@@ -1,0 +1,51 @@
+---
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  active?: string;
+  image?: string;
+}
+
+const {
+  title,
+  description,
+  active = "",
+  image = "/Images/ary-gasolinerias.png",
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site || Astro.url.origin).toString();
+---
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1b0718" />
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:locale" content="es_MX" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.site || Astro.url.origin)} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Ir al contenido</a>
+    <Header active={active} />
+    <main id="contenido"><slot /></main>
+    <Footer />
+    <div class="mobile-shortcuts" aria-label="Accesos rápidos para móvil">
+      <a href="/estaciones/" class="mobile-find"><span aria-hidden="true">⌖</span> Estaciones</a>
+      <a href="/facturacion/" class="mobile-facturar"><span aria-hidden="true">▤</span> Facturación y alta</a>
+    </div>
+  </body>
+</html>

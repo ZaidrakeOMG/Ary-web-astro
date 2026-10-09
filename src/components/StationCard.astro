@@ -1,0 +1,19 @@
+---
+import { mapsLink, type Station } from "../data/site";
+interface Props { station: Station; priority?: boolean }
+const { station, priority = false } = Astro.props;
+---
+<article class="station-card" data-city={station.city} id={station.id}>
+  <div class="station-image">
+    <img src={station.image} alt={"Vista de " + station.name} loading={priority ? "eager" : "lazy"} decoding="async" />
+    <span class="station-city"><span aria-hidden="true">⌖</span> {station.city}</span>
+  </div>
+  <div class="station-body">
+    <span class="station-label">{station.shortName}</span>
+    <h3>{station.name}</h3>
+    <p>{station.address}</p>
+    <a href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer" aria-label={"Ver ubicación de " + station.name + " en Google Maps"}>
+      Cómo llegar <span aria-hidden="true">↗</span>
+    </a>
+  </div>
+</article>
