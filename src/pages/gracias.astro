@@ -1,6 +1,5 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import PageIntro from '../components/PageIntro.astro';
 ---
-<SiteLayout title="Gracias por contactarnos | Grupo ARY" description="Gracias por comunicarte con Grupo ARY.">
-  <section class="page-hero" style="min-height:66vh;display:flex;align-items:center"><div class="shell"><span class="eyebrow light">Grupo ARY</span><h1>¡Gracias por <span class="accent-gold">contactarnos!</span></h1><p>Recibimos tu visita a esta página de confirmación. Si enviaste una solicitud por otro canal, conserva los datos de seguimiento correspondientes.</p><div class="actions"><a href="/" class="button gold">Volver al inicio ↗</a><a href="/contacto/" class="button outline">Contacto</a></div></div></section>
-</SiteLayout>
+<SiteLayout title="Atención | Grupo ARY" description="Conserva la referencia de cualquier solicitud enviada. Visitar esta página no confirma el procesamiento de un trámite."><PageIntro eyebrow="ATENCIÓN ARY" title="Tu siguiente paso está aquí." description="Conserva la referencia de cualquier solicitud enviada. Visitar esta página no confirma el procesamiento de un trámite."/><section class="section"><div class="wrap button-row"><a class="button button-primary" href="/facturacion/">Ir a facturación</a><a class="button button-outline" href="/contacto/">Contactar a ARY</a></div></section></SiteLayout>

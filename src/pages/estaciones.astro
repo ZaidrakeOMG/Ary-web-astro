@@ -1,23 +1,17 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import PageIntro from '../components/PageIntro.astro';
 import StationCard from '../components/StationCard.astro';
-import {stations} from '../data/site';
-const cities=['Todas','Gómez Palacio','Lerdo','Torreón'];
+import Icon from '../components/Icon.astro';
+import { stations } from '../data/site';
 ---
-<SiteLayout title="Estaciones ARY y Apache | Ubicaciones" description="Ubica las siete estaciones ARY y Servicio Apache en Gómez Palacio, Lerdo y Torreón." active="estaciones">
-  <section class="page-hero"><div class="shell page-hero-grid"><div><span class="eyebrow light">Tu próxima parada</span><h1>Donde estés, <span class="accent-gold">hay una ARY.</span></h1><p>Busca por ciudad y encuentra la estación más conveniente para ti. Abre la ruta de tu elección directamente en Google Maps.</p></div><div class="page-hero-img"><img src="/media/ary-5.webp" width="1152" height="864" alt="Estación ARY iluminada" decoding="async" /></div></div></section>
-  <section class="section blush" id="lista-estaciones"><div class="shell"><div class="heading-row"><div><span class="eyebrow">Conoce nuestras ubicaciones</span><h2 class="section-title">7 estaciones.<br /><span class="accent">Muchos caminos.</span></h2><p class="section-lead">Filtra por ciudad o consulta todas las ubicaciones publicadas.</p></div></div>
-    <div class="filter-row" role="group" aria-label="Filtrar estaciones por ciudad">{cities.map((city,i)=><button type="button" class="filter-button" data-city-filter={city} aria-pressed={i===0?'true':'false'}>{city}</button>)}</div>
-    <div class="station-grid" id="station-results">{stations.map(station=><StationCard station={station} />)}</div>
-    <p class="notice" style="margin:27px 0 0">Las fotografías corresponden a las ubicaciones proporcionadas por Grupo ARY. Los horarios y servicios pueden variar según cada estación.</p>
-  </div></section>
-  <script>
-    const buttons=document.querySelectorAll<HTMLButtonElement>('[data-city-filter]');
-    const cards=document.querySelectorAll<HTMLElement>('.station-card[data-city]');
-    buttons.forEach(button=>button.addEventListener('click',()=>{
-      const city=button.dataset.cityFilter||'Todas';
-      buttons.forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
-      cards.forEach(card=>card.hidden=city!=='Todas'&&card.dataset.city!==city);
-    }));
-  </script>
+<SiteLayout title="Nuestras estaciones | ARY Gasolinerías" description="Fotografías y ubicaciones de las siete estaciones ARY y Servicio Apache en La Laguna." active="estaciones">
+<PageIntro eyebrow="TU PRÓXIMA PARADA" title="Estamos en" accent="tu camino." description="Elige tu ciudad, encuentra tu estación y abre la ruta en Google Maps. Así de fácil."/>
+<section class="section"><div class="wrap"><div class="filter-row"><div class="filters" role="group" aria-label="Filtrar por ciudad">{['Todas','Gómez Palacio','Lerdo','Torreón'].map((city,i)=><button class="filter-button" data-filter={city} type="button" aria-pressed={i===0 ? 'true' : 'false'}>{city}</button>)}</div><label class="station-search"><Icon name="search" size={18}/><span class="sr-only">Buscar estación, ciudad o dirección</span><input id="stationSearch" type="search" placeholder="Busca tu estación" autocomplete="off"/></label></div><p class="results-status" id="stationCount" role="status" aria-live="polite">7 estaciones para seguir avanzando</p><div class="station-grid">{stations.map((station,i)=><StationCard station={station} index={i}/>)}</div><div class="no-results" id="noStations" hidden>No encontramos una estación con esa búsqueda. Prueba otra ciudad o nombre.</div><div class="notice-box">Consulta directamente con la estación sus horarios, servicios y disponibilidad. Las fotografías corresponden a cada ubicación.</div></div></section>
 </SiteLayout>
+<script>
+const buttons=document.querySelectorAll<HTMLButtonElement>('[data-filter]');const cards=document.querySelectorAll<HTMLElement>('.station-card');const input=document.querySelector<HTMLInputElement>('#stationSearch');let city='Todas';
+const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function filter(){const q=normalize(input?.value.trim()||'');let total=0;cards.forEach(card=>{card.hidden=(city!=='Todas'&&card.dataset.city!==city)||!normalize(card.dataset.search||'').includes(q);if(!card.hidden)total++;});const label=document.getElementById('stationCount');if(label)label.textContent=`${total} ${total===1?'estación disponible':'estaciones disponibles'}`;const empty=document.getElementById('noStations');if(empty)empty.hidden=total>0;}
+buttons.forEach(b=>b.addEventListener('click',()=>{city=b.dataset.filter||'Todas';buttons.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));filter();}));input?.addEventListener('input',filter);
+</script>

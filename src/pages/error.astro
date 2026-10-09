@@ -1,6 +1,5 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import PageIntro from '../components/PageIntro.astro';
 ---
-<SiteLayout title="No se pudo completar la solicitud | Grupo ARY" description="No fue posible completar tu solicitud. Contáctanos para recibir ayuda.">
-  <section class="page-hero" style="min-height:66vh;display:flex;align-items:center"><div class="shell"><span class="eyebrow light">Necesitamos revisar tu solicitud</span><h1>Algo no salió <span class="accent-gold">como esperábamos.</span></h1><p>Desde esta página no podemos confirmar la recepción de la información. Antes de repetir una solicitud de facturación, consulta su estado en el portal para evitar duplicados.</p><div class="actions"><a href="/contacto/" class="button gold">Solicitar ayuda ↗</a><a href="/facturacion/" class="button outline">Portal de facturación</a></div></div></section>
-</SiteLayout>
+<SiteLayout title="Atención | Grupo ARY" description="No se ha confirmado un trámite desde esta pantalla. Consulta el portal o contacta a nuestro equipo con tu referencia."><PageIntro eyebrow="ATENCIÓN ARY" title="Revisemos tu solicitud." description="No se ha confirmado un trámite desde esta pantalla. Consulta el portal o contacta a nuestro equipo con tu referencia."/><section class="section"><div class="wrap button-row"><a class="button button-primary" href="/facturacion/">Ir a facturación</a><a class="button button-outline" href="/contacto/">Contactar a ARY</a></div></section></SiteLayout>

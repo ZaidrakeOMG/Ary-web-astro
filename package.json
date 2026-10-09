@@ -1,23 +1,23 @@
 {
   "name": "grupo-ary-astro",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev --host 0.0.0.0",
-    "build": "astro build",
-    "preview": "astro preview --host 0.0.0.0",
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro build && node scripts/postbuild.mjs",
+    "preview": "astro preview --host 127.0.0.1",
     "check": "astro check",
     "test:integrity": "node scripts/verificar-build.mjs"
   },
   "dependencies": {
-    "astro": "^5.16.0"
+    "astro": "5.18.2"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
-    "typescript": "^5.7.0"
+    "@astrojs/check": "0.9.10",
+    "typescript": "5.9.3"
   },
   "engines": {
-    "node": ">=20.3.0"
+    "node": ">=22.12.0 <23 || >=24.0.0 <25"
   }
 }

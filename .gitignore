@@ -14,3 +14,11 @@ dist/
 *.db
 .DS_Store
 npm-debug.log*
+.ary-staging/
+.ary-releases/
+.ary-install-cache.txt
+.ary-last-deployment.json
+test-results/
+playwright-report/
+sha256-manifest.json
+paquete-publicacion/
