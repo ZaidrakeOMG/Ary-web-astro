@@ -25,3 +25,11 @@ jobs:
         run: npm run build
       - name: Verificar facturacion, alta e IIS
         run: npm run test:integrity
+      - name: Archivar build Astro para revisión
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: grupo-ary-astro-dist
+          path: dist/
+          retention-days: 3
+          if-no-files-found: error
