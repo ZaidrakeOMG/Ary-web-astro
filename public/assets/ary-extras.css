@@ -1,0 +1,64 @@
+
+/* UI ARY 2026 · Extensión responsive para páginas IIS, sin alterar facturación */
+:where(a,button,input,textarea,select):focus-visible{outline:3px solid #FFD36A;outline-offset:3px}
+.ary-mobile-actions{display:none}
+@media(max-width:820px){
+ body:has(.ary-mobile-actions){padding-bottom:calc(89px + env(safe-area-inset-bottom)) !important}
+ .ary-mobile-actions{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:9px;align-items:center;position:fixed;bottom:0;left:0;right:0;z-index:900;padding:11px 13px calc(11px + env(safe-area-inset-bottom));border-top:1px solid #ffffff2b;background:#18000ff0;backdrop-filter:blur(18px);box-shadow:0 -8px 45px #0005}
+ .ary-mobile-actions a{display:flex;min-width:0;min-height:52px;justify-content:center;align-items:center;gap:8px;text-align:center;border-radius:14px;padding:8px 10px;text-decoration:none !important;color:#FFF9FC !important;font:700 12px/1.3 "Segoe UI",system-ui,sans-serif}
+ .ary-mobile-actions .ary-mobile-primary{background:linear-gradient(135deg,#D72A93,#941063);box-shadow:0 7px 20px #d72a9340}
+ .ary-mobile-actions .ary-mobile-secondary{background:#ffffff12;border:1px solid #ffffff30}
+ body.menu-open .ary-mobile-actions{display:none}
+}
+@media(max-width:380px){.ary-mobile-actions{gap:7px}.ary-mobile-actions a{font-size:11px;padding:8px 6px}}
+@media(prefers-reduced-motion:reduce){.ary-mobile-actions a{transition:none}}
+/* Las siguientes reglas son exclusivas de las páginas de contenido nuevas. */
+body.ary-landing{margin:0;min-width:320px;min-height:100vh;overflow-x:hidden;color:#fff7fb;font-family:"Segoe UI",Inter,system-ui,sans-serif;background:radial-gradient(circle at 8% 1%,#76215077,transparent 34%),radial-gradient(circle at 97% 28%,#fcaf3926,transparent 34%),linear-gradient(150deg,#16000e,#28051b 50%,#12000d)}
+.ary-landing *{box-sizing:border-box}
+.ary-landing a{color:inherit}
+.ary-landing img{max-width:100%;height:auto;display:block}
+.ary-wrap{width:min(1180px,calc(100% - 48px));margin-inline:auto}
+.ary-new-header{position:sticky;top:0;z-index:100;border-bottom:1px solid #ffffff24;background:#180012e8;backdrop-filter:blur(20px)}
+.ary-new-header .ary-wrap{min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.ary-brand{display:flex;align-items:center;gap:11px;text-decoration:none;min-width:0}
+.ary-brand img{width:46px;height:46px;object-fit:contain;border-radius:13px;background:#fff9}
+.ary-brand strong{display:block;line-height:1.2;font-size:16px}
+.ary-brand small{display:block;color:#e7bcce;font-size:11px;letter-spacing:.02em}
+.ary-nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.ary-nav a{padding:10px 13px;border-radius:12px;text-decoration:none;font-size:13px;font-weight:650}
+.ary-nav a:hover,.ary-nav a[aria-current=page]{background:#ffffff18}
+.ary-nav .ary-nav-cta{background:#B0187C;color:#fff}
+.ary-hero{padding:92px 0 62px;position:relative}
+.ary-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid #fcb1446b;border-radius:999px;color:#ffd38e;font-size:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;background:#fcb14413}
+.ary-hero h1{font-size:clamp(40px,6.4vw,78px);line-height:1.08;letter-spacing:-.045em;margin:23px 0 20px;max-width:930px;text-wrap:balance}
+.ary-hero h1 em{font-style:normal;color:#FCB144}
+.ary-lead{font-size:clamp(16px,2vw,19px);line-height:1.75;max-width:730px;color:#ebcada;margin:0}
+.ary-buttons{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.ary-action{display:inline-flex;gap:9px;align-items:center;justify-content:center;min-height:49px;border-radius:13px;padding:13px 19px;text-decoration:none;font-weight:750;font-size:14px}
+.ary-action-primary{background:linear-gradient(135deg,#DA2894,#9C116A);box-shadow:0 14px 35px #aa146d50}
+.ary-action-outline{border:1px solid #ffffff55;background:#ffffff0d}
+.ary-section{padding:24px 0 85px}
+.ary-section-title{font-size:clamp(27px,3.5vw,39px);letter-spacing:-.03em;margin:0 0 12px}
+.ary-section-intro{margin:0 0 32px;color:#e3bfd0;line-height:1.7;max-width:700px}
+.ary-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.ary-card{overflow:hidden;border:1px solid #ffffff23;border-radius:22px;background:linear-gradient(145deg,#490d30bb,#220318f0);box-shadow:0 16px 40px #0003}
+.ary-card img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#281021}
+.ary-card-body{padding:23px}
+.ary-card-number{font-size:12px;color:#FCB144;font-weight:900;letter-spacing:.14em}
+.ary-card h2,.ary-card h3{margin:10px 0;font-size:20px;letter-spacing:-.02em}
+.ary-card p{color:#e9c9d9;line-height:1.72;margin:0;font-size:14px}
+.ary-feature{border-radius:23px;border:1px solid #fcb1444f;background:linear-gradient(130deg,#742452a6,#2d061ebf);padding:32px 36px;display:flex;gap:28px;justify-content:space-between;align-items:center;margin-top:35px}
+.ary-feature h2{margin:0 0 8px;font-size:25px;letter-spacing:-.02em}
+.ary-feature p{margin:0;color:#eac9d7;max-width:630px;line-height:1.7}
+.ary-feature .ary-action{flex:0 0 auto}
+.ary-footer{border-top:1px solid #ffffff20;padding:26px 0 36px;color:#dbb5c8;font-size:13px}
+.ary-footer .ary-wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.ary-footer a{margin-left:16px;text-decoration:none}
+.ary-steps{counter-reset:ary-step;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.ary-step{padding:28px;border-radius:20px;border:1px solid #ffffff23;background:#ffffff0a}
+.ary-step:before{counter-increment:ary-step;content:"0" counter(ary-step);display:block;color:#FCB144;font-size:14px;font-weight:900;margin-bottom:14px}
+.ary-step h2{font-size:20px;line-height:1.3;margin:0 0 8px}
+.ary-step p{font-size:14px;line-height:1.75;color:#e7c7d5;margin:0}
+.ary-note{font-size:13px;color:#dfbdd0;line-height:1.7;margin-top:18px}
+@media(max-width:970px){.ary-new-header .ary-wrap{min-height:82px;flex-wrap:wrap;padding:14px 0}.ary-nav{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin;padding-bottom:3px}.ary-nav a{white-space:nowrap}.ary-card-grid,.ary-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.ary-wrap{width:calc(100% - 30px)}.ary-new-header .ary-wrap{gap:11px}.ary-brand img{width:40px;height:40px}.ary-nav a{padding:9px 12px}.ary-hero{padding:55px 0 34px}.ary-buttons{flex-direction:column;align-items:stretch}.ary-action{width:100%}.ary-card-grid,.ary-steps{grid-template-columns:1fr;gap:16px}.ary-card-body{padding:21px}.ary-feature{padding:24px;flex-direction:column;align-items:stretch}.ary-footer .ary-wrap{display:block}.ary-footer a{margin:12px 12px 0 0;display:inline-block}}

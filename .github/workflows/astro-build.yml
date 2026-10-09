@@ -1,0 +1,36 @@
+name: Compilar y comprobar Astro
+
+on:
+  push:
+    branches: [main, astro-real-migracion-20261009]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Construir sitio Astro
+        run: npm run build
+      - name: Confirmar archivos criticos IIS
+        run: |
+          test -f dist/index.html
+          test -f dist/empresa/index.html
+          test -f dist/estaciones/index.html
+          test -f dist/facturacion/index.html
+          test -f dist/ary_facturacion.htm
+          test -f dist/web.config
+          test -f dist/Images/Arylogo2.png
+          grep -q "api/facturacion" dist/web.config
+          grep -q "id=\"form-alta\"" dist/ary_facturacion.htm

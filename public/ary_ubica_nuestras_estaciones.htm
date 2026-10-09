@@ -1,0 +1,2072 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ary Super Servicios | Ubica tu estación</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  
+  <style>
+    :root {
+      --ary-magenta: #B0187C;
+      --ary-magenta-2: #D72A93;
+      --ary-orange: #FCB144;
+      --ary-gold: #FFD36A;
+      --ary-white: #FFFFFF;
+
+      --bg: #16000F;
+      --bg-2: #250318;
+      --bg-3: #350723;
+      --text: #FFF8FC;
+      --muted: #DDB8CC;
+      --line: rgba(255,255,255,.10);
+      --header-h: 82px;
+      --container: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--header-h) + 22px);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      font-family: 'Roboto', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 7%, rgba(176,24,124,.22), transparent 28%),
+        radial-gradient(circle at 90% 17%, rgba(252,177,68,.10), transparent 24%),
+        radial-gradient(circle at 50% 68%, rgba(176,24,124,.07), transparent 34%),
+        linear-gradient(180deg, #16000F 0%, #260319 48%, #110009 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -4;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.9), transparent 88%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.9), transparent 88%);
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a { -webkit-tap-highlight-color: transparent; }
+
+    #ary-particles {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: .52;
+    }
+
+    .scroll-progress {
+      position: fixed;
+      z-index: 1200;
+      inset: 0 auto auto 0;
+      width: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 14px rgba(252,177,68,.58);
+    }
+
+    .cursor-energy {
+      position: fixed;
+      z-index: 50;
+      width: 270px;
+      height: 270px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle,
+          rgba(252,177,68,.13) 0%,
+          rgba(215,42,147,.10) 31%,
+          rgba(176,24,124,.04) 54%,
+          transparent 74%);
+      filter: blur(12px);
+      mix-blend-mode: screen;
+      transition: opacity .25s ease;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      min-height: var(--header-h);
+      padding: 12px max(22px, calc((100vw - var(--container)) / 2));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(252,177,68,.13);
+      background:
+        linear-gradient(90deg, rgba(22,0,15,.95), rgba(64,7,45,.88), rgba(22,0,15,.95));
+      backdrop-filter: blur(16px) saturate(135%);
+      -webkit-backdrop-filter: blur(16px) saturate(135%);
+      box-shadow: 0 14px 40px rgba(0,0,0,.20);
+      transition: min-height .3s ease, background .3s ease, box-shadow .3s ease;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: -1px;
+      height: 1px;
+      background:
+        linear-gradient(90deg,
+          transparent,
+          rgba(176,24,124,.62),
+          rgba(252,177,68,.92),
+          rgba(176,24,124,.62),
+          transparent);
+      filter: drop-shadow(0 0 8px rgba(252,177,68,.35));
+      opacity: .72;
+    }
+
+    header.is-scrolled {
+      min-height: 70px;
+      background: rgba(22,0,15,.97);
+      box-shadow: 0 14px 42px rgba(0,0,0,.30);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .logo-container img {
+      width: 50px;
+      height: 50px;
+      padding: 6px;
+      object-fit: contain;
+      border: 1px solid rgba(252,177,68,.27);
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.08),
+        0 12px 30px rgba(0,0,0,.20);
+      animation: logoFloat 4.5s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0) rotate(0); }
+      50% { transform: translateY(-3px) rotate(-1deg); }
+    }
+
+    .logo-container span {
+      color: #fff;
+      font-size: clamp(1rem, 1.65vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      white-space: nowrap;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    nav a {
+      position: relative;
+      color: #F2DCE9;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: .78rem;
+      padding: 10px 10px;
+      border-radius: 12px;
+      transition: color .25s ease, background .25s ease, transform .25s ease;
+    }
+
+    nav a::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 5px;
+      height: 2px;
+      border-radius: 99px;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      box-shadow: 0 0 10px rgba(252,177,68,.42);
+      transition: transform .28s ease;
+    }
+
+    nav a:hover,
+    nav a[href="ary_ubica_nuestras_estaciones.htm"] {
+      color: #fff;
+      background: rgba(255,255,255,.055);
+    }
+
+    nav a:hover {
+      transform: translateY(-2px);
+    }
+
+    nav a:hover::after,
+    nav a[href="ary_ubica_nuestras_estaciones.htm"]::after {
+      transform: scaleX(1);
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      padding: 0;
+      border: 1px solid rgba(252,177,68,.22);
+      border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      width: 20px;
+      height: 2px;
+      display: block;
+      margin: 4px auto;
+      border-radius: 99px;
+      background: currentColor;
+      transition: transform .3s ease, opacity .3s ease;
+    }
+
+    .menu-toggle.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .menu-toggle.active span:nth-child(2) { opacity: 0; }
+    .menu-toggle.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ===== HERO ===== */
+    .hero-imagen {
+      min-height: max(520px, calc(72svh - var(--header-h)));
+      height: auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      isolation: isolate;
+      background:
+        url("images/Ary-super-servicios-VI-Triana.jpg") no-repeat center 55% / cover;
+      box-shadow: inset 0 -120px 120px rgba(15,0,10,.38);
+    }
+
+    .hero-imagen::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(176,24,124,.18), transparent 33%),
+        linear-gradient(90deg, rgba(22,0,15,.88), rgba(22,0,15,.38) 54%, rgba(22,0,15,.70)),
+        linear-gradient(180deg, rgba(22,0,15,.08), rgba(22,0,15,.82));
+    }
+
+    .hero-imagen::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      width: min(860px, 78vw);
+      height: min(860px, 78vw);
+      right: -18%;
+      top: 46%;
+      transform: translateY(-50%);
+      border: 1px solid rgba(252,177,68,.10);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 100px rgba(176,24,124,.022),
+        0 0 0 210px rgba(252,177,68,.012),
+        0 0 180px rgba(176,24,124,.12);
+      animation: heroHalo 5s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes heroHalo {
+      0%,100% { opacity: .68; transform: translateY(-50%) scale(.98); }
+      50% { opacity: 1; transform: translateY(-50%) scale(1.035); }
+    }
+
+    .hero-decor {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .hero-decor .beam {
+      position: absolute;
+      left: -44%;
+      width: 36vw;
+      height: 3px;
+      border-radius: 99px;
+      opacity: .45;
+      background:
+        linear-gradient(90deg,
+          transparent,
+          rgba(176,24,124,.72),
+          rgba(252,177,68,.95),
+          transparent);
+      box-shadow:
+        0 0 12px rgba(176,24,124,.34),
+        0 0 22px rgba(252,177,68,.20);
+      animation: beamFly 6.6s linear infinite;
+    }
+
+    .hero-decor .beam:nth-child(1) { top: 24%; transform: rotate(-7deg); }
+    .hero-decor .beam:nth-child(2) { top: 58%; transform: rotate(5deg); animation-delay: -2.2s; }
+    .hero-decor .beam:nth-child(3) { top: 78%; transform: rotate(-4deg); animation-delay: -4.4s; }
+
+    @keyframes beamFly {
+      from { left: -45%; }
+      to { left: 116%; }
+    }
+
+    .station-horizon {
+      position: absolute;
+      z-index: 1;
+      left: 0;
+      right: 0;
+      bottom: 12%;
+      height: 4px;
+      opacity: .48;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg,
+          transparent 0 5%,
+          rgba(176,24,124,.18) 14%,
+          #B0187C 34%,
+          #FCB144 50%,
+          #B0187C 66%,
+          rgba(176,24,124,.18) 86%,
+          transparent 95%);
+      box-shadow:
+        0 0 12px rgba(176,24,124,.55),
+        0 0 30px rgba(252,177,68,.22);
+      animation: horizonPulse 3.8s ease-in-out infinite;
+    }
+
+    @keyframes horizonPulse {
+      0%,100% { opacity: .30; transform: scaleX(.94); }
+      50% { opacity: .65; transform: scaleX(1.03); }
+    }
+
+    .road-lines {
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      bottom: -8%;
+      width: min(720px, 86vw);
+      height: 35%;
+      transform: translateX(-50%) perspective(500px) rotateX(67deg);
+      transform-origin: center bottom;
+      opacity: .32;
+      pointer-events: none;
+      mask-image: linear-gradient(to top, black, transparent 88%);
+      -webkit-mask-image: linear-gradient(to top, black, transparent 88%);
+    }
+
+    .road-lines::before,
+    .road-lines::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to top, var(--ary-orange), rgba(176,24,124,.16), transparent);
+      box-shadow: 0 0 12px rgba(252,177,68,.38);
+    }
+
+    .road-lines::before { left: 19%; }
+    .road-lines::after { right: 19%; }
+
+    .road-lines i {
+      position: absolute;
+      left: calc(50% - 2px);
+      width: 4px;
+      height: 19%;
+      border-radius: 99px;
+      background: linear-gradient(to top, #FFD36A, #FCB144);
+      box-shadow: 0 0 12px rgba(252,177,68,.75);
+      animation: roadMove 2.1s linear infinite;
+    }
+
+    .road-lines i:nth-child(1) { bottom: 4%; }
+    .road-lines i:nth-child(2) { bottom: 34%; animation-delay: -.7s; }
+    .road-lines i:nth-child(3) { bottom: 64%; animation-delay: -1.4s; }
+
+    @keyframes roadMove {
+      from { transform: translateY(-120%) scaleY(.35); opacity: 0; }
+      20% { opacity: 1; }
+      to { transform: translateY(380%) scaleY(1.25); opacity: 0; }
+    }
+
+    .hero-texto {
+      position: relative;
+      z-index: 2;
+      max-width: 1000px;
+      padding: 0 20px;
+      color: #fff;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(32px);
+      animation: heroEnter 1s cubic-bezier(.2,.8,.2,1) .18s forwards;
+    }
+
+    @keyframes heroEnter {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-texto h1 {
+      margin: 0;
+      font-size: clamp(3rem, 7vw, 6.7rem);
+      font-weight: 800;
+      line-height: .92;
+      letter-spacing: -.055em;
+      color: #fff;
+      text-wrap: balance;
+      text-shadow:
+        0 16px 44px rgba(0,0,0,.44),
+        0 0 34px rgba(176,24,124,.10);
+      animation: titleFloat 4.4s ease-in-out infinite;
+    }
+
+    .hero-texto h1::after {
+      content: "";
+      width: min(290px, 48vw);
+      height: 6px;
+      margin: 28px auto 0;
+      display: block;
+      border-radius: 99px;
+      background:
+        linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold), var(--ary-magenta));
+      background-size: 220% 100%;
+      box-shadow: 0 0 22px rgba(252,177,68,.34);
+      animation: accentFlow 4s linear infinite;
+    }
+
+    @keyframes titleFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    @keyframes accentFlow {
+      to { background-position: 220% 0; }
+    }
+
+    /* ===== MAIN / TITLE ===== */
+    main {
+      width: min(var(--container), calc(100% - 40px));
+      max-width: none;
+      margin: 86px auto 110px;
+      padding: 0;
+      position: relative;
+    }
+
+    main::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      left: 50%;
+      top: 50px;
+      width: min(900px, 90vw);
+      height: 500px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle,
+          rgba(176,24,124,.10),
+          rgba(252,177,68,.035) 42%,
+          transparent 72%);
+      filter: blur(16px);
+    }
+
+    main > h1 {
+      max-width: 840px;
+      margin: 0 auto 52px;
+      color: #fff;
+      text-align: center;
+      font-size: clamp(2.7rem, 5.5vw, 5.4rem);
+      font-weight: 800;
+      line-height: .98;
+      letter-spacing: -.055em;
+      text-wrap: balance;
+      text-shadow: 0 12px 36px rgba(0,0,0,.24);
+    }
+
+    main > h1::before {
+      content: "";
+      width: 46px;
+      height: 3px;
+      display: block;
+      margin: 0 auto 16px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      box-shadow: 0 0 14px rgba(252,177,68,.35);
+    }
+
+    /* ===== ESTACIONES ===== */
+    .ubicaciones {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .location-link-wrapper {
+      min-width: 0;
+      display: block;
+      color: inherit;
+      text-decoration: none;
+      perspective: 1000px;
+    }
+
+    .ubicacion {
+      height: 100%;
+      min-width: 0;
+      padding: 13px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(252,177,68,.18);
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 86% 8%, rgba(252,177,68,.11), transparent 26%),
+        radial-gradient(circle at 10% 90%, rgba(176,24,124,.13), transparent 35%),
+        linear-gradient(155deg, rgba(71,7,49,.78), rgba(24,1,16,.94));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        0 28px 80px rgba(0,0,0,.24),
+        inset 0 1px rgba(255,255,255,.06);
+      opacity: 0;
+      transform: translateY(26px);
+      transition:
+        opacity .75s ease,
+        transform .75s cubic-bezier(.2,.8,.2,1),
+        border-color .32s ease,
+        box-shadow .32s ease;
+      isolation: isolate;
+    }
+
+    .ubicacion.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .ubicacion::before {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      transform: scaleX(.18);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 18px rgba(252,177,68,.42);
+      transition: transform .42s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .ubicacion::after {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      width: 190px;
+      height: 190px;
+      right: -85px;
+      top: -85px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,177,68,.17), transparent 70%);
+      opacity: .55;
+      transform: scale(.8);
+      transition: transform .45s ease, opacity .35s ease;
+    }
+
+    .location-link-wrapper:hover .ubicacion {
+      transform: translateY(-9px);
+      border-color: rgba(252,177,68,.34);
+      box-shadow:
+        0 40px 95px rgba(0,0,0,.34),
+        0 0 36px rgba(176,24,124,.08),
+        inset 0 1px rgba(255,255,255,.07);
+    }
+
+    .location-link-wrapper:hover .ubicacion::before {
+      transform: scaleX(1);
+    }
+
+    .location-link-wrapper:hover .ubicacion::after {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+
+    .location-map-iframe {
+      width: 100%;
+      height: 250px;
+      display: block;
+      margin: 0 0 18px;
+      border: 0;
+      border-radius: 19px;
+      pointer-events: none;
+      background: #2A071E;
+      filter: saturate(.88) contrast(1.02);
+      box-shadow:
+        0 18px 38px rgba(0,0,0,.24),
+        inset 0 0 0 1px rgba(255,255,255,.04);
+      transition: filter .35s ease, transform .5s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .location-link-wrapper:hover .location-map-iframe {
+      filter: saturate(1.08) contrast(1.04);
+      transform: scale(1.008);
+    }
+
+    .ubicacion h2 {
+      margin: 0 5px 9px;
+      color: #fff;
+      font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -.025em;
+      text-shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+
+    .ubicacion h2::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      margin-right: 9px;
+      display: inline-block;
+      vertical-align: 2px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: var(--ary-orange);
+      box-shadow:
+        0 0 0 5px rgba(252,177,68,.08),
+        0 0 14px rgba(252,177,68,.68);
+    }
+
+    .ubicacion p {
+      margin: 4px 5px;
+      color: #DDB8CC;
+      font-size: .91rem;
+      line-height: 1.55;
+    }
+
+    .ubicacion p:last-child {
+      width: fit-content;
+      margin-top: 12px;
+      padding: 7px 10px;
+      border: 1px solid rgba(252,177,68,.18);
+      border-radius: 999px;
+      color: var(--ary-gold);
+      background: rgba(252,177,68,.055);
+      font-weight: 700;
+      font-size: .79rem;
+    }
+
+    /* ===== FOOTER ===== */
+    .site-footer {
+      margin-top: 0;
+      padding: 34px 20px;
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid rgba(252,177,68,.16);
+      background:
+        linear-gradient(180deg, rgba(22,0,15,.76), rgba(10,0,7,.96));
+      color: #CFA5BC;
+      font-size: .82rem;
+    }
+
+    .site-footer::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -150px;
+      width: 520px;
+      height: 260px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(176,24,124,.13), transparent 70%);
+      pointer-events: none;
+    }
+
+    .footer-content {
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .footer-links {
+      margin: 0 0 10px;
+    }
+
+    .footer-links a {
+      position: relative;
+      display: inline-block;
+      margin: 0 5px;
+      padding: 5px 0;
+      color: var(--ary-orange);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .footer-links a[href="ary_conoce_nuestra_empresa.htm"] {
+      color: var(--ary-orange);
+    }
+
+    .footer-links a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 1px;
+      height: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      transition: transform .28s ease;
+    }
+
+    .footer-links a:hover {
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .footer-links a:hover::after { transform: scaleX(1); }
+
+    .footer-copyright,
+    .footer-credits {
+      margin: 8px 0;
+    }
+
+    .footer-copyright strong,
+    .footer-credits strong {
+      color: #fff;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1050px) {
+      nav a {
+        padding-inline: 7px;
+        font-size: .72rem;
+      }
+    }
+
+    @media (max-width: 900px) {
+      :root { --header-h: 74px; }
+
+      header { padding-inline: 16px; }
+
+      .menu-toggle { display: block; }
+
+      nav {
+        position: fixed;
+        inset: calc(var(--header-h) + 8px) 14px auto;
+        display: grid;
+        gap: 6px;
+        padding: 14px;
+        border: 1px solid rgba(252,177,68,.18);
+        border-radius: 20px;
+        background: rgba(28,1,19,.97);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 28px 80px rgba(0,0,0,.38);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-14px) scale(.985);
+        transform-origin: top;
+        transition: opacity .28s ease, transform .28s ease, visibility .28s ease;
+      }
+
+      nav.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+      }
+
+      nav a {
+        padding: 12px 13px;
+        text-align: left;
+        font-size: .83rem;
+      }
+
+      .cursor-energy { display: none; }
+
+      .hero-imagen {
+        min-height: 500px;
+      }
+
+      .hero-texto h1 {
+        font-size: clamp(3rem, 10vw, 5.2rem);
+        animation: none;
+      }
+
+      .hero-decor .beam {
+        width: 54vw;
+        opacity: .30;
+      }
+
+      .road-lines { opacity: .20; }
+      .station-horizon { opacity: .32; }
+
+      .ubicaciones {
+        grid-template-columns: 1fr;
+      }
+
+      .location-map-iframe {
+        height: 280px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .logo-container span { font-size: .92rem; }
+
+      .logo-container img {
+        width: 46px;
+        height: 46px;
+      }
+
+      .hero-imagen {
+        min-height: 430px;
+        background-position: center 56%;
+      }
+
+      .hero-texto {
+        padding-inline: 12px;
+      }
+
+      .hero-texto h1 {
+        font-size: clamp(2.65rem, 13vw, 4.15rem);
+        line-height: .95;
+      }
+
+      .hero-decor .beam:nth-child(2),
+      .hero-decor .beam:nth-child(3),
+      .station-horizon {
+        display: none;
+      }
+
+      .road-lines {
+        height: 24%;
+        opacity: .13;
+      }
+
+      main {
+        width: min(100% - 22px, var(--container));
+        margin: 64px auto 84px;
+      }
+
+      main > h1 {
+        margin-bottom: 35px;
+        font-size: clamp(2.35rem, 10vw, 3.65rem);
+      }
+
+      .ubicaciones { gap: 18px; }
+
+      .ubicacion {
+        padding: 9px;
+        border-radius: 23px;
+      }
+
+      .location-map-iframe {
+        height: 220px;
+        margin-bottom: 15px;
+        border-radius: 16px;
+      }
+
+      .ubicacion h2 {
+        margin-inline: 5px;
+        font-size: 1.2rem;
+      }
+
+      .ubicacion p {
+        margin-inline: 5px;
+        font-size: .84rem;
+      }
+
+      .site-footer {
+        padding-inline: 12px;
+      }
+
+      .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 7px 13px;
+      }
+
+      .footer-links a { margin: 0; }
+    }
+
+    @media (max-width: 390px) {
+      .logo-container span { font-size: .82rem; }
+      .hero-texto h1 { font-size: 2.55rem; }
+      .location-map-iframe { height: 195px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  
+    /* =========================================================
+       V3 — UBICACIONES REACOMODADAS + RESPONSIVE INTEGRAL
+       ========================================================= */
+
+    /* Prevención general de desbordes */
+    header,
+    nav,
+    main,
+    .ubicaciones,
+    .location-link-wrapper,
+    .ubicacion,
+    .location-info,
+    .hero-texto,
+    .footer-content {
+      min-width: 0;
+    }
+
+    iframe,
+    img {
+      max-width: 100%;
+    }
+
+    /* Más aire entre hero y contenido */
+    main {
+      margin-top: clamp(64px, 8vw, 96px);
+    }
+
+    /* ---------------------------------------------------------
+       DESKTOP:
+       1ª estación destacada a ancho completo.
+       Las 6 restantes en 2 columnas limpias.
+       --------------------------------------------------------- */
+    .ubicaciones {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(20px, 2.2vw, 28px);
+      align-items: stretch;
+    }
+
+    .location-link-wrapper {
+      height: 100%;
+      border-radius: 30px;
+    }
+
+    .location-link-wrapper:first-child {
+      grid-column: 1 / -1;
+    }
+
+    .ubicacion {
+      height: 100%;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      border-radius: 28px;
+    }
+
+    .location-map-iframe {
+      width: 100%;
+      height: 260px;
+      flex: 0 0 auto;
+      margin: 0;
+      border-radius: 27px 27px 0 0;
+      box-shadow: none;
+    }
+
+    .location-info {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      padding: 22px 22px 21px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .ubicacion h2 {
+      margin: 0 0 12px;
+      font-size: clamp(1.25rem, 1.8vw, 1.62rem);
+      line-height: 1.12;
+    }
+
+    .ubicacion p {
+      margin: 3px 0;
+      font-size: .91rem;
+      line-height: 1.55;
+    }
+
+    .ubicacion p:last-child {
+      margin-top: auto;
+      padding-top: 8px;
+      align-self: flex-start;
+    }
+
+    /* Primera estación: formato editorial horizontal */
+    .location-link-wrapper:first-child .ubicacion {
+      min-height: 390px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.28fr) minmax(300px, .72fr);
+      align-items: stretch;
+    }
+
+    .location-link-wrapper:first-child .location-map-iframe {
+      height: 100%;
+      min-height: 390px;
+      border-radius: 27px 0 0 27px;
+    }
+
+    .location-link-wrapper:first-child .location-info {
+      justify-content: center;
+      padding: clamp(28px, 4vw, 46px);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(252,177,68,.12), transparent 32%),
+        linear-gradient(145deg, rgba(176,24,124,.08), transparent 48%);
+    }
+
+    .location-link-wrapper:first-child .ubicacion h2 {
+      font-size: clamp(1.75rem, 3vw, 2.65rem);
+      margin-bottom: 17px;
+    }
+
+    .location-link-wrapper:first-child .ubicacion p {
+      font-size: clamp(.94rem, 1.25vw, 1.05rem);
+    }
+
+    /* La tarjeta destacada recibe una línea visual lateral */
+    .location-link-wrapper:first-child .location-info::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 13%;
+      bottom: 13%;
+      width: 3px;
+      border-radius: 99px;
+      background: linear-gradient(to bottom, var(--ary-magenta-2), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 14px rgba(252,177,68,.35);
+    }
+
+    /* Hover más elegante y menos "brinco" */
+    .location-link-wrapper:hover .ubicacion {
+      transform: translateY(-6px);
+    }
+
+    .location-link-wrapper:first-child:hover .ubicacion {
+      transform: translateY(-7px);
+    }
+
+    /* Teléfono siempre fácil de leer */
+    .ubicacion p:last-child {
+      border-color: rgba(252,177,68,.24);
+      background:
+        linear-gradient(90deg, rgba(176,24,124,.10), rgba(252,177,68,.07));
+      color: #FFE099;
+      white-space: normal;
+    }
+
+    /* ---------------------------------------------------------
+       LAPTOP / TABLET GRANDE
+       --------------------------------------------------------- */
+    @media (max-width: 1024px) {
+      header {
+        padding-inline: 18px;
+      }
+
+      .hero-imagen {
+        min-height: max(470px, 64svh);
+      }
+
+      main {
+        width: min(100% - 30px, var(--container));
+      }
+
+      .ubicaciones {
+        gap: 20px;
+      }
+
+      .location-link-wrapper:first-child .ubicacion {
+        grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+      }
+
+      .location-map-iframe {
+        height: 235px;
+      }
+    }
+
+    /* ---------------------------------------------------------
+       TABLET:
+       Todas las estaciones en una sola columna horizontal.
+       --------------------------------------------------------- */
+    @media (max-width: 820px) {
+      body::before {
+        background-size: 58px 58px;
+      }
+
+      .hero-imagen {
+        min-height: 480px;
+      }
+
+      .hero-imagen::after {
+        width: 84vw;
+        height: 84vw;
+        right: -34%;
+      }
+
+      main {
+        width: min(100% - 26px, var(--container));
+        margin-top: 58px;
+        margin-bottom: 86px;
+      }
+
+      main > h1 {
+        max-width: 680px;
+        margin-bottom: 34px;
+      }
+
+      .ubicaciones {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .location-link-wrapper:first-child {
+        grid-column: auto;
+      }
+
+      .ubicacion,
+      .location-link-wrapper:first-child .ubicacion {
+        min-height: 260px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
+      }
+
+      .location-map-iframe,
+      .location-link-wrapper:first-child .location-map-iframe {
+        width: 100%;
+        height: 100%;
+        min-height: 260px;
+        border-radius: 27px 0 0 27px;
+      }
+
+      .location-info,
+      .location-link-wrapper:first-child .location-info {
+        justify-content: center;
+        padding: 24px;
+      }
+
+      .location-link-wrapper:first-child .location-info::before {
+        display: none;
+      }
+
+      .location-link-wrapper:first-child .ubicacion h2,
+      .ubicacion h2 {
+        font-size: clamp(1.35rem, 3.4vw, 1.8rem);
+        margin-bottom: 11px;
+      }
+
+      .ubicacion p,
+      .location-link-wrapper:first-child .ubicacion p {
+        font-size: .9rem;
+      }
+
+      .ubicacion p:last-child {
+        margin-top: 11px;
+      }
+
+      /* Reducir ruido gráfico para tablet */
+      .hero-decor .beam:nth-child(3) {
+        display: none;
+      }
+
+      .road-lines {
+        opacity: .16;
+      }
+    }
+
+    /* ---------------------------------------------------------
+       TELÉFONO:
+       Una columna, mapa arriba, información abajo.
+       Targets grandes y sin desbordes.
+       --------------------------------------------------------- */
+    @media (max-width: 640px) {
+      :root {
+        --header-h: 70px;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at 10% 5%, rgba(176,24,124,.16), transparent 26%),
+          radial-gradient(circle at 95% 18%, rgba(252,177,68,.07), transparent 22%),
+          linear-gradient(180deg, #16000F 0%, #220216 52%, #100008 100%);
+      }
+
+      header {
+        min-height: var(--header-h);
+        padding: 10px 12px;
+        gap: 10px;
+      }
+
+      header.is-scrolled {
+        min-height: 66px;
+      }
+
+      .logo-container {
+        gap: 9px;
+      }
+
+      .logo-container img {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        animation: none;
+      }
+
+      .logo-container span {
+        max-width: 190px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: .86rem;
+      }
+
+      .menu-toggle {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+      }
+
+      nav {
+        inset:
+          calc(var(--header-h) + 7px)
+          10px
+          auto;
+        max-height: calc(100svh - var(--header-h) - 22px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+
+      nav a {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+      }
+
+      .hero-imagen {
+        min-height: 390px;
+        background-position: center 56%;
+      }
+
+      .hero-imagen::before {
+        background:
+          linear-gradient(180deg, rgba(22,0,15,.58), rgba(22,0,15,.89)),
+          linear-gradient(90deg, rgba(176,24,124,.10), transparent);
+      }
+
+      .hero-imagen::after,
+      .station-horizon,
+      .road-lines,
+      .hero-decor .beam:nth-child(2),
+      .hero-decor .beam:nth-child(3) {
+        display: none;
+      }
+
+      .hero-decor .beam:first-child {
+        width: 70vw;
+        opacity: .20;
+      }
+
+      .hero-texto {
+        width: 100%;
+        padding: 0 16px;
+      }
+
+      .hero-texto h1 {
+        max-width: 520px;
+        margin-inline: auto;
+        font-size: clamp(2.35rem, 12vw, 3.75rem);
+        line-height: .96;
+        letter-spacing: -.045em;
+      }
+
+      .hero-texto h1::after {
+        width: min(210px, 52vw);
+        height: 4px;
+        margin-top: 21px;
+      }
+
+      main {
+        width: min(100% - 20px, var(--container));
+        margin: 48px auto 72px;
+      }
+
+      main::before {
+        width: 100%;
+        height: 360px;
+      }
+
+      main > h1 {
+        margin-bottom: 28px;
+        padding-inline: 8px;
+        font-size: clamp(2.1rem, 10vw, 3.2rem);
+        line-height: 1;
+      }
+
+      .ubicaciones {
+        gap: 16px;
+      }
+
+      .location-link-wrapper {
+        border-radius: 23px;
+      }
+
+      .ubicacion,
+      .location-link-wrapper:first-child .ubicacion {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border-radius: 22px;
+      }
+
+      .location-map-iframe,
+      .location-link-wrapper:first-child .location-map-iframe {
+        width: 100%;
+        height: clamp(190px, 52vw, 235px);
+        min-height: 0;
+        border-radius: 21px 21px 0 0;
+      }
+
+      .location-info,
+      .location-link-wrapper:first-child .location-info {
+        padding: 18px 17px 17px;
+      }
+
+      .location-link-wrapper:first-child .ubicacion h2,
+      .ubicacion h2 {
+        margin-bottom: 9px;
+        font-size: clamp(1.18rem, 5.8vw, 1.5rem);
+        line-height: 1.15;
+      }
+
+      .ubicacion h2::before {
+        width: 8px;
+        height: 8px;
+        margin-right: 8px;
+      }
+
+      .ubicacion p,
+      .location-link-wrapper:first-child .ubicacion p {
+        margin: 2px 0;
+        font-size: .84rem;
+        line-height: 1.48;
+        overflow-wrap: anywhere;
+      }
+
+      .ubicacion p:last-child {
+        width: 100%;
+        margin-top: 11px;
+        padding: 9px 10px;
+        text-align: center;
+        border-radius: 12px;
+        font-size: .8rem;
+      }
+
+      /* En touch no necesitamos tilt ni saltos */
+      .location-link-wrapper:hover .ubicacion,
+      .location-link-wrapper:first-child:hover .ubicacion {
+        transform: none;
+      }
+
+      .location-link-wrapper:hover .location-map-iframe {
+        transform: none;
+      }
+
+      .site-footer {
+        padding: 28px 14px;
+      }
+
+      .footer-content {
+        font-size: .79rem;
+      }
+
+      .footer-links {
+        gap: 4px 12px;
+      }
+
+      .footer-links a {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+      }
+    }
+
+    /* Teléfonos compactos */
+    @media (max-width: 390px) {
+      header {
+        padding-inline: 9px;
+      }
+
+      .logo-container span {
+        max-width: 155px;
+        font-size: .78rem;
+      }
+
+      .hero-imagen {
+        min-height: 360px;
+      }
+
+      .hero-texto h1 {
+        font-size: clamp(2.18rem, 12.6vw, 3rem);
+      }
+
+      main {
+        width: calc(100% - 16px);
+      }
+
+      .location-map-iframe,
+      .location-link-wrapper:first-child .location-map-iframe {
+        height: 185px;
+      }
+
+      .location-info,
+      .location-link-wrapper:first-child .location-info {
+        padding: 16px 14px 15px;
+      }
+    }
+
+    /* Teléfono horizontal: evitar hero gigantesco */
+    @media (max-height: 520px) and (orientation: landscape) {
+      .hero-imagen {
+        min-height: 330px;
+      }
+
+      .hero-texto h1 {
+        font-size: clamp(2.2rem, 7vw, 3.5rem);
+      }
+    }
+
+    /* Usuarios con ahorro de datos/movimiento */
+    @media (prefers-reduced-motion: reduce) {
+      .ubicacion,
+      .location-map-iframe,
+      .hero-texto {
+        transform: none !important;
+      }
+    }
+
+  
+    /* =========================================================
+       V4 — TODAS LAS UBICACIONES COMO LA PRIMERA
+       Mapa izquierda / información derecha
+       Móvil: mapa arriba / información abajo
+       ========================================================= */
+
+    .ubicaciones {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: clamp(18px, 2.2vw, 26px);
+    }
+
+    .location-link-wrapper,
+    .location-link-wrapper:first-child {
+      grid-column: auto;
+      width: 100%;
+    }
+
+    .ubicacion,
+    .location-link-wrapper:first-child .ubicacion {
+      min-height: 350px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+      align-items: stretch;
+      border-radius: 28px;
+    }
+
+    .location-map-iframe,
+    .location-link-wrapper:first-child .location-map-iframe {
+      width: 100%;
+      height: 100%;
+      min-height: 350px;
+      margin: 0;
+      border-radius: 27px 0 0 27px;
+    }
+
+    .location-info,
+    .location-link-wrapper:first-child .location-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: clamp(26px, 3.5vw, 42px);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(252,177,68,.11), transparent 34%),
+        linear-gradient(145deg, rgba(176,24,124,.07), transparent 50%);
+    }
+
+    .location-info::before,
+    .location-link-wrapper:first-child .location-info::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 13%;
+      bottom: 13%;
+      width: 3px;
+      border-radius: 99px;
+      background: linear-gradient(to bottom, var(--ary-magenta-2), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 14px rgba(252,177,68,.32);
+    }
+
+    .ubicacion h2,
+    .location-link-wrapper:first-child .ubicacion h2 {
+      margin: 0 0 15px;
+      font-size: clamp(1.55rem, 2.6vw, 2.25rem);
+      line-height: 1.08;
+    }
+
+    .ubicacion p,
+    .location-link-wrapper:first-child .ubicacion p {
+      margin: 4px 0;
+      font-size: clamp(.9rem, 1.1vw, 1rem);
+      line-height: 1.58;
+    }
+
+    .ubicacion p:last-child,
+    .location-link-wrapper:first-child .ubicacion p:last-child {
+      margin-top: 14px;
+      align-self: flex-start;
+    }
+
+    /* Alternancia sutil para que no se vea repetitivo */
+    .location-link-wrapper:nth-child(even) .ubicacion {
+      grid-template-columns: minmax(300px, .75fr) minmax(0, 1.25fr);
+    }
+
+    .location-link-wrapper:nth-child(even) .location-map-iframe {
+      order: 2;
+      border-radius: 0 27px 27px 0;
+    }
+
+    .location-link-wrapper:nth-child(even) .location-info {
+      order: 1;
+      background:
+        radial-gradient(circle at 0 0, rgba(176,24,124,.13), transparent 34%),
+        linear-gradient(215deg, rgba(252,177,68,.045), transparent 50%);
+    }
+
+    .location-link-wrapper:nth-child(even) .location-info::before {
+      left: auto;
+      right: 0;
+    }
+
+    /* Tablet */
+    @media (max-width: 900px) {
+      .ubicacion,
+      .location-link-wrapper:first-child .ubicacion,
+      .location-link-wrapper:nth-child(even) .ubicacion {
+        min-height: 290px;
+        grid-template-columns: minmax(0, 1.05fr) minmax(280px, .95fr);
+      }
+
+      .location-map-iframe,
+      .location-link-wrapper:first-child .location-map-iframe,
+      .location-link-wrapper:nth-child(even) .location-map-iframe {
+        min-height: 290px;
+      }
+
+      .location-info,
+      .location-link-wrapper:first-child .location-info {
+        padding: 24px;
+      }
+    }
+
+    /* Móvil: todos iguales, mapa arriba */
+    @media (max-width: 640px) {
+      .ubicacion,
+      .location-link-wrapper:first-child .ubicacion,
+      .location-link-wrapper:nth-child(even) .ubicacion {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border-radius: 22px;
+      }
+
+      .location-map-iframe,
+      .location-link-wrapper:first-child .location-map-iframe,
+      .location-link-wrapper:nth-child(even) .location-map-iframe {
+        order: 1;
+        width: 100%;
+        height: clamp(190px, 52vw, 235px);
+        min-height: 0;
+        border-radius: 21px 21px 0 0;
+      }
+
+      .location-info,
+      .location-link-wrapper:first-child .location-info,
+      .location-link-wrapper:nth-child(even) .location-info {
+        order: 2;
+        padding: 18px 17px 17px;
+        background:
+          radial-gradient(circle at 100% 0%, rgba(252,177,68,.08), transparent 34%),
+          linear-gradient(145deg, rgba(176,24,124,.05), transparent 50%);
+      }
+
+      .location-info::before,
+      .location-link-wrapper:first-child .location-info::before,
+      .location-link-wrapper:nth-child(even) .location-info::before {
+        display: none;
+      }
+
+      .ubicacion h2,
+      .location-link-wrapper:first-child .ubicacion h2 {
+        margin-bottom: 9px;
+        font-size: clamp(1.18rem, 5.8vw, 1.5rem);
+      }
+
+      .ubicacion p,
+      .location-link-wrapper:first-child .ubicacion p {
+        font-size: .84rem;
+      }
+
+      .ubicacion p:last-child,
+      .location-link-wrapper:first-child .ubicacion p:last-child {
+        width: 100%;
+        margin-top: 11px;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .location-map-iframe,
+      .location-link-wrapper:first-child .location-map-iframe,
+      .location-link-wrapper:nth-child(even) .location-map-iframe {
+        height: 185px;
+      }
+    }
+
+  </style>
+
+  <link rel="stylesheet" href="assets/ary-extras.css?v=1" />
+</head>
+<body>
+  <canvas id="ary-particles" aria-hidden="true"></canvas>
+  <div class="scroll-progress" aria-hidden="true"></div>
+  <div class="cursor-energy" aria-hidden="true"></div>
+
+  <header>
+    <div class="logo-container">
+      <img src="images/Arylogo2.png" alt="Logo ARY" /> <span>ARY Super Servicios</span>
+    </div>
+    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <a href="default.htm">Inicio</a>
+      <a href="ary_conoce_nuestra_empresa.htm">Empresa</a>
+      <a href="ary_ubica_nuestras_estaciones.htm">Estaciones</a>
+      <a href="ary_servicios.htm">Servicios</a>
+      <a href="ary_productos.htm">Productos</a>
+      <a href="ary_tips_ahorro_combustible.htm">Tips</a>
+      <a href="ary_contacto.htm">Contacto</a>
+            <a href="ary_facturacion.htm" class="ary-invoice-link">Facturación</a>
+      </nav>
+  </header>
+
+  <section class="hero-imagen">
+    <div class="hero-decor" aria-hidden="true">
+      <span class="beam"></span>
+      <span class="beam"></span>
+      <span class="beam"></span>
+    </div>
+    <div class="station-horizon" aria-hidden="true"></div>
+    <div class="road-lines" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="hero-texto">
+      <h1>Tu estación más cercana, siempre contigo</h1>
+    </div>
+  </section>
+
+  <main>
+    <h1>Ubica tu estación más cercana</h1>
+    <div class="ubicaciones">
+      <a href="https://www.google.com/maps?q=Calle+5+de+Mayo+740,+Gómez+Palacio,+Dgo." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.6950312639393!2d-103.49282!3d25.58078!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fdc1d4fd30f2f%3A0x491c1b84a7d1467e!2sC.%205%20de%20Mayo%20740%2C%20Francisco%20Gonzalez%20de%20la%20Vega%2C%2035030%20G%C3%B3mez%20Palacio%2C%20Dgo.!5e0!3m2!1ses-419!2smx!4v1716315660020!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Ary Super Servicios I</h2>
+          <p>Calle 5 de Mayo No. 740</p>
+          <p>Col. Fco. Glz. De la Vega C.P. 35030</p>
+          <p>Tel: (871) 193.6401</p>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.google.com/maps?q=Blvd.+Miguel+Alemán+1200,+Cd+Lerdo,+Dgo." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.6168010171027!2d-103.51894!3d25.54443!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fdc0a96071211%3A0x697e4762e1d89e04!2sBlvd.%20Miguel%20Alem%C3%A1n%201200%2C%20Centro%2C%2035150%20Cd%20Lerdo%2C%20Dgo.!5e0!3m2!1ses-419!2smx!4v1716314531809!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Ary Super Servicios II</h2>
+          <p>Blvd. Miguel Alemán No. 1200 Nte.</p>
+          <p>Col. Centro C.P. 35150</p>
+          <p>Tel: (871) 193.6402</p>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.google.com/maps?q=Av.+Abasolo+1195,+Torreón,+Coah." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.3351286941787!2d-103.43603!3d25.54285!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fd9d7b3778c9d%3A0x64e94a73b7ea7b85!2sAv.%20Abasolo%201195%2C%20Centro%2C%2027000%20Torre%C3%B3n%2C%20Coah.!5e0!3m2!1ses-419!2smx!4v1716314314117!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Ary Super Servicios III</h2>
+          <p>Av. Abasolo No. 1195</p>
+          <p>Col. Centro C.P. 27000</p>
+          <p>Tel: (871) 193.6403</p>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.google.com/maps?q=Blvd.+Rodríguez+Triana+888,+Torreón,+Coah." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.6222575737594!2d-103.39428!3d25.51428!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fd9f81e05d237%3A0x1f6aa8374a76aef4!2sBlvd.%20Rodr%C3%ADguez%20Triana%20888%2C%20Residencial%20Las%20Misiones%2C%2027276%20Torre%C3%B3n%2C%20Coah.!5e0!3m2!1ses-419!2smx!4v1716315459987!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Ary Super Servicios IV</h2>
+          <p>Blvd. Rodríguez Triana No. 888</p>
+          <p>Residencial Las Misiones C.P. 27276</p>
+          <p>Tel: (871) 193.6404</p>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.google.com/maps?q=Blvd.+Miguel+Alemán+1207,+Cd+Lerdo,+Dgo." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.6219462065875!2d-103.51876!3d25.54548!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fdc0aa88062a7%3A0xdcb3956ddf3b25ce!2sBlvd.%20Miguel%20Alem%C3%A1n%201207%2C%20Centro%2C%2035150%20Cd%20Lerdo%2C%20Dgo.!5e0!3m2!1ses-419!2smx!4v1716315936423!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Ary Super Express V</h2>
+          <p>Blvd. Miguel Alemán No. 1207 Nte.</p>
+          <p>Col. Centro C.P. 35150</p>
+          <p>Tel: (871) 193.6405</p>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.google.com/maps?q=Blvd.+Centenario+450,+Torreón,+Coah." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.9804641998656!2d-103.40041!3d25.59765!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fd9688e3a1a27%3A0xf45e520fa7255e2d!2sBlvd.%20Centenario%20450%2C%20Ciudad%20Industrial%2C%2027019%20Torre%C3%B3n%2C%20Coah.!5e0!3m2!1ses-419!2smx!4v1716316126752!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Ary Super Servicios VI</h2>
+          <p>Blvd. Centenario Nº 450</p>
+          <p>Fracc. Ciudad Industrial C.P. 27019</p>
+          <p>Tel: (871) 193.6406</p>
+          </div>
+        </div>
+      </a>
+
+      <a href="https://www.google.com/maps?q=Periférico+Lerdo+-+Gómez+Palacio+-+Torreón,+Chapala,+Gómez+Palacio,+Dgo." target="_blank" class="location-link-wrapper">
+        <div class="ubicacion">
+          <iframe
+            title="Mapa de ubicación de estación ARY" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3584.476543258071!2d-103.52044!3d25.56806!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x868fdc1db00fa4d5%3A0xa617ae0fd2378f34!2sPerif%C3%A9rico%20Lerdo%20-%20G%C3%B3mez%20Palacio%20-%20Torre%C3%B3n%2C%20Chapala%2C%2035025%20G%C3%B3mez%20Palacio%2C%20Dgo.!5e0!3m2!1ses-419!2smx!4v1716316288582!5m2!1ses-419!2smx"
+            class="location-map-iframe"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <div class="location-info">
+            <h2>Servicio Apache</h2>
+          <p>Lib. Perif. Lerdo-Gómez Palacio-Torreón Km. 10+703</p>
+          <p>Col. Chapala C.P. 35025</p>
+          <p>Tel: (871) 193.6407</p>
+          </div>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p class="footer-links">
+        <a href="ary_conoce_nuestra_empresa.htm">Empresa</a> |
+        <a href="ary_ubica_nuestras_estaciones.htm">Estaciones</a> |
+        <a href="ary_servicios.htm">Servicios</a> |
+        <a href="ary_productos.htm">Productos</a> |
+        <a href="ary_contacto.htm">Contacto</a>
+      </p>
+      <p class="footer-copyright"><strong >grupoary.com.mx</strong> © 2012 – 2025. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+
+  <script>
+    (() => {
+      "use strict";
+
+      const header = document.querySelector("header");
+      const nav = document.querySelector("header nav");
+      const toggle = document.querySelector(".menu-toggle");
+      const progress = document.querySelector(".scroll-progress");
+      const cursorEnergy = document.querySelector(".cursor-energy");
+
+      const updateScroll = () => {
+        const y = window.scrollY || 0;
+        header?.classList.toggle("is-scrolled", y > 24);
+
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        if (progress) {
+          progress.style.width = max > 0
+            ? `${Math.min(100, (y / max) * 100)}%`
+            : "0%";
+        }
+      };
+
+      window.addEventListener("scroll", updateScroll, { passive: true });
+      updateScroll();
+
+      toggle?.addEventListener("click", () => {
+        const open = nav?.classList.toggle("open");
+        toggle.classList.toggle("active", Boolean(open));
+        toggle.setAttribute("aria-expanded", String(Boolean(open)));
+      });
+
+      nav?.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
+          nav.classList.remove("open");
+          toggle?.classList.remove("active");
+          toggle?.setAttribute("aria-expanded", "false");
+        });
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!nav?.classList.contains("open")) return;
+        if (nav.contains(event.target) || toggle?.contains(event.target)) return;
+
+        nav.classList.remove("open");
+        toggle?.classList.remove("active");
+        toggle?.setAttribute("aria-expanded", "false");
+      });
+
+      // Reveal de estaciones.
+      const cards = document.querySelectorAll(".ubicacion");
+
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries, obs) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          });
+        }, { threshold: .12 });
+
+        cards.forEach((card, index) => {
+          card.style.transitionDelay = `${Math.min(index * 55, 220)}ms`;
+          observer.observe(card);
+        });
+      } else {
+        cards.forEach((card) => card.classList.add("is-visible"));
+      }
+
+      // Halo de cursor.
+      if (cursorEnergy && matchMedia("(pointer:fine)").matches) {
+        document.addEventListener("pointermove", (event) => {
+          cursorEnergy.style.left = `${event.clientX}px`;
+          cursorEnergy.style.top = `${event.clientY}px`;
+          cursorEnergy.style.opacity = "1";
+        }, { passive: true });
+
+        document.addEventListener("pointerleave", () => {
+          cursorEnergy.style.opacity = "0";
+        });
+      }
+
+      // Tilt suave por tarjeta, sin interferir con enlaces ni mapas.
+      document.querySelectorAll(".location-link-wrapper").forEach((wrapper) => {
+        if (!matchMedia("(pointer:fine) and (min-width: 821px)").matches) return;
+        const card = wrapper.querySelector(".ubicacion");
+        if (!card) return;
+
+        wrapper.addEventListener("pointermove", (event) => {
+          const rect = wrapper.getBoundingClientRect();
+          const px = (event.clientX - rect.left) / rect.width;
+          const py = (event.clientY - rect.top) / rect.height;
+          const ry = (px - .5) * 3.5;
+          const rx = (.5 - py) * 3;
+
+          card.style.transform =
+            `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-6px)`;
+        });
+
+        wrapper.addEventListener("pointerleave", () => {
+          card.style.transform =
+            "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)";
+        });
+      });
+
+      // Partículas ARY.
+      const canvas = document.getElementById("ary-particles");
+      const ctx = canvas?.getContext("2d");
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const saveData = navigator.connection?.saveData === true;
+      const smallMobile = window.matchMedia("(max-width: 640px)").matches;
+
+      if (canvas && ctx && !reduceMotion && !saveData && !smallMobile) {
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+        let particles = [];
+        const pointer = { x: -9999, y: -9999 };
+
+        const resize = () => {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = `${width}px`;
+          canvas.style.height = `${height}px`;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          const count = Math.max(
+            28,
+            Math.min(72, Math.floor((width * height) / 28000))
+          );
+
+          particles = Array.from({ length: count }, (_, index) => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - .5) * .30,
+            vy: (Math.random() - .5) * .30,
+            r: Math.random() * 1.5 + .6,
+            orange: index % 4 === 0
+          }));
+        };
+
+        window.addEventListener("resize", resize, { passive: true });
+
+        window.addEventListener("pointermove", (event) => {
+          pointer.x = event.clientX;
+          pointer.y = event.clientY;
+        }, { passive: true });
+
+        const draw = () => {
+          ctx.clearRect(0, 0, width, height);
+
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < -10) p.x = width + 10;
+            if (p.x > width + 10) p.x = -10;
+            if (p.y < -10) p.y = height + 10;
+            if (p.y > height + 10) p.y = -10;
+
+            const dxp = p.x - pointer.x;
+            const dyp = p.y - pointer.y;
+            const pd = Math.hypot(dxp, dyp);
+
+            if (pd < 100 && pd > .1) {
+              p.x += (dxp / pd) * .45;
+              p.y += (dyp / pd) * .45;
+            }
+
+            ctx.beginPath();
+            ctx.fillStyle = p.orange
+              ? "rgba(252,177,68,.72)"
+              : "rgba(215,42,147,.56)";
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let j = i + 1; j < particles.length; j++) {
+              const q = particles[j];
+              const dx = p.x - q.x;
+              const dy = p.y - q.y;
+              const distance = Math.hypot(dx, dy);
+
+              if (distance < 100) {
+                ctx.beginPath();
+                ctx.strokeStyle =
+                  `rgba(244,177,212,${(1 - distance / 100) * .09})`;
+                ctx.lineWidth = .7;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(q.x, q.y);
+                ctx.stroke();
+              }
+            }
+          }
+
+          requestAnimationFrame(draw);
+        };
+
+        resize();
+        draw();
+      }
+    })();
+  </script>
+
+
+  <nav class="ary-mobile-actions" aria-label="Accesos rápidos">
+    <a class="ary-mobile-primary" href="ary_facturacion.htm#tramites"><span aria-hidden="true">▣</span> Facturación y alta</a>
+    <a class="ary-mobile-secondary" href="ary_ubica_nuestras_estaciones.htm"><span aria-hidden="true">⌖</span> Estaciones</a>
+  </nav>
+</body>
+</html>

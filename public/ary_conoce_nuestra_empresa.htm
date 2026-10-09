@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ARY Super Servicios | Conoce Nuestra Empresa</title>
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  
+  <style>
+    :root {
+      --ary-magenta: #B0187C;
+      --ary-magenta-2: #D72A93;
+      --ary-orange: #FCB144;
+      --ary-gold: #FFD36A;
+      --ary-white: #FFFFFF;
+
+      --bg: #16000F;
+      --bg-2: #250318;
+      --bg-3: #350723;
+      --text: #FFF8FC;
+      --muted: #DDB8CC;
+      --line: rgba(255,255,255,.10);
+      --header-h: 82px;
+      --container: 1160px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--header-h) + 24px);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      color: var(--text);
+      font-family: 'Roboto', sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(176,24,124,.20), transparent 27%),
+        radial-gradient(circle at 90% 20%, rgba(252,177,68,.10), transparent 24%),
+        linear-gradient(180deg, #16000F 0%, #250318 48%, #110009 100%);
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a { -webkit-tap-highlight-color: transparent; }
+
+    #ary-particles {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: .52;
+    }
+
+    .scroll-progress {
+      position: fixed;
+      z-index: 1200;
+      inset: 0 auto auto 0;
+      width: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 14px rgba(252,177,68,.55);
+    }
+
+    /* ===== MENÚ ===== */
+    header {
+      min-height: var(--header-h);
+      padding: 12px max(22px, calc((100vw - var(--container)) / 2));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(252,177,68,.13);
+      background:
+        linear-gradient(90deg, rgba(22,0,15,.94), rgba(63,7,44,.88), rgba(22,0,15,.94));
+      backdrop-filter: blur(16px) saturate(135%);
+      -webkit-backdrop-filter: blur(16px) saturate(135%);
+      box-shadow: 0 14px 40px rgba(0,0,0,.18);
+      transition: min-height .3s ease, background .3s ease, box-shadow .3s ease;
+    }
+
+    header.is-scrolled {
+      min-height: 70px;
+      background: rgba(22,0,15,.96);
+      box-shadow: 0 14px 42px rgba(0,0,0,.28);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .logo-container img {
+      width: 50px;
+      height: 50px;
+      padding: 6px;
+      object-fit: contain;
+      border: 1px solid rgba(252,177,68,.26);
+      border-radius: 16px;
+      background: rgba(255,255,255,.05);
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.08),
+        0 12px 30px rgba(0,0,0,.20);
+    }
+
+    .logo-container span {
+      color: white;
+      font-size: clamp(1rem, 1.65vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: -.02em;
+      white-space: nowrap;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    nav a {
+      position: relative;
+      color: #F2DCE9;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: .78rem;
+      padding: 10px 10px;
+      border-radius: 12px;
+      transition: color .25s ease, background .25s ease, transform .25s ease;
+    }
+
+    nav a::after {
+      content: '';
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 5px;
+      height: 2px;
+      border-radius: 99px;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      box-shadow: 0 0 10px rgba(252,177,68,.4);
+      transition: transform .28s ease;
+    }
+
+    nav a:hover {
+      color: #fff;
+      background: rgba(255,255,255,.055);
+      transform: translateY(-2px);
+    }
+
+    nav a:hover::after { transform: scaleX(1); }
+
+    .menu-toggle {
+      display: none;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      padding: 0;
+      border: 1px solid rgba(252,177,68,.22);
+      border-radius: 14px;
+      background: rgba(255,255,255,.05);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      width: 20px;
+      height: 2px;
+      display: block;
+      margin: 4px auto;
+      border-radius: 99px;
+      background: currentColor;
+      transition: transform .3s ease, opacity .3s ease;
+    }
+
+    .menu-toggle.active span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    .menu-toggle.active span:nth-child(2) { opacity: 0; }
+    .menu-toggle.active span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+    /* ===== HERO ===== */
+    .hero-banner {
+      min-height: calc(100svh - var(--header-h));
+      height: auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      isolation: isolate;
+      background-image: url("images/Ary-super-servicios-III.jpg");
+      background-size: cover;
+      background-position: center 58%;
+    }
+
+    .hero-banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(90deg, rgba(22,0,15,.84), rgba(22,0,15,.44) 52%, rgba(22,0,15,.68)),
+        linear-gradient(180deg, rgba(22,0,15,.10), rgba(22,0,15,.78));
+    }
+
+    .hero-banner::after {
+      content: "";
+      position: absolute;
+      z-index: 0;
+      width: min(880px, 76vw);
+      height: min(880px, 76vw);
+      right: -18%;
+      top: 48%;
+      transform: translateY(-50%);
+      border: 1px solid rgba(252,177,68,.10);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 100px rgba(176,24,124,.022),
+        0 0 0 220px rgba(252,177,68,.012),
+        0 0 180px rgba(176,24,124,.12);
+      pointer-events: none;
+    }
+
+    .hero-overlay {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      min-height: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(90px, 12vh, 140px) 20px;
+      background:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 72px 72px;
+    }
+
+    .hero-texto {
+      position: relative;
+      max-width: 980px;
+      text-align: center;
+      color: #fff;
+      padding: 0 20px;
+      opacity: 0;
+      transform: translateY(36px);
+      animation: heroEnter 1s cubic-bezier(.2,.8,.2,1) .18s forwards;
+    }
+
+    .hero-texto::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -70px;
+      width: min(520px, 78vw);
+      height: 180px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(176,24,124,.26), rgba(252,177,68,.08) 42%, transparent 72%);
+      filter: blur(20px);
+      z-index: -1;
+    }
+
+    @keyframes heroEnter {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-texto p {
+      width: fit-content;
+      margin: 0 auto 15px;
+      padding: 9px 14px;
+      border: 1px solid rgba(252,177,68,.24);
+      border-radius: 999px;
+      color: #FFD9EC;
+      background: rgba(55,5,38,.54);
+      backdrop-filter: blur(10px);
+      font-size: .72rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .hero-texto h1 {
+      max-width: 920px;
+      margin: 12px auto 30px;
+      color: #fff;
+      font-size: clamp(3rem, 7.5vw, 7rem);
+      font-weight: 800;
+      letter-spacing: -.055em;
+      line-height: .92;
+      text-wrap: balance;
+      text-shadow: 0 16px 44px rgba(0,0,0,.36);
+    }
+
+    .hero-texto h1::after {
+      content: "";
+      display: block;
+      width: min(220px, 34vw);
+      height: 5px;
+      margin: 26px auto 0;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 22px rgba(252,177,68,.30);
+    }
+
+    .hero-boton {
+      min-height: 52px;
+      padding: 0 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      border: 1px solid rgba(255,225,143,.62);
+      border-radius: 17px;
+      color: #260015;
+      background: linear-gradient(135deg, #FFD36A 0%, #FCB144 48%, #D3268D 100%);
+      box-shadow:
+        0 16px 40px rgba(176,24,124,.26),
+        inset 0 1px rgba(255,255,255,.72);
+      text-decoration: none;
+      font-size: .86rem;
+      font-weight: 800;
+      transition: transform .3s ease, box-shadow .3s ease, filter .3s ease;
+    }
+
+    .hero-boton::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -120%;
+      width: 55%;
+      height: 100%;
+      z-index: -1;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,.50), transparent);
+      transform: skewX(-25deg);
+      transition: left .7s ease;
+    }
+
+    .hero-boton:hover {
+      color: #210013;
+      transform: translateY(-5px);
+      filter: saturate(1.08) brightness(1.04);
+      box-shadow:
+        0 22px 50px rgba(176,24,124,.36),
+        0 0 28px rgba(252,177,68,.15);
+    }
+
+    .hero-boton:hover::before { left: 150%; }
+
+    /* ===== EMPRESA ===== */
+    section#empresa {
+      position: relative;
+      width: min(var(--container), calc(100% - 40px));
+      margin: 92px auto;
+      padding: clamp(34px, 6vw, 72px);
+      overflow: hidden;
+      border: 1px solid rgba(252,177,68,.18);
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 8% 12%, rgba(176,24,124,.15), transparent 30%),
+        radial-gradient(circle at 95% 15%, rgba(252,177,68,.08), transparent 25%),
+        linear-gradient(145deg, rgba(71,7,49,.84), rgba(24,1,16,.94));
+      box-shadow:
+        0 38px 100px rgba(0,0,0,.26),
+        inset 0 1px rgba(255,255,255,.06);
+    }
+
+    section#empresa::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 4px;
+      margin: 0;
+      transform: none;
+      background: linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold), var(--ary-magenta));
+      background-size: 220% 100%;
+      animation: topLineMove 6s linear infinite;
+      box-shadow: 0 0 20px rgba(252,177,68,.35);
+    }
+
+    @keyframes topLineMove {
+      to { background-position: 220% 0; }
+    }
+
+    .empresa-container {
+      display: grid;
+      grid-template-columns: minmax(0, 1.04fr) minmax(340px, .96fr);
+      gap: clamp(42px, 6vw, 78px);
+      align-items: center;
+    }
+
+    .empresa-texto {
+      min-width: 0;
+    }
+
+    .empresa-texto h2 {
+      margin: 0 0 22px;
+      color: #fff;
+      font-size: clamp(2.6rem, 5vw, 5rem);
+      font-weight: 800;
+      line-height: .98;
+      letter-spacing: -.055em;
+      position: relative;
+    }
+
+    .empresa-texto h2::after {
+      content: '';
+      width: 92px;
+      height: 4px;
+      margin-top: 16px;
+      display: block;
+      border-radius: 99px;
+      transform: none;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      box-shadow: 0 0 14px rgba(252,177,68,.25);
+    }
+
+    .empresa-intro-subtitle {
+      margin: 0 0 28px;
+      color: var(--ary-orange);
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: .07em;
+      line-height: 1.6;
+      text-transform: uppercase;
+    }
+
+    .empresa-features-list {
+      display: grid;
+      gap: 12px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .empresa-features-list li {
+      margin: 0;
+      padding: 15px 16px;
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 17px;
+      color: #E4C5D7;
+      background:
+        linear-gradient(90deg, rgba(176,24,124,.10), rgba(255,255,255,.025));
+      font-size: .98rem;
+      line-height: 1.65;
+      opacity: 1;
+      transform: none;
+      transition:
+        transform .3s ease,
+        border-color .3s ease,
+        background .3s ease,
+        box-shadow .3s ease;
+    }
+
+    .empresa-features-list li:hover {
+      transform: translateX(7px);
+      border-color: rgba(252,177,68,.26);
+      background:
+        linear-gradient(90deg, rgba(176,24,124,.18), rgba(252,177,68,.045));
+      box-shadow: 0 14px 34px rgba(0,0,0,.15);
+    }
+
+    .empresa-features-list li strong {
+      color: #fff;
+      font-weight: 800;
+    }
+
+    .empresa-texto .hero-boton {
+      margin-top: 28px;
+    }
+
+    .btn-ver-estaciones {
+      color: #260015;
+      border: 1px solid rgba(255,225,143,.62);
+      background: linear-gradient(135deg, #FFD36A 0%, #FCB144 48%, #D3268D 100%);
+      box-shadow: 0 16px 40px rgba(176,24,124,.26);
+    }
+
+    .btn-ver-estaciones .icon-pin {
+      margin-right: 2px;
+      display: inline-block;
+      font-size: 1.05em;
+      transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .btn-ver-estaciones:hover .icon-pin {
+      transform: translateY(-2px) scale(1.16) rotate(-7deg);
+    }
+
+    /* ===== IMAGEN ===== */
+    .empresa-imagen {
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .image-card-wrapper {
+      width: 100%;
+      max-width: 500px;
+      padding: 12px;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(252,177,68,.24);
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 82% 12%, rgba(252,177,68,.13), transparent 28%),
+        rgba(255,255,255,.045);
+      box-shadow:
+        0 30px 85px rgba(0,0,0,.30),
+        inset 0 1px rgba(255,255,255,.07);
+      transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s ease;
+    }
+
+    .image-card-wrapper::before {
+      content: "";
+      position: absolute;
+      z-index: 4;
+      left: -40%;
+      top: -35%;
+      width: 28%;
+      height: 170%;
+      transform: rotate(18deg);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
+      animation: photoScan 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes photoScan {
+      0%, 18% { left: -45%; opacity: 0; }
+      38% { opacity: .65; }
+      68%, 100% { left: 125%; opacity: 0; }
+    }
+
+    .image-card-wrapper:hover {
+      transform: translateY(-8px);
+      box-shadow:
+        0 40px 100px rgba(0,0,0,.36),
+        0 0 36px rgba(176,24,124,.10);
+    }
+
+    .image-card-wrapper img {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      object-position: center 52%;
+      border-radius: 20px;
+      background: #2A071E;
+      transition: transform .65s cubic-bezier(.2,.8,.2,1), filter .4s ease;
+    }
+
+    .image-card-wrapper:hover img {
+      transform: scale(1.025);
+      filter: saturate(1.05) contrast(1.02);
+    }
+
+    .image-card-wrapper .caption {
+      margin: 12px 4px 2px;
+      padding: 0;
+      color: #DDB8CC;
+      text-align: center;
+      font-size: .82rem;
+      font-style: normal;
+      line-height: 1.55;
+    }
+
+    /* ===== ANIMACIONES DE ENTRADA ===== */
+    .fade-in,
+    .fade-in-delay,
+    .zoom-in {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1);
+      animation: none !important;
+    }
+
+    .is-visible.fade-in,
+    .is-visible.fade-in-delay,
+    .is-visible.zoom-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .empresa-features-list.fade-in-delay {
+      transition-delay: .10s;
+    }
+
+    .zoom-in { transition-delay: .14s; }
+
+    /* ===== FOOTER ===== */
+    footer {
+      margin-top: 0;
+      padding: 34px 20px;
+      border-top: 1px solid rgba(252,177,68,.16);
+      background:
+        linear-gradient(180deg, rgba(22,0,15,.74), rgba(10,0,7,.94));
+      color: #CFA5BC;
+      font-size: .82rem;
+      opacity: 1;
+      animation: none;
+    }
+
+    footer .footer-content {
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    footer .footer-content p {
+      margin: 10px 0;
+    }
+
+    footer .footer-content .footer-links a {
+      position: relative;
+      display: inline-block;
+      margin: 0 8px;
+      color: var(--ary-orange);
+      text-decoration: none;
+      font-weight: 700;
+      transition: color .3s ease;
+    }
+
+    footer .footer-content .footer-links a::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -4px;
+      height: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      transition: transform .3s ease;
+    }
+
+    footer .footer-content .footer-links a:hover {
+      color: #fff;
+    }
+
+    footer .footer-content .footer-links a:hover::after {
+      transform: scaleX(1);
+    }
+
+    footer strong {
+      color: #fff;
+      font-weight: 700;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1100px) {
+      nav a {
+        padding-inline: 7px;
+        font-size: .72rem;
+      }
+
+      .empresa-container {
+        grid-template-columns: minmax(0,1fr) minmax(320px,.82fr);
+        gap: 38px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      :root { --header-h: 74px; }
+
+      header {
+        padding-inline: 16px;
+      }
+
+      .menu-toggle { display: block; }
+
+      nav {
+        position: fixed;
+        inset: calc(var(--header-h) + 8px) 14px auto;
+        display: grid;
+        gap: 6px;
+        padding: 14px;
+        border: 1px solid rgba(252,177,68,.18);
+        border-radius: 20px;
+        background: rgba(28,1,19,.97);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        box-shadow: 0 28px 80px rgba(0,0,0,.38);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-14px) scale(.985);
+        transform-origin: top;
+        transition: opacity .28s ease, transform .28s ease, visibility .28s ease;
+      }
+
+      nav.open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+      }
+
+      nav a {
+        padding: 12px 13px;
+        text-align: left;
+        font-size: .83rem;
+      }
+
+      .hero-banner {
+        min-height: calc(86svh - var(--header-h));
+      }
+
+      .hero-texto h1 {
+        font-size: clamp(3rem, 10vw, 5.5rem);
+      }
+
+      .empresa-container {
+        grid-template-columns: 1fr;
+      }
+
+      .empresa-imagen {
+        order: -1;
+      }
+
+      .image-card-wrapper {
+        max-width: 680px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .logo-container span {
+        font-size: .92rem;
+      }
+
+      .logo-container img {
+        width: 46px;
+        height: 46px;
+      }
+
+      .hero-banner {
+        min-height: 72svh;
+        background-position: center 56%;
+      }
+
+      .hero-overlay {
+        padding: 84px 12px;
+      }
+
+      .hero-texto {
+        padding-inline: 4px;
+      }
+
+      .hero-texto p {
+        font-size: .64rem;
+        letter-spacing: .14em;
+      }
+
+      .hero-texto h1 {
+        font-size: clamp(2.65rem, 14vw, 4.25rem);
+        line-height: .95;
+      }
+
+      section#empresa {
+        width: min(100% - 22px, var(--container));
+        margin: 64px auto;
+        padding: 28px 18px;
+        border-radius: 27px;
+      }
+
+      .empresa-texto h2 {
+        font-size: clamp(2.35rem, 11vw, 3.6rem);
+      }
+
+      .empresa-intro-subtitle {
+        font-size: .82rem;
+      }
+
+      .empresa-features-list li {
+        padding: 13px 14px;
+        font-size: .91rem;
+      }
+
+      .empresa-texto .hero-boton {
+        width: 100%;
+      }
+
+      .image-card-wrapper {
+        padding: 9px;
+        border-radius: 23px;
+      }
+
+      .image-card-wrapper img {
+        border-radius: 16px;
+      }
+
+      footer .footer-content .footer-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 7px 13px;
+      }
+
+      footer .footer-content .footer-links a {
+        margin: 0;
+      }
+
+      footer .footer-content .footer-links span.separator {
+        display: none;
+      }
+    }
+
+    @media (max-width: 390px) {
+      .logo-container span { font-size: .82rem; }
+      .hero-texto h1 { font-size: 2.6rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  
+    /* =========================================================
+       V2 MÁS LLAMATIVO — MISMO CONTENIDO
+       ========================================================= */
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -4;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(252,177,68,.09), transparent 30%),
+        linear-gradient(120deg, transparent 0 44%, rgba(176,24,124,.035) 44% 45%, transparent 45% 100%);
+      background-size: auto, 96px 96px;
+    }
+
+    .cursor-energy {
+      position: fixed;
+      z-index: 40;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle,
+          rgba(252,177,68,.14) 0%,
+          rgba(215,42,147,.10) 32%,
+          rgba(176,24,124,.04) 52%,
+          transparent 72%);
+      filter: blur(12px);
+      mix-blend-mode: screen;
+      transition: opacity .25s ease;
+    }
+
+    /* Header con borde luminoso */
+    header::after {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: -1px;
+      height: 1px;
+      background:
+        linear-gradient(90deg,
+          transparent,
+          rgba(176,24,124,.6),
+          rgba(252,177,68,.9),
+          rgba(176,24,124,.6),
+          transparent);
+      filter: drop-shadow(0 0 8px rgba(252,177,68,.35));
+      opacity: .7;
+    }
+
+    .logo-container img {
+      animation: logoFloat 4.5s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-3px) rotate(-1deg); }
+    }
+
+    /* ===== HERO CON MÁS IMPACTO ===== */
+    .hero-banner {
+      box-shadow: inset 0 -120px 120px rgba(15,0,10,.34);
+    }
+
+    .hero-banner::before {
+      background:
+        radial-gradient(circle at 50% 42%, rgba(176,24,124,.18), transparent 32%),
+        linear-gradient(90deg, rgba(22,0,15,.89), rgba(22,0,15,.36) 54%, rgba(22,0,15,.72)),
+        linear-gradient(180deg, rgba(22,0,15,.06), rgba(22,0,15,.80));
+    }
+
+    .hero-banner::after {
+      animation: heroHaloBreath 5s ease-in-out infinite;
+    }
+
+    @keyframes heroHaloBreath {
+      0%,100% {
+        opacity: .72;
+        transform: translateY(-50%) scale(.97);
+      }
+      50% {
+        opacity: 1;
+        transform: translateY(-50%) scale(1.035);
+      }
+    }
+
+    .energy-beams {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .energy-beams span {
+      position: absolute;
+      width: 34vw;
+      height: 3px;
+      border-radius: 999px;
+      opacity: .45;
+      filter: blur(.2px);
+      background:
+        linear-gradient(90deg,
+          transparent,
+          rgba(176,24,124,.72),
+          rgba(252,177,68,.95),
+          transparent);
+      box-shadow:
+        0 0 12px rgba(176,24,124,.35),
+        0 0 22px rgba(252,177,68,.22);
+      animation: beamFly 6.5s linear infinite;
+    }
+
+    .energy-beams span:nth-child(1) {
+      top: 24%;
+      left: -38%;
+      transform: rotate(-8deg);
+    }
+
+    .energy-beams span:nth-child(2) {
+      top: 56%;
+      left: -45%;
+      animation-delay: -2.2s;
+      transform: rotate(5deg);
+    }
+
+    .energy-beams span:nth-child(3) {
+      top: 78%;
+      left: -52%;
+      animation-delay: -4.4s;
+      transform: rotate(-4deg);
+    }
+
+    @keyframes beamFly {
+      from { left: -45%; }
+      to { left: 115%; }
+    }
+
+    .station-horizon {
+      position: absolute;
+      z-index: 1;
+      left: 0;
+      right: 0;
+      bottom: 13%;
+      height: 4px;
+      pointer-events: none;
+      opacity: .48;
+      background:
+        linear-gradient(90deg,
+          transparent 0 5%,
+          rgba(176,24,124,.18) 14%,
+          #B0187C 34%,
+          #FCB144 50%,
+          #B0187C 66%,
+          rgba(176,24,124,.18) 86%,
+          transparent 95%);
+      box-shadow:
+        0 0 12px rgba(176,24,124,.55),
+        0 0 30px rgba(252,177,68,.22);
+      animation: horizonPulse 3.8s ease-in-out infinite;
+    }
+
+    @keyframes horizonPulse {
+      0%,100% { opacity: .3; transform: scaleX(.94); }
+      50% { opacity: .65; transform: scaleX(1.03); }
+    }
+
+    .road-lines {
+      position: absolute;
+      z-index: 1;
+      left: 50%;
+      bottom: -6%;
+      width: min(720px, 86vw);
+      height: 34%;
+      transform: translateX(-50%) perspective(500px) rotateX(67deg);
+      transform-origin: center bottom;
+      pointer-events: none;
+      opacity: .34;
+      mask-image: linear-gradient(to top, black, transparent 88%);
+      -webkit-mask-image: linear-gradient(to top, black, transparent 88%);
+    }
+
+    .road-lines::before,
+    .road-lines::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: linear-gradient(to top, var(--ary-orange), rgba(176,24,124,.16), transparent);
+      box-shadow: 0 0 12px rgba(252,177,68,.38);
+    }
+
+    .road-lines::before { left: 19%; }
+    .road-lines::after { right: 19%; }
+
+    .road-lines i {
+      position: absolute;
+      left: calc(50% - 2px);
+      width: 4px;
+      height: 19%;
+      border-radius: 99px;
+      background: linear-gradient(to top, #FFD36A, #FCB144);
+      box-shadow: 0 0 12px rgba(252,177,68,.75);
+      animation: roadPulse 2.1s linear infinite;
+    }
+
+    .road-lines i:nth-child(1) { bottom: 4%; }
+    .road-lines i:nth-child(2) { bottom: 34%; animation-delay: -.7s; }
+    .road-lines i:nth-child(3) { bottom: 64%; animation-delay: -1.4s; }
+
+    @keyframes roadPulse {
+      from {
+        transform: translateY(-120%) scaleY(.35);
+        opacity: 0;
+      }
+      20% { opacity: 1; }
+      to {
+        transform: translateY(380%) scaleY(1.25);
+        opacity: 0;
+      }
+    }
+
+    .hero-texto {
+      max-width: 1040px;
+    }
+
+    .hero-texto p {
+      position: relative;
+      box-shadow:
+        inset 0 1px rgba(255,255,255,.08),
+        0 12px 32px rgba(0,0,0,.18),
+        0 0 0 1px rgba(176,24,124,.06);
+    }
+
+    .hero-texto p::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      margin-right: 7px;
+      display: inline-block;
+      vertical-align: 1px;
+      border-radius: 50%;
+      background: var(--ary-orange);
+      box-shadow: 0 0 12px rgba(252,177,68,.9);
+      animation: pulseDot 1.7s ease-in-out infinite;
+    }
+
+    @keyframes pulseDot {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(.68); opacity: .56; }
+    }
+
+    .hero-texto h1 {
+      text-shadow:
+        0 16px 44px rgba(0,0,0,.44),
+        0 0 34px rgba(176,24,124,.10);
+      animation: titleBreath 4.4s ease-in-out infinite;
+    }
+
+    @keyframes titleBreath {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    .hero-texto h1::after {
+      height: 6px;
+      width: min(280px, 46vw);
+      background-size: 220% 100%;
+      animation: accentFlow 4s linear infinite;
+    }
+
+    @keyframes accentFlow {
+      to { background-position: 220% 0; }
+    }
+
+    .hero-boton {
+      isolation: isolate;
+    }
+
+    .hero-boton::after {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      z-index: -2;
+      border-radius: inherit;
+      background: linear-gradient(120deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold), var(--ary-magenta));
+      background-size: 250% 100%;
+      filter: blur(10px);
+      opacity: .28;
+      animation: buttonGlow 4s linear infinite;
+    }
+
+    @keyframes buttonGlow {
+      to { background-position: 250% 0; }
+    }
+
+    /* ===== PANEL EMPRESA MÁS TEATRAL ===== */
+    section#empresa {
+      isolation: isolate;
+      box-shadow:
+        0 45px 120px rgba(0,0,0,.30),
+        0 0 70px rgba(176,24,124,.06),
+        inset 0 1px rgba(255,255,255,.07);
+    }
+
+    section#empresa::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, transparent 0 44%, rgba(255,255,255,.025) 44% 45%, transparent 45% 100%);
+      background-size: 90px 90px;
+      opacity: .8;
+    }
+
+    .empresa-energy-ring {
+      position: absolute;
+      z-index: -1;
+      border: 1px solid rgba(252,177,68,.11);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .ring-a {
+      width: 420px;
+      height: 420px;
+      right: -180px;
+      top: -180px;
+      box-shadow:
+        0 0 0 48px rgba(176,24,124,.022),
+        0 0 0 94px rgba(252,177,68,.012);
+      animation: slowSpin 18s linear infinite;
+    }
+
+    .ring-b {
+      width: 300px;
+      height: 300px;
+      left: -160px;
+      bottom: -150px;
+      border-color: rgba(176,24,124,.15);
+      animation: slowSpin 24s linear infinite reverse;
+    }
+
+    @keyframes slowSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empresa-texto h2 {
+      position: relative;
+      text-shadow: 0 10px 35px rgba(0,0,0,.26);
+    }
+
+    .empresa-intro-subtitle {
+      text-shadow: 0 0 18px rgba(252,177,68,.14);
+    }
+
+    .empresa-features-list li {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .empresa-features-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 14%;
+      bottom: 14%;
+      width: 3px;
+      border-radius: 99px;
+      background: linear-gradient(to bottom, var(--ary-magenta-2), var(--ary-orange));
+      box-shadow: 0 0 10px rgba(252,177,68,.25);
+      transform: scaleY(.28);
+      transition: transform .3s ease;
+    }
+
+    .empresa-features-list li:hover::before {
+      transform: scaleY(1);
+    }
+
+    .empresa-features-list li::after {
+      content: "";
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      right: -60px;
+      top: -60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(252,177,68,.11), transparent 70%);
+      opacity: 0;
+      transform: scale(.7);
+      transition: opacity .3s ease, transform .3s ease;
+    }
+
+    .empresa-features-list li:hover::after {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* ===== IMAGEN MÁS LLAMATIVA ===== */
+    .image-card-wrapper {
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+
+    .image-card-wrapper::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      z-index: -1;
+      border-radius: 29px;
+      padding: 1px;
+      background:
+        linear-gradient(135deg,
+          rgba(176,24,124,.72),
+          rgba(252,177,68,.70),
+          rgba(255,255,255,.12),
+          rgba(176,24,124,.50));
+      background-size: 220% 220%;
+      animation: frameFlow 7s ease-in-out infinite;
+      opacity: .75;
+    }
+
+    @keyframes frameFlow {
+      0%,100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    .corner {
+      position: absolute;
+      z-index: 8;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+      opacity: .75;
+    }
+
+    .c1 {
+      left: 18px; top: 18px;
+      border-left: 2px solid var(--ary-orange);
+      border-top: 2px solid var(--ary-orange);
+    }
+
+    .c2 {
+      right: 18px; top: 18px;
+      border-right: 2px solid var(--ary-orange);
+      border-top: 2px solid var(--ary-orange);
+    }
+
+    .c3 {
+      left: 18px; bottom: 54px;
+      border-left: 2px solid var(--ary-magenta-2);
+      border-bottom: 2px solid var(--ary-magenta-2);
+    }
+
+    .c4 {
+      right: 18px; bottom: 54px;
+      border-right: 2px solid var(--ary-magenta-2);
+      border-bottom: 2px solid var(--ary-magenta-2);
+    }
+
+    .image-card-wrapper img {
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.04),
+        0 18px 38px rgba(0,0,0,.26);
+    }
+
+    .image-card-wrapper:hover img {
+      transform: scale(1.04);
+      filter: saturate(1.10) contrast(1.04) brightness(1.02);
+    }
+
+    .image-card-wrapper .caption {
+      position: relative;
+      color: #E9C9DB;
+    }
+
+    .image-card-wrapper .caption::before {
+      content: "";
+      display: inline-block;
+      width: 18px;
+      height: 2px;
+      margin-right: 7px;
+      vertical-align: middle;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+    }
+
+    /* Footer con más presencia */
+    footer {
+      position: relative;
+      overflow: hidden;
+    }
+
+    footer::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -150px;
+      width: 520px;
+      height: 260px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(176,24,124,.13), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .cursor-energy { display: none; }
+
+      .energy-beams span {
+        width: 54vw;
+        opacity: .30;
+      }
+
+      .road-lines {
+        opacity: .22;
+      }
+
+      .station-horizon {
+        bottom: 10%;
+        opacity: .32;
+      }
+
+      .hero-texto h1 {
+        animation: none;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .energy-beams span:nth-child(2),
+      .energy-beams span:nth-child(3) {
+        display: none;
+      }
+
+      .station-horizon {
+        display: none;
+      }
+
+      .road-lines {
+        height: 24%;
+        opacity: .14;
+      }
+
+      .ring-a {
+        width: 280px;
+        height: 280px;
+        right: -160px;
+        top: -120px;
+      }
+
+      .ring-b {
+        width: 220px;
+        height: 220px;
+      }
+
+      .corner {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .energy-beams span,
+      .road-lines i,
+      .station-horizon,
+      .hero-texto h1,
+      .hero-texto h1::after,
+      .hero-boton::after,
+      .logo-container img,
+      .empresa-energy-ring,
+      .image-card-wrapper::after {
+        animation: none !important;
+      }
+    }
+
+  </style>
+
+  <link rel="stylesheet" href="assets/ary-extras.css?v=1" />
+</head>
+<body>
+  <canvas id="ary-particles" aria-hidden="true"></canvas>
+  <div class="scroll-progress" aria-hidden="true"></div>
+  <div class="cursor-energy" aria-hidden="true"></div>
+
+  <header>
+    <div class="logo-container">
+      <img src="images/Arylogo2.png" alt="Logo ARY" /> <span>ARY Super Servicios</span>
+    </div>
+    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <a href="default.htm">Inicio</a>
+      <a href="ary_conoce_nuestra_empresa.htm">Empresa</a>
+      <a href="ary_ubica_nuestras_estaciones.htm">Estaciones</a>
+      <a href="ary_servicios.htm">Servicios</a>
+      <a href="ary_productos.htm">Productos</a>
+      <a href="ary_tips_ahorro_combustible.htm">Tips</a>
+      <a href="ary_contacto.htm">Contacto</a>
+            <a href="ary_facturacion.htm" class="ary-invoice-link">Facturación</a>
+      </nav>
+  </header>
+
+  <section class="hero-banner">
+    <div class="energy-beams" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="station-horizon" aria-hidden="true"></div>
+    <div class="road-lines" aria-hidden="true">
+      <i></i><i></i><i></i>
+    </div>
+    <div class="hero-overlay">
+      <div class="hero-texto">
+        <p>DESCUBRE</p>
+        <h1>CONOCE NUESTRA EMPRESA</h1>
+        <a href="#empresa" class="hero-boton">VER MÁS</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="empresa" class="empresa-section">
+    <div class="empresa-container">
+      <div class="empresa-texto">
+        <h2 class="fade-in">¿Quiénes somos?</h2>
+        <p class="empresa-intro-subtitle fade-in-delay">
+          Un enfoque moderno en estaciones de servicio
+        </p>
+        <ul class="empresa-features-list fade-in-delay">
+          <li>
+            🚀 <strong>Ary</strong> y <strong>APACHE</strong> transforman la experiencia de carga de combustible y lubricantes.
+          </li>
+          <li>
+            🔐 Brindamos control, seguridad y soluciones eficientes para empresas y usuarios.
+          </li>
+          <li>
+            ⚡ Nuestro compromiso: honestidad, rapidez y excelencia en cada visita.
+          </li>
+          <li>
+            📍 Presencia en <strong>Torreón</strong>, <strong>Gómez Palacio</strong> y <strong>Cd. Lerdo</strong>.
+          </li>
+        </ul>
+        <a href="ary_ubica_nuestras_estaciones.htm" class="hero-boton btn-ver-estaciones">
+            <span class="icon-pin">📍</span> Ver estaciones
+        </a>
+      </div>
+
+      <div class="empresa-imagen zoom-in">
+        <div class="image-card-wrapper tilt-card">
+          <span class="corner c1" aria-hidden="true"></span>
+          <span class="corner c2" aria-hidden="true"></span>
+          <span class="corner c3" aria-hidden="true"></span>
+          <span class="corner c4" aria-hidden="true"></span>
+          <img src="images/ARY_III_foto_ubica.jpg" alt="Foto de estación ARY" />
+          <p class="caption">
+            Estación ARY III - Ejemplo de innovación y servicio
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-content">
+      <p class="footer-links">
+        <a href="ary_conoce_nuestra_empresa.htm">Empresa</a><span class="separator"> | </span>
+        <a href="ary_ubica_nuestras_estaciones.htm">Estaciones</a><span class="separator"> | </span>
+        <a href="ary_servicios.htm">Servicios</a><span class="separator"> | </span>
+        <a href="ary_productos.htm">Productos</a><span class="separator"> | </span>
+        <a href="ary_contacto.htm">Contacto</a>
+      </p>
+      <p><strong>grupoary.com.mx</strong> © 2012 – 2025. Todos los derechos reservados.</p>
+  </footer>
+
+
+  <script>
+    (() => {
+      "use strict";
+
+      const header = document.querySelector("header");
+      const nav = document.querySelector("header nav");
+      const toggle = document.querySelector(".menu-toggle");
+      const progress = document.querySelector(".scroll-progress");
+
+      const updateScroll = () => {
+        const y = window.scrollY || 0;
+        header?.classList.toggle("is-scrolled", y > 24);
+
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        if (progress) {
+          progress.style.width = max > 0 ? `${Math.min(100, (y / max) * 100)}%` : "0%";
+        }
+      };
+
+      window.addEventListener("scroll", updateScroll, { passive: true });
+      updateScroll();
+
+      toggle?.addEventListener("click", () => {
+        const open = nav?.classList.toggle("open");
+        toggle.classList.toggle("active", Boolean(open));
+        toggle.setAttribute("aria-expanded", String(Boolean(open)));
+      });
+
+      nav?.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => {
+          nav.classList.remove("open");
+          toggle?.classList.remove("active");
+          toggle?.setAttribute("aria-expanded", "false");
+        });
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!nav?.classList.contains("open")) return;
+        if (nav.contains(event.target) || toggle?.contains(event.target)) return;
+        nav.classList.remove("open");
+        toggle?.classList.remove("active");
+        toggle?.setAttribute("aria-expanded", "false");
+      });
+
+      // Reveal usando las clases ya existentes.
+      const targets = document.querySelectorAll(".fade-in, .fade-in-delay, .zoom-in");
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries, obs) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-visible");
+            obs.unobserve(entry.target);
+          });
+        }, { threshold: .16 });
+
+        targets.forEach((el) => observer.observe(el));
+      } else {
+        targets.forEach((el) => el.classList.add("is-visible"));
+      }
+
+      // Partículas ARY.
+      const canvas = document.getElementById("ary-particles");
+      const ctx = canvas?.getContext("2d");
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      if (canvas && ctx && !reduceMotion) {
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+        let particles = [];
+        const pointer = { x: -9999, y: -9999 };
+
+        const resize = () => {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = `${width}px`;
+          canvas.style.height = `${height}px`;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          const count = Math.max(28, Math.min(72, Math.floor((width * height) / 28000)));
+          particles = Array.from({ length: count }, (_, i) => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - .5) * .30,
+            vy: (Math.random() - .5) * .30,
+            r: Math.random() * 1.5 + .6,
+            orange: i % 4 === 0
+          }));
+        };
+
+        window.addEventListener("resize", resize, { passive: true });
+        window.addEventListener("pointermove", (e) => {
+          pointer.x = e.clientX;
+          pointer.y = e.clientY;
+        }, { passive: true });
+
+        const draw = () => {
+          ctx.clearRect(0, 0, width, height);
+
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < -10) p.x = width + 10;
+            if (p.x > width + 10) p.x = -10;
+            if (p.y < -10) p.y = height + 10;
+            if (p.y > height + 10) p.y = -10;
+
+            const dxp = p.x - pointer.x;
+            const dyp = p.y - pointer.y;
+            const pd = Math.hypot(dxp, dyp);
+
+            if (pd < 100 && pd > .1) {
+              p.x += (dxp / pd) * .45;
+              p.y += (dyp / pd) * .45;
+            }
+
+            ctx.beginPath();
+            ctx.fillStyle = p.orange
+              ? "rgba(252,177,68,.72)"
+              : "rgba(215,42,147,.56)";
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let j = i + 1; j < particles.length; j++) {
+              const q = particles[j];
+              const dx = p.x - q.x;
+              const dy = p.y - q.y;
+              const d = Math.hypot(dx, dy);
+
+              if (d < 100) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(244,177,212,${(1 - d / 100) * .09})`;
+                ctx.lineWidth = .7;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(q.x, q.y);
+                ctx.stroke();
+              }
+            }
+          }
+
+          requestAnimationFrame(draw);
+        };
+
+        resize();
+        draw();
+      }
+
+      // Halo de energía siguiendo el cursor.
+      const cursorEnergy = document.querySelector(".cursor-energy");
+      if (cursorEnergy && matchMedia("(pointer:fine)").matches) {
+        document.addEventListener("pointermove", (event) => {
+          cursorEnergy.style.left = `${event.clientX}px`;
+          cursorEnergy.style.top = `${event.clientY}px`;
+          cursorEnergy.style.opacity = "1";
+        }, { passive: true });
+
+        document.addEventListener("pointerleave", () => {
+          cursorEnergy.style.opacity = "0";
+        });
+      }
+
+      // Tilt 3D suave en la imagen principal.
+      document.querySelectorAll(".tilt-card").forEach((card) => {
+        if (!matchMedia("(pointer:fine)").matches) return;
+
+        card.addEventListener("pointermove", (event) => {
+          const rect = card.getBoundingClientRect();
+          const px = (event.clientX - rect.left) / rect.width;
+          const py = (event.clientY - rect.top) / rect.height;
+          const ry = (px - .5) * 8;
+          const rx = (.5 - py) * 7;
+
+          card.style.transform =
+            `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-4px)`;
+        });
+
+        card.addEventListener("pointerleave", () => {
+          card.style.transform =
+            "perspective(900px) rotateX(0deg) rotateY(0deg) translateY(0)";
+        });
+      });
+
+      // Microparallax en el hero, solo escritorio.
+      const hero = document.querySelector(".hero-banner");
+      const heroText = document.querySelector(".hero-texto");
+
+      if (hero && heroText && matchMedia("(pointer:fine)").matches) {
+        hero.addEventListener("pointermove", (event) => {
+          const rect = hero.getBoundingClientRect();
+          const x = ((event.clientX - rect.left) / rect.width - .5) * 8;
+          const y = ((event.clientY - rect.top) / rect.height - .5) * 6;
+          heroText.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        });
+
+        hero.addEventListener("pointerleave", () => {
+          heroText.style.transform = "translate3d(0,0,0)";
+        });
+      }
+
+    })();
+  </script>
+
+
+  <nav class="ary-mobile-actions" aria-label="Accesos rápidos">
+    <a class="ary-mobile-primary" href="ary_facturacion.htm#tramites"><span aria-hidden="true">▣</span> Facturación y alta</a>
+    <a class="ary-mobile-secondary" href="ary_ubica_nuestras_estaciones.htm"><span aria-hidden="true">⌖</span> Estaciones</a>
+  </nav>
+</body>
+</html>
