@@ -41,9 +41,16 @@ jobs:
           retention-days: 7
   windows-syntax:
     runs-on: windows-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run test:integrity
       - name: Parse PowerShell scripts and IIS XML without changing services
         shell: powershell
         run: ./tests/windows_validation.ps1

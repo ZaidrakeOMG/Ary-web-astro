@@ -16,3 +16,8 @@ foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Re
  if(-not $src.Contains($required)){throw "Deployment guard missing: $required"}
 }
 Write-Host 'PASS XML and publication guard checks. Real IIS/Polaris was NOT started.'
+
+# The browser normalizes line endings before verifying the CSP inline hash.
+$golden=[IO.File]::ReadAllText((Join-Path $PWD 'legacy/billing-original.htm'))
+if($golden.Contains("`r")){throw 'Billing reference must use LF line endings on Windows'}
+Write-Host 'PASS LF billing reference on Windows; CSP input remains byte-identical.'
