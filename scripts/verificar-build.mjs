@@ -31,6 +31,11 @@ assert.equal(inlineScript(legacy), inlineScript(original), "El script del portal
 assert.ok(inlineScript(astroBilling).includes("const API = '/api/facturacion'"), "La ruta Astro no conserva la API");
 assert.ok(astroBilling.includes('<base href="/"'), "Falta base del portal Astro");
 assert.ok(configBuilt.includes('value="index.html"'), "No se configuro index.html como inicio");
+const defaultDocumentFiles = configBuilt.match(/<defaultDocument\b[^>]*>[\s\S]*?<files\b[^>]*>([\s\S]*?)<\/files>[\s\S]*?<\/defaultDocument>/i)?.[1];
+assert.ok(defaultDocumentFiles, "No se encontro la seccion defaultDocument/files de IIS");
+const defaultDocNames = [...defaultDocumentFiles.matchAll(/<add\s+value=["\x27]([^"\x27]+)["\x27]\s*\/>/gi)].map(match => match[1].toLowerCase());
+assert.equal(defaultDocNames[0], "index.html", "index.html debe ser el documento predeterminado de Astro");
+assert.equal(new Set(defaultDocNames).size, defaultDocNames.length, "IIS 500.19: defaultDocument contiene entradas duplicadas");
 assert.ok(configBuilt.includes('api/facturacion'), "Falta el rewrite del API");
 assert.ok(configBuilt.includes('10.20.20.182:8765'), "No coincide el destino del proxy actual");
 assert.ok(configSource.includes('10.20.20.182:8765'), "Cambio inesperado en config original");
