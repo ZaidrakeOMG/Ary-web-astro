@@ -2,7 +2,7 @@ name: Compilar y comprobar Astro
 
 on:
   push:
-    branches: [main, astro-real-migracion-20261009]
+    branches: [main, astro-real-migracion-20261009, astro-ary-mobile-v2-20261009]
   pull_request:
     branches: [main]
   workflow_dispatch:
