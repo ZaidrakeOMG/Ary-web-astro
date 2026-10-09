@@ -1,0 +1,43 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import { tips } from "../data/site";
+---
+<SiteLayout
+  title="Consejos para aprovechar tu combustible | Grupo ARY"
+  description="Consejos prácticos de Grupo ARY para cuidar tu automóvil y hacer un uso responsable del combustible."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Tips para el camino</span>
+      <h1>Pequeños hábitos.<br /><span class="highlight">Grandes recorridos.</span></h1>
+      <p>Ideas sencillas para cuidar tu vehículo y conducir de forma más eficiente.</p>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Consejos ARY</span>
+          <h2>Tu auto también merece cuidados.</h2>
+          <p class="section-subtitle">Las recomendaciones pueden variar según el vehículo y las condiciones de tránsito. Siempre respeta el manual de tu auto.</p>
+        </div>
+      </div>
+      <div class="tip-grid">
+        {tips.map(tip => (
+          <article class="tip-card">
+            <img src={tip.image} alt={tip.alt} loading="lazy" decoding="async" />
+            <div><span>{tip.tag}</span><h3>{tip.title}</h3><p>{tip.summary}</p></div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="section section-tight">
+    <div class="container"><div class="feature-band"><div class="feature-band-inner">
+      <div><span class="eyebrow" style="color:#ffe0a9">Sigue tu camino</span>
+        <h2>Encuentra tu próxima parada.</h2>
+        <p>Explora todas nuestras estaciones ARY y Servicio Apache en la región.</p></div>
+      <a class="btn btn-accent" href="/estaciones/">Ubicar estación <span aria-hidden="true">↗</span></a>
+    </div></div></div>
+  </section>
+</SiteLayout>

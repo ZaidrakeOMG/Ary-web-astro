@@ -1,0 +1,12 @@
+---
+/*
+ * Facturación y alta con Astro: el documento de producción se integra
+ * tal cual mediante un import raw para conservar el JavaScript, campos,
+ * encabezados CSRF, idempotencia y API /api/facturacion.
+ * Solo se añade base href para que los enlaces relativos funcionen
+ * también desde /facturacion/ (además de /ary_facturacion.htm).
+ */
+import legacyBillingPage from "../../ary_facturacion.htm?raw";
+const html = legacyBillingPage.replace(/<head\s*>/i, '<head><base href="/" />');
+---
+<Fragment set:html={html} />
