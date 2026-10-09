@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#18000f" />
+  <meta
+    name="description"
+    content="Conoce los servicios ARY para el control de flotillas, códigos de barras, Tarjeta ARY y vales prepagados."
+  />
+  <title>Servicios | ARY Super Servicios</title>
+  <link rel="shortcut icon" href="favicon.ico" />
+
+  <style>
+    :root {
+      --ary-magenta: #b0187c;
+      --ary-magenta-2: #d72a93;
+      --ary-orange: #fcb144;
+      --ary-gold: #ffd36a;
+      --ary-white: #ffffff;
+
+      --bg: #15000e;
+      --bg-2: #270319;
+      --bg-3: #360723;
+      --surface: rgba(63, 7, 44, 0.66);
+      --surface-strong: rgba(31, 2, 21, 0.92);
+      --text: #fff8fc;
+      --muted: #ddb8cc;
+      --line: rgba(255, 255, 255, 0.11);
+      --line-warm: rgba(252, 177, 68, 0.24);
+      --header-h: 82px;
+      --container: 1180px;
+      --shadow-xl: 0 42px 110px rgba(0, 0, 0, 0.38);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--header-h) + 24px);
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% 5%, rgba(176, 24, 124, 0.25), transparent 27%),
+        radial-gradient(circle at 92% 16%, rgba(252, 177, 68, 0.13), transparent 23%),
+        radial-gradient(circle at 50% 82%, rgba(215, 42, 147, 0.08), transparent 34%),
+        linear-gradient(180deg, #15000e 0%, #29031b 48%, #0f0008 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -4;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.88), transparent 90%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.88), transparent 90%);
+    }
+
+    body.menu-open {
+      overflow: hidden;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    a,
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 3px solid rgba(255, 211, 106, 0.92);
+      outline-offset: 4px;
+    }
+
+    #ary-particles {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.52;
+    }
+
+    .scroll-progress {
+      position: fixed;
+      z-index: 1300;
+      inset: 0 auto auto 0;
+      width: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--ary-magenta), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 14px rgba(252, 177, 68, 0.58);
+    }
+
+    .cursor-energy {
+      position: fixed;
+      z-index: 40;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(
+          circle,
+          rgba(252, 177, 68, 0.13) 0%,
+          rgba(215, 42, 147, 0.1) 31%,
+          rgba(176, 24, 124, 0.04) 54%,
+          transparent 74%
+        );
+      filter: blur(12px);
+      mix-blend-mode: screen;
+      transition: opacity 0.25s ease;
+    }
+
+    /* ================= HEADER ================= */
+    .site-header {
+      min-height: var(--header-h);
+      padding: 12px max(22px, calc((100vw - var(--container)) / 2));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid rgba(252, 177, 68, 0.15);
+      background:
+        linear-gradient(
+          90deg,
+          rgba(18, 0, 12, 0.97),
+          rgba(74, 8, 51, 0.9) 38%,
+          rgba(46, 4, 32, 0.92) 62%,
+          rgba(18, 0, 12, 0.97)
+        );
+      backdrop-filter: blur(16px) saturate(140%);
+      -webkit-backdrop-filter: blur(16px) saturate(140%);
+      box-shadow:
+        0 18px 55px rgba(0, 0, 0, 0.28),
+        inset 0 -1px rgba(255, 255, 255, 0.03);
+      transition: min-height 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .site-header::after {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: -1px;
+      height: 1px;
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(176, 24, 124, 0.62),
+          rgba(252, 177, 68, 0.92),
+          rgba(176, 24, 124, 0.62),
+          transparent
+        );
+      filter: drop-shadow(0 0 8px rgba(252, 177, 68, 0.35));
+      opacity: 0.72;
+    }
+
+    .site-header.is-scrolled {
+      min-height: 70px;
+      background: rgba(18, 0, 12, 0.97);
+      box-shadow: 0 16px 46px rgba(0, 0, 0, 0.32);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .logo-container img {
+      width: 50px;
+      height: 50px;
+      padding: 6px;
+      object-fit: contain;
+      border: 1px solid rgba(252, 177, 68, 0.34);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 34%),
+        rgba(255, 255, 255, 0.055);
+      box-shadow:
+        0 15px 34px rgba(0, 0, 0, 0.22),
+        0 0 24px rgba(176, 24, 124, 0.12),
+        inset 0 1px rgba(255, 255, 255, 0.12);
+      animation: logoFloat 4.5s ease-in-out infinite;
+    }
+
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0) rotate(0); }
+      50% { transform: translateY(-3px) rotate(-1deg); }
+    }
+
+    .logo-container span {
+      color: #fff;
+      font-size: clamp(1rem, 1.65vw, 1.35rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .site-nav a {
+      position: relative;
+      color: #f2dce9;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.78rem;
+      padding: 10px;
+      border-radius: 12px;
+      transition: color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+    }
+
+    .site-nav a::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      bottom: 5px;
+      height: 2px;
+      border-radius: 99px;
+      transform: scaleX(0);
+      transform-origin: left;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange));
+      box-shadow: 0 0 10px rgba(252, 177, 68, 0.42);
+      transition: transform 0.28s ease;
+    }
+
+    .site-nav a:hover,
+    .site-nav a[aria-current="page"] {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .site-nav a:hover {
+      transform: translateY(-2px);
+    }
+
+    .site-nav a:hover::after,
+    .site-nav a[aria-current="page"]::after {
+      transform: scaleX(1);
+    }
+
+    .menu-toggle {
+      display: none;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      padding: 0;
+      border: 1px solid rgba(252, 177, 68, 0.22);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      width: 20px;
+      height: 2px;
+      display: block;
+      margin: 4px auto;
+      border-radius: 99px;
+      background: currentColor;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(1) {
+      transform: translateY(6px) rotate(45deg);
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle[aria-expanded="true"] span:nth-child(3) {
+      transform: translateY(-6px) rotate(-45deg);
+    }
+
+    /* ================= HERO ================= */
+    .hero-banner {
+      min-height: clamp(520px, 72vh, 760px);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      background-image: url("images/imagen-estacion-apache.png");
+      background-position: center 54%;
+      background-size: cover;
+      border-bottom: 1px solid rgba(252, 177, 68, 0.16);
+    }
+
+    .hero-banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 50% 40%, rgba(215, 42, 147, 0.18), transparent 31%),
+        linear-gradient(90deg, rgba(20, 0, 13, 0.88), rgba(40, 3, 27, 0.45) 52%, rgba(20, 0, 13, 0.84)),
+        linear-gradient(180deg, rgba(21, 0, 14, 0.34), rgba(21, 0, 14, 0.9));
+    }
+
+    .hero-banner::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 190px;
+      z-index: -1;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
+    }
+
+    .hero-decor {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .hero-decor .beam {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      width: min(780px, 70vw);
+      height: 1px;
+      transform-origin: left center;
+      background: linear-gradient(90deg, rgba(252, 177, 68, 0.62), transparent 75%);
+      box-shadow: 0 0 16px rgba(252, 177, 68, 0.34);
+      opacity: 0.28;
+    }
+
+    .hero-decor .beam:nth-child(1) { transform: rotate(-17deg); }
+    .hero-decor .beam:nth-child(2) { transform: rotate(7deg); opacity: 0.18; }
+    .hero-decor .beam:nth-child(3) { transform: rotate(24deg); opacity: 0.12; }
+
+    .hero-content {
+      width: min(var(--container), calc(100% - 40px));
+      margin-inline: auto;
+      position: relative;
+      text-align: center;
+      padding: 76px 20px 98px;
+    }
+
+    .hero-content::before {
+      content: "";
+      position: absolute;
+      z-index: -1;
+      left: 50%;
+      top: 50%;
+      width: min(800px, 82vw);
+      height: 300px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(176, 24, 124, 0.23), transparent 68%);
+      filter: blur(26px);
+    }
+
+    .hero-kicker {
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 auto 22px;
+      padding: 9px 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border: 1px solid rgba(252, 177, 68, 0.26);
+      border-radius: 999px;
+      color: #ffe6f4;
+      background: rgba(27, 1, 19, 0.54);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.2),
+        inset 0 1px rgba(255, 255, 255, 0.08);
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .hero-kicker::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--ary-orange);
+      box-shadow: 0 0 12px rgba(252, 177, 68, 0.88);
+    }
+
+    .hero-content h1 {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(3.25rem, 8.8vw, 8rem);
+      font-weight: 950;
+      line-height: 0.88;
+      letter-spacing: -0.065em;
+      text-transform: uppercase;
+      text-wrap: balance;
+      text-shadow:
+        0 18px 55px rgba(0, 0, 0, 0.42),
+        0 0 34px rgba(176, 24, 124, 0.12);
+    }
+
+    .hero-content h1 span {
+      display: block;
+      color: transparent;
+      background: linear-gradient(90deg, #fff 4%, #ffd8ef 35%, var(--ary-orange) 74%, var(--ary-gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin: 27px auto 0;
+      color: #f1d9e7;
+      font-size: clamp(1rem, 1.7vw, 1.18rem);
+      line-height: 1.7;
+      text-wrap: balance;
+    }
+
+    .hero-actions {
+      margin-top: 34px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-btn,
+    .ghost-btn {
+      min-height: 52px;
+      padding: 0 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 16px;
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+    }
+
+    .hero-btn {
+      color: #250116;
+      background: linear-gradient(135deg, var(--ary-orange), var(--ary-gold));
+      box-shadow:
+        0 18px 38px rgba(252, 177, 68, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+    }
+
+    .ghost-btn {
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.055);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .hero-btn:hover,
+    .ghost-btn:hover {
+      transform: translateY(-4px);
+    }
+
+    .hero-btn:hover {
+      box-shadow: 0 22px 48px rgba(252, 177, 68, 0.3);
+    }
+
+    .ghost-btn:hover {
+      border-color: rgba(252, 177, 68, 0.42);
+    }
+
+    /* ================= INTRO ================= */
+    .services-section {
+      width: min(var(--container), calc(100% - 40px));
+      margin: 0 auto 110px;
+      position: relative;
+      isolation: isolate;
+    }
+
+    .services-section::before {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      left: 50%;
+      top: 45%;
+      width: min(1050px, 96vw);
+      height: 920px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, rgba(176, 24, 124, 0.15) 0%, rgba(252, 177, 68, 0.04) 42%, transparent 72%);
+      filter: blur(30px);
+      pointer-events: none;
+    }
+
+    .section-heading {
+      max-width: 850px;
+      margin: 0 auto 46px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 15px;
+      color: var(--ary-orange);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .section-heading h2 {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(2.6rem, 5.8vw, 5.5rem);
+      font-weight: 950;
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+      text-wrap: balance;
+    }
+
+    .section-heading h2::after {
+      content: "";
+      width: min(180px, 36vw);
+      height: 4px;
+      display: block;
+      margin: 24px auto 0;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--ary-magenta-2), var(--ary-orange), var(--ary-gold));
+      box-shadow: 0 0 18px rgba(252, 177, 68, 0.34);
+    }
+
+    .section-heading p:last-child {
+      max-width: 700px;
+      margin: 24px auto 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.75;
+      text-wrap: balance;
+    }
+
+    /* ================= SERVICE CARDS ================= */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px;
+    }
+
+    .service-card {
+      --spot-x: 50%;
+      --spot-y: 50%;
+      min-height: 100%;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      padding: clamp(25px, 3.7vw, 42px);
+      border: 1px solid var(--line-warm);
+      border-radius: 32px;
+      background:
+        radial-gradient(circle at var(--spot-x) var(--spot-y), rgba(252, 177, 68, 0.105), transparent 28%),
+        radial-gradient(circle at 88% 8%, rgba(252, 177, 68, 0.11), transparent 27%),
+        radial-gradient(circle at 10% 90%, rgba(176, 24, 124, 0.14), transparent 35%),
+        linear-gradient(155deg, rgba(71, 7, 49, 0.82), rgba(24, 1, 16, 0.96));
+      box-shadow:
+        0 34px 90px rgba(0, 0, 0, 0.3),
+        0 0 50px rgba(176, 24, 124, 0.055),
+        inset 0 1px rgba(255, 255, 255, 0.075);
+      transform: translateY(30px);
+      opacity: 0;
+      transition:
+        transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.45s ease,
+        border-color 0.35s ease,
+        opacity 0.65s ease;
+    }
+
+    .service-card.is-visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .service-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at center, #000, transparent 78%);
+      -webkit-mask-image: radial-gradient(circle at center, #000, transparent 78%);
+      opacity: 0.8;
+    }
+
+    .service-card::after {
+      content: "";
+      position: absolute;
+      left: -55%;
+      top: 0;
+      width: 38%;
+      height: 100%;
+      z-index: 4;
+      pointer-events: none;
+      transform: skewX(-18deg);
+      background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+      transition: left 0.75s ease;
+    }
+
+    .service-card:hover {
+      transform: translateY(-9px);
+      border-color: rgba(252, 177, 68, 0.4);
+      box-shadow:
+        0 46px 110px rgba(0, 0, 0, 0.38),
+        0 0 65px rgba(176, 24, 124, 0.1),
+        inset 0 1px rgba(255, 255, 255, 0.09);
+    }
+
+    .service-card:hover::after {
+      left: 130%;
+    }
+
+    .service-card:nth-child(3),
+    .service-card:nth-child(4) {
+      margin-top: 6px;
+    }
+
+    .service-card.featured {
+      grid-column: span 2;
+      min-height: 470px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: clamp(28px, 5vw, 70px);
+      align-items: center;
+    }
+
+    .card-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .service-icon {
+      width: 66px;
+      height: 66px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(252, 177, 68, 0.28);
+      border-radius: 20px;
+      color: var(--ary-orange);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 35%),
+        linear-gradient(145deg, rgba(215, 42, 147, 0.16), rgba(252, 177, 68, 0.055));
+      box-shadow:
+        0 18px 34px rgba(0, 0, 0, 0.2),
+        0 0 28px rgba(176, 24, 124, 0.1),
+        inset 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .service-icon svg {
+      width: 34px;
+      height: 34px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .service-number {
+      color: rgba(255, 255, 255, 0.14);
+      font-size: 3.4rem;
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: -0.08em;
+    }
+
+    .service-card h3 {
+      margin: 0 0 16px;
+      color: #fff;
+      font-size: clamp(1.85rem, 3.4vw, 3rem);
+      font-weight: 900;
+      line-height: 1.02;
+      letter-spacing: -0.045em;
+      text-wrap: balance;
+    }
+
+    .service-card > div > p,
+    .service-card > p,
+    .card-copy > p {
+      margin: 0 0 16px;
+      color: #e7cbdc;
+      font-size: 1rem;
+      line-height: 1.72;
+    }
+
+    .service-card strong {
+      color: #fff;
+    }
+
+    .detail-panel {
+      margin-top: 25px;
+      padding: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.095);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 95% 8%, rgba(252, 177, 68, 0.075), transparent 30%),
+        rgba(255, 255, 255, 0.038);
+      box-shadow: inset 0 1px rgba(255, 255, 255, 0.055);
+    }
+
+    .detail-panel h4 {
+      margin: 0 0 15px;
+      color: var(--ary-orange);
+      font-size: 0.82rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 11px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .feature-list li {
+      position: relative;
+      padding-left: 28px;
+      color: #f2dce9;
+      font-size: 0.94rem;
+      line-height: 1.48;
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    .feature-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.39em;
+      width: 13px;
+      height: 7px;
+      border-left: 2px solid var(--ary-orange);
+      border-bottom: 2px solid var(--ary-orange);
+      transform: rotate(-45deg);
+      filter: drop-shadow(0 0 6px rgba(252, 177, 68, 0.4));
+    }
+
+    .feature-list li:hover {
+      transform: translateX(5px);
+      color: #fff;
+    }
+
+    .split-details {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .mini-panel {
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 19px;
+      background: rgba(255, 255, 255, 0.034);
+    }
+
+    .mini-panel h4 {
+      margin: 0 0 13px;
+      color: var(--ary-orange);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .product-visual {
+      min-height: 340px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      perspective: 1100px;
+    }
+
+    .product-visual::before,
+    .product-visual::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .product-visual::before {
+      width: min(390px, 90%);
+      aspect-ratio: 1;
+      background:
+        radial-gradient(circle, rgba(252, 177, 68, 0.16), rgba(215, 42, 147, 0.14) 36%, transparent 70%);
+      filter: blur(18px);
+      animation: glowBreath 4.8s ease-in-out infinite;
+    }
+
+    .product-visual::after {
+      width: min(420px, 94%);
+      aspect-ratio: 1;
+      border: 1px solid rgba(252, 177, 68, 0.15);
+      animation: orbitSpin 18s linear infinite;
+    }
+
+    @keyframes glowBreath {
+      0%, 100% { transform: scale(0.94); opacity: 0.72; }
+      50% { transform: scale(1.06); opacity: 1; }
+    }
+
+    @keyframes orbitSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    .product-frame {
+      width: min(360px, 88%);
+      position: relative;
+      z-index: 2;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 25% 16%, rgba(255, 255, 255, 0.14), transparent 31%),
+        rgba(255, 255, 255, 0.055);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow:
+        0 28px 75px rgba(0, 0, 0, 0.34),
+        0 0 42px rgba(176, 24, 124, 0.09),
+        inset 0 1px rgba(255, 255, 255, 0.11);
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    .product-frame:hover {
+      transform: translateY(-8px) rotateY(-2deg);
+      box-shadow:
+        0 38px 90px rgba(0, 0, 0, 0.42),
+        0 0 58px rgba(176, 24, 124, 0.12),
+        inset 0 1px rgba(255, 255, 255, 0.13);
+    }
+
+    .product-frame img {
+      width: 100%;
+      max-height: 270px;
+      object-fit: contain;
+      border-radius: 18px;
+      filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.28));
+    }
+
+    .image-caption {
+      margin: 12px 0 0;
+      color: #d8b8ca;
+      font-size: 0.76rem;
+      text-align: center;
+    }
+
+    .highlight-note {
+      margin-top: 20px !important;
+      padding: 15px 17px;
+      border-left: 3px solid var(--ary-orange);
+      border-radius: 0 14px 14px 0;
+      color: #ffeaf6 !important;
+      background: linear-gradient(90deg, rgba(252, 177, 68, 0.1), transparent);
+    }
+
+    /* ================= TRUST STRIP ================= */
+    .trust-strip {
+      width: min(var(--container), calc(100% - 40px));
+      margin: -52px auto 110px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .trust-item {
+      min-height: 130px;
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 90% 5%, rgba(252, 177, 68, 0.08), transparent 30%),
+        rgba(255, 255, 255, 0.035);
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.24),
+        inset 0 1px rgba(255, 255, 255, 0.055);
+    }
+
+    .trust-item b {
+      display: block;
+      margin-bottom: 4px;
+      color: #fff;
+      font-size: 1.04rem;
+    }
+
+    .trust-item span {
+      color: #d7b8ca;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+
+    .trust-icon {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      color: var(--ary-orange);
+      background: rgba(252, 177, 68, 0.08);
+      border: 1px solid rgba(252, 177, 68, 0.17);
+      font-weight: 950;
+      box-shadow: 0 0 22px rgba(252, 177, 68, 0.08);
+    }
+
+    /* ================= CTA ================= */
+    .cta-section {
+      width: min(var(--container), calc(100% - 40px));
+      margin: 0 auto 110px;
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      padding: clamp(34px, 6vw, 72px);
+      border: 1px solid rgba(252, 177, 68, 0.24);
+      border-radius: 36px;
+      background:
+        radial-gradient(circle at 85% 15%, rgba(252, 177, 68, 0.16), transparent 28%),
+        radial-gradient(circle at 5% 100%, rgba(176, 24, 124, 0.24), transparent 34%),
+        linear-gradient(145deg, rgba(81, 8, 57, 0.88), rgba(20, 1, 14, 0.97));
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+    }
+
+    .cta-section::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 50px 50px;
+      mask-image: radial-gradient(circle at center, #000, transparent 78%);
+      -webkit-mask-image: radial-gradient(circle at center, #000, transparent 78%);
+    }
+
+    .cta-section h2 {
+      max-width: 760px;
+      margin: 0 auto;
+      color: #fff;
+      font-size: clamp(2.35rem, 5vw, 4.8rem);
+      font-weight: 950;
+      line-height: 0.96;
+      letter-spacing: -0.055em;
+      text-wrap: balance;
+    }
+
+    .cta-section p {
+      max-width: 660px;
+      margin: 22px auto 0;
+      color: var(--muted);
+      line-height: 1.72;
+      text-wrap: balance;
+    }
+
+    .cta-section .hero-actions {
+      margin-top: 28px;
+    }
+
+    /* ================= FOOTER ================= */
+    .site-footer {
+      position: relative;
+      padding: 34px 18px 30px;
+      border-top: 1px solid rgba(252, 177, 68, 0.15);
+      color: #cfaec1;
+      background:
+        radial-gradient(circle at 50% 0, rgba(176, 24, 124, 0.12), transparent 35%),
+        #0d0008;
+      font-size: 0.8rem;
+    }
+
+    .footer-content {
+      width: min(960px, 100%);
+      margin: 0 auto;
+      text-align: center;
+      line-height: 1.55;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px 16px;
+      margin: 0 0 14px;
+    }
+
+    .footer-links a {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      color: #f4dfeb;
+      text-decoration: none;
+      font-weight: 700;
+      transition: color 0.24s ease, transform 0.24s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--ary-orange);
+      transform: translateY(-2px);
+    }
+
+    .footer-copyright,
+    .footer-credits {
+      margin: 7px 0;
+    }
+
+    .footer-copyright strong {
+      color: #fff;
+    }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 960px) {
+      :root { --header-h: 74px; }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .site-nav {
+        position: fixed;
+        inset: calc(var(--header-h) + 8px) 14px auto;
+        max-height: calc(100svh - var(--header-h) - 24px);
+        overflow-y: auto;
+        padding: 12px;
+        display: grid;
+        gap: 4px;
+        border: 1px solid rgba(252, 177, 68, 0.2);
+        border-radius: 22px;
+        background: rgba(22, 0, 15, 0.97);
+        backdrop-filter: blur(18px) saturate(135%);
+        -webkit-backdrop-filter: blur(18px) saturate(135%);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+        transform: translateY(-12px) scale(0.98);
+        transform-origin: top;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: transform 0.25s ease, opacity 0.25s ease, visibility 0.25s ease;
+      }
+
+      .site-nav.is-open {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+
+      .site-nav a {
+        min-height: 46px;
+        display: flex;
+        align-items: center;
+        padding: 11px 14px;
+        font-size: 0.88rem;
+      }
+
+      .site-nav a::after {
+        left: 14px;
+        right: auto;
+        width: 52px;
+      }
+
+      .services-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .service-card.featured {
+        grid-column: span 1;
+        grid-template-columns: 1fr;
+      }
+
+      .product-visual {
+        min-height: 310px;
+      }
+
+      .trust-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      :root { --header-h: 68px; }
+
+      body {
+        background:
+          radial-gradient(circle at 10% 5%, rgba(176, 24, 124, 0.16), transparent 26%),
+          radial-gradient(circle at 95% 18%, rgba(252, 177, 68, 0.07), transparent 22%),
+          linear-gradient(180deg, #16000f 0%, #220216 52%, #100008 100%);
+      }
+
+      .site-header {
+        min-height: var(--header-h);
+        padding: 10px 12px;
+        gap: 10px;
+      }
+
+      .site-header.is-scrolled {
+        min-height: 64px;
+      }
+
+      .logo-container {
+        gap: 9px;
+      }
+
+      .logo-container img {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        animation: none;
+      }
+
+      .logo-container span {
+        max-width: 190px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.86rem;
+      }
+
+      .menu-toggle {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+      }
+
+      .site-nav {
+        inset: calc(var(--header-h) + 7px) 10px auto;
+      }
+
+      .hero-banner {
+        min-height: 470px;
+        background-position: center 56%;
+      }
+
+      .hero-decor .beam:nth-child(2),
+      .hero-decor .beam:nth-child(3) {
+        display: none;
+      }
+
+      .hero-content {
+        width: 100%;
+        padding: 54px 14px 82px;
+      }
+
+      .hero-kicker {
+        padding: 8px 11px;
+        font-size: 0.63rem;
+        letter-spacing: 0.11em;
+      }
+
+      .hero-content h1 {
+        font-size: clamp(2.8rem, 15vw, 4.7rem);
+        line-height: 0.92;
+      }
+
+      .hero-copy {
+        font-size: 0.96rem;
+        line-height: 1.6;
+      }
+
+      .hero-actions {
+        align-items: stretch;
+      }
+
+      .hero-btn,
+      .ghost-btn {
+        width: min(100%, 340px);
+      }
+
+      .services-section,
+      .trust-strip,
+      .cta-section {
+        width: calc(100% - 20px);
+      }
+
+      .services-section {
+        margin-bottom: 90px;
+      }
+
+      .section-heading {
+        margin-bottom: 31px;
+      }
+
+      .section-heading h2 {
+        font-size: clamp(2.35rem, 11vw, 3.6rem);
+      }
+
+      .services-grid {
+        gap: 18px;
+      }
+
+      .service-card {
+        padding: 22px 18px;
+        border-radius: 24px;
+      }
+
+      .service-card:hover {
+        transform: translateY(0);
+      }
+
+      .card-topline {
+        margin-bottom: 18px;
+      }
+
+      .service-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 17px;
+      }
+
+      .service-icon svg {
+        width: 29px;
+        height: 29px;
+      }
+
+      .service-number {
+        font-size: 2.7rem;
+      }
+
+      .service-card h3 {
+        font-size: clamp(1.75rem, 8.6vw, 2.35rem);
+      }
+
+      .detail-panel {
+        padding: 18px 16px;
+        border-radius: 18px;
+      }
+
+      .split-details {
+        grid-template-columns: 1fr;
+      }
+
+      .product-visual {
+        min-height: 285px;
+      }
+
+      .product-frame {
+        width: min(315px, 92%);
+        padding: 14px;
+        border-radius: 23px;
+      }
+
+      .trust-strip {
+        margin-top: -48px;
+        margin-bottom: 90px;
+      }
+
+      .trust-item {
+        min-height: 112px;
+        padding: 18px;
+        border-radius: 19px;
+      }
+
+      .cta-section {
+        margin-bottom: 82px;
+        border-radius: 26px;
+      }
+
+      .cta-section h2 {
+        font-size: clamp(2.15rem, 10vw, 3.35rem);
+      }
+    }
+
+    @media (max-width: 390px) {
+      .site-header {
+        padding-inline: 9px;
+      }
+
+      .logo-container span {
+        max-width: 154px;
+        font-size: 0.78rem;
+      }
+
+      .hero-banner {
+        min-height: 440px;
+      }
+
+      .hero-content h1 {
+        font-size: clamp(2.55rem, 14.5vw, 3.65rem);
+      }
+    }
+
+    @media (pointer: coarse), (max-width: 900px) {
+      .cursor-energy {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+
+      .service-card {
+        opacity: 1;
+        transform: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="ary-particles" aria-hidden="true"></canvas>
+  <div class="scroll-progress" aria-hidden="true"></div>
+  <div class="cursor-energy" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="logo-container" href="default.htm" aria-label="ARY Super Servicios - Inicio">
+      <img src="images/Arylogo2.png" alt="Logo ARY" />
+      <span>ARY Super Servicios</span>
+    </a>
+
+    <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="site-nav">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <nav class="site-nav" id="site-nav" aria-label="Navegación principal">
+      <a href="default.htm">Inicio</a>
+      <a href="ary_conoce_nuestra_empresa.htm">Empresa</a>
+      <a href="ary_ubica_nuestras_estaciones.htm">Estaciones</a>
+      <a href="ary_servicios.htm" aria-current="page">Servicios</a>
+      <a href="ary_productos.htm">Productos</a>
+      <a href="ary_tips_ahorro_combustible.htm">Tips</a>
+      <a href="ary_contacto.htm">Contacto</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero-banner" aria-labelledby="hero-title">
+      <div class="hero-decor" aria-hidden="true">
+        <span class="beam"></span>
+        <span class="beam"></span>
+        <span class="beam"></span>
+      </div>
+
+      <div class="hero-content">
+        <p class="hero-kicker">Soluciones que mueven tu negocio</p>
+        <h1 id="hero-title">Nuestros <span>Servicios</span></h1>
+        <p class="hero-copy">
+          Control, seguridad y flexibilidad para cada carga de combustible. Descubre herramientas pensadas para empresas, flotillas y usuarios ARY.
+        </p>
+        <div class="hero-actions">
+          <a class="hero-btn" href="#servicios">Explorar servicios <span aria-hidden="true">↓</span></a>
+          <a class="ghost-btn" href="ary_contacto.htm">Hablar con ARY</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="services-section" id="servicios" aria-labelledby="services-title">
+      <div class="section-heading">
+        <p class="eyebrow">Experiencia ARY</p>
+        <h2 id="services-title">Más control. Más libertad.</h2>
+        <p>
+          Soluciones diseñadas para simplificar la operación, optimizar recursos y darte visibilidad sobre cada consumo.
+        </p>
+      </div>
+
+      <div class="services-grid">
+        <!-- 01 · CONTROL DE FLOTILLAS -->
+        <article class="service-card" data-reveal>
+          <div class="card-topline">
+            <span class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48">
+                <path d="M5 13h24v20H5z" />
+                <path d="M29 20h8l6 7v6H29z" />
+                <circle cx="14" cy="35" r="4" />
+                <circle cx="36" cy="35" r="4" />
+                <path d="M9 18h11M9 23h8" />
+              </svg>
+            </span>
+            <span class="service-number" aria-hidden="true">01</span>
+          </div>
+
+          <h3>Control de Flotillas o Vehículos</h3>
+          <p>
+            Gestiona de forma eficiente los consumos de combustible de cada unidad de tu empresa, sin importar el tamaño de tu flotilla. Administra todo desde una plataforma moderna y flexible.
+          </p>
+          <p>
+            Centraliza tus gastos, optimiza tus recursos y recibe reportes detallados, personalizados y listos para facturar.
+          </p>
+
+          <div class="detail-panel">
+            <h4>Ventajas destacadas</h4>
+            <ul class="feature-list">
+              <li>Control total de consumos por vehículo o usuario</li>
+              <li>Comprobante único 100% deducible</li>
+              <li>Restricciones configurables: días, horarios, litros y más</li>
+              <li>Portal web de monitoreo y reportes</li>
+              <li>Sin necesidad de comprobantes físicos</li>
+              <li>Cobertura en todas las estaciones ARY y Apache</li>
+              <li>Atención profesional y soporte personalizado</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- 02 · CÓDIGO DE BARRAS -->
+        <article class="service-card" data-reveal>
+          <div class="card-topline">
+            <span class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48">
+                <path d="M7 9v30M12 9v30M19 9v30M23 9v30M30 9v30M36 9v30M41 9v30" />
+                <path d="M5 6h8M5 6v8M43 6h-8M43 6v8M5 42h8M5 42v-8M43 42h-8M43 42v-8" />
+              </svg>
+            </span>
+            <span class="service-number" aria-hidden="true">02</span>
+          </div>
+
+          <h3>Código de Barras</h3>
+          <p>
+            Una solución práctica y segura para el control de cargas sin tarjetas físicas. Ideal para empresas que requieren velocidad y simplicidad operativa.
+          </p>
+
+          <div class="split-details">
+            <div class="mini-panel">
+              <h4>Características</h4>
+              <ul class="feature-list">
+                <li>Etiqueta única asignada al vehículo</li>
+                <li>Lectura automática en estaciones</li>
+                <li>Intransferible con tecnología <em>tamper evident</em></li>
+              </ul>
+            </div>
+
+            <div class="mini-panel">
+              <h4>Beneficios</h4>
+              <ul class="feature-list">
+                <li>Reporte con rendimiento, litros y fechas</li>
+                <li>Pagos en efectivo, cheque o transferencia</li>
+                <li>Servicio de cobranza a domicilio</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <!-- 03 · TARJETA ARY -->
+        <article class="service-card featured" data-reveal>
+          <div class="card-copy">
+            <div class="card-topline">
+              <span class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <rect x="5" y="11" width="38" height="27" rx="5" />
+                  <path d="M5 19h38" />
+                  <path d="M11 29h10M11 33h6" />
+                  <circle cx="35" cy="29" r="4" />
+                </svg>
+              </span>
+              <span class="service-number" aria-hidden="true">03</span>
+            </div>
+
+            <h3>Tarjeta ARY</h3>
+            <p>Diseñada para obtener ahorros y control en la gestión del gasto de combustible.</p>
+
+            <div class="split-details">
+              <div class="mini-panel">
+                <h4>Características</h4>
+                <ul class="feature-list">
+                  <li>Tarjeta personalizada</li>
+                  <li>Banda magnética: débito o crédito</li>
+                  <li>Cobertura en estaciones ARY y Servicio APACHE</li>
+                </ul>
+              </div>
+
+              <div class="mini-panel">
+                <h4>Ventajas</h4>
+                <ul class="feature-list">
+                  <li>Ahorro y control empresarial</li>
+                  <li>Un solo comprobante fiscal, 100% deducible</li>
+                  <li>Restricciones configurables</li>
+                  <li>Sin manejo de efectivo</li>
+                  <li>Facturación semanal o quincenal</li>
+                  <li>Atención profesional y confiable</li>
+                </ul>
+              </div>
+            </div>
+
+            <p class="highlight-note">Incluye reporte detallado anexado a la factura.</p>
+          </div>
+
+          <div class="product-visual">
+            <div class="product-frame">
+              <img src="images/tarjeta_ARY.png" alt="Tarjeta ARY" loading="lazy" decoding="async" />
+              <p class="image-caption">Imagen ilustrativa de la Tarjeta ARY</p>
+            </div>
+          </div>
+        </article>
+
+        <!-- 04 · VALE PREPAGADO -->
+        <article class="service-card featured" data-reveal>
+          <div class="card-copy">
+            <div class="card-topline">
+              <span class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 48 48">
+                  <path d="M7 14a4 4 0 0 0 4-4h26a4 4 0 0 0 4 4v20a4 4 0 0 0-4 4H11a4 4 0 0 0-4-4z" />
+                  <path d="M24 10v28" stroke-dasharray="3 4" />
+                  <circle cx="16" cy="24" r="4" />
+                  <path d="M32 20h5M32 24h5M32 28h5" />
+                </svg>
+              </span>
+              <span class="service-number" aria-hidden="true">04</span>
+            </div>
+
+            <h3>Vale Pre-Pagado ARY</h3>
+            <p>Solución práctica y flexible para controlar presupuesto y ofrecer prestaciones.</p>
+
+            <div class="split-details">
+              <div class="mini-panel">
+                <h4>Características</h4>
+                <ul class="feature-list">
+                  <li>Sin comisión</li>
+                  <li>Denominación y monto personalizado</li>
+                  <li>Cobertura nacional ARY y APACHE</li>
+                  <li>Compra disponible en todas las estaciones</li>
+                  <li>100% deducible de impuestos</li>
+                </ul>
+              </div>
+
+              <div class="mini-panel">
+                <h4>Ventajas</h4>
+                <ul class="feature-list">
+                  <li>Ahorro en labores administrativas</li>
+                  <li>Control efectivo del consumo</li>
+                  <li>Evita el manejo de efectivo</li>
+                  <li>Atención profesional y confiable</li>
+                </ul>
+              </div>
+            </div>
+
+            <p class="highlight-note">
+              Incluye reporte de consumo detallado anexado a la factura. <strong>Más que un vale deducible de impuestos, un sistema EFECTIVO.</strong>
+            </p>
+          </div>
+
+          <div class="product-visual">
+            <div class="product-frame">
+              <img src="images/vale_prepagado.png" alt="Vale Pre-Pagado ARY" loading="lazy" decoding="async" />
+              <p class="image-caption">Imagen ilustrativa del Vale Prepagado</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Beneficios generales de los servicios ARY">
+      <div class="trust-item">
+        <span class="trust-icon" aria-hidden="true">01</span>
+        <div>
+          <b>Control inteligente</b>
+          <span>Visibilidad de consumos, restricciones y reportes para tomar mejores decisiones.</span>
+        </div>
+      </div>
+
+      <div class="trust-item">
+        <span class="trust-icon" aria-hidden="true">02</span>
+        <div>
+          <b>Cobertura ARY + APACHE</b>
+          <span>Soluciones pensadas para acompañar la operación donde realmente las necesitas.</span>
+        </div>
+      </div>
+
+      <div class="trust-item">
+        <span class="trust-icon" aria-hidden="true">03</span>
+        <div>
+          <b>Atención profesional</b>
+          <span>Soporte cercano y confiable para empresas, flotillas y usuarios.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-section" aria-labelledby="cta-title">
+      <p class="eyebrow">Hagamos equipo</p>
+      <h2 id="cta-title">Encuentra la solución ideal para tu operación.</h2>
+      <p>
+        Nuestro equipo puede orientarte para elegir el servicio ARY que mejor se adapte a tus necesidades de control, presupuesto y consumo.
+      </p>
+      <div class="hero-actions">
+        <a class="hero-btn" href="ary_contacto.htm">Contactar a ARY</a>
+        <a class="ghost-btn" href="ary_ubica_nuestras_estaciones.htm">Ver estaciones</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-content">
+      <nav class="footer-links" aria-label="Enlaces del pie de página">
+        <a href="ary_conoce_nuestra_empresa.htm">Empresa</a>
+        <a href="ary_ubica_nuestras_estaciones.htm">Estaciones</a>
+        <a href="ary_servicios.htm">Servicios</a>
+        <a href="ary_productos.htm">Productos</a>
+        <a href="ary_contacto.htm">Contacto</a>
+      </nav>
+      <p class="footer-copyright">
+        <strong>grupoary.com.mx</strong> © 2012 – <span id="currentYear">2026</span>. Todos los derechos reservados.
+      </p>
+      <p class="footer-credits">ARY Super Servicios</p>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const header = document.querySelector(".site-header");
+      const progress = document.querySelector(".scroll-progress");
+      const menuToggle = document.querySelector(".menu-toggle");
+      const nav = document.querySelector(".site-nav");
+      const navLinks = Array.from(document.querySelectorAll(".site-nav a"));
+      const cursorEnergy = document.querySelector(".cursor-energy");
+      const cards = Array.from(document.querySelectorAll(".service-card"));
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Año automático.
+      const year = document.getElementById("currentYear");
+      if (year) year.textContent = new Date().getFullYear();
+
+      // Scroll: header compacto + barra de progreso.
+      const updateScrollUI = () => {
+        const scrollY = window.scrollY || document.documentElement.scrollTop;
+        header?.classList.toggle("is-scrolled", scrollY > 18);
+
+        if (progress) {
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const value = maxScroll > 0 ? Math.min(100, (scrollY / maxScroll) * 100) : 0;
+          progress.style.width = `${value}%`;
+        }
+      };
+
+      updateScrollUI();
+      window.addEventListener("scroll", updateScrollUI, { passive: true });
+      window.addEventListener("resize", updateScrollUI, { passive: true });
+
+      // Menú móvil accesible.
+      const closeMenu = () => {
+        if (!nav || !menuToggle) return;
+        nav.classList.remove("is-open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.setAttribute("aria-label", "Abrir menú");
+        document.body.classList.remove("menu-open");
+      };
+
+      menuToggle?.addEventListener("click", () => {
+        const open = !nav?.classList.contains("is-open");
+        nav?.classList.toggle("is-open", open);
+        menuToggle.setAttribute("aria-expanded", String(open));
+        menuToggle.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+        document.body.classList.toggle("menu-open", open);
+      });
+
+      navLinks.forEach((link) => link.addEventListener("click", closeMenu));
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeMenu();
+      });
+
+      document.addEventListener("pointerdown", (event) => {
+        if (!nav?.classList.contains("is-open")) return;
+        if (nav.contains(event.target) || menuToggle?.contains(event.target)) return;
+        closeMenu();
+      });
+
+      // Aparición suave de tarjetas.
+      if ("IntersectionObserver" in window && !reduceMotion) {
+        const revealObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return;
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            });
+          },
+          { threshold: 0.16, rootMargin: "0px 0px -8%" }
+        );
+
+        cards.forEach((card, index) => {
+          card.style.transitionDelay = `${Math.min(index * 90, 260)}ms`;
+          revealObserver.observe(card);
+        });
+      } else {
+        cards.forEach((card) => card.classList.add("is-visible"));
+      }
+
+      // Spotlight en tarjetas solo con mouse fino.
+      if (matchMedia("(pointer: fine) and (min-width: 901px)").matches) {
+        cards.forEach((card) => {
+          card.addEventListener("pointermove", (event) => {
+            const rect = card.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 100;
+            const y = ((event.clientY - rect.top) / rect.height) * 100;
+            card.style.setProperty("--spot-x", `${x}%`);
+            card.style.setProperty("--spot-y", `${y}%`);
+          });
+
+          card.addEventListener("pointerleave", () => {
+            card.style.setProperty("--spot-x", "50%");
+            card.style.setProperty("--spot-y", "50%");
+          });
+        });
+      }
+
+      // Halo del cursor.
+      if (cursorEnergy && matchMedia("(pointer: fine) and (min-width: 901px)").matches && !reduceMotion) {
+        window.addEventListener(
+          "pointermove",
+          (event) => {
+            cursorEnergy.style.left = `${event.clientX}px`;
+            cursorEnergy.style.top = `${event.clientY}px`;
+            cursorEnergy.style.opacity = "1";
+          },
+          { passive: true }
+        );
+
+        document.addEventListener("pointerleave", () => {
+          cursorEnergy.style.opacity = "0";
+        });
+      }
+
+      // Partículas ARY. Se omiten en móvil pequeño, ahorro de datos y movimiento reducido.
+      const canvas = document.getElementById("ary-particles");
+      const ctx = canvas?.getContext("2d");
+      const saveData = navigator.connection?.saveData === true;
+      const smallMobile = matchMedia("(max-width: 640px)").matches;
+
+      if (canvas && ctx && !reduceMotion && !saveData && !smallMobile) {
+        let width = 0;
+        let height = 0;
+        let dpr = 1;
+        let particles = [];
+        const pointer = { x: -9999, y: -9999 };
+
+        const resizeCanvas = () => {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+          canvas.width = Math.floor(width * dpr);
+          canvas.height = Math.floor(height * dpr);
+          canvas.style.width = `${width}px`;
+          canvas.style.height = `${height}px`;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          const count = Math.max(28, Math.min(72, Math.floor((width * height) / 28000)));
+          particles = Array.from({ length: count }, (_, index) => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.3,
+            r: Math.random() * 1.5 + 0.6,
+            orange: index % 4 === 0
+          }));
+        };
+
+        window.addEventListener("resize", resizeCanvas, { passive: true });
+        window.addEventListener(
+          "pointermove",
+          (event) => {
+            pointer.x = event.clientX;
+            pointer.y = event.clientY;
+          },
+          { passive: true }
+        );
+
+        const draw = () => {
+          ctx.clearRect(0, 0, width, height);
+
+          for (let i = 0; i < particles.length; i += 1) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < -10) p.x = width + 10;
+            if (p.x > width + 10) p.x = -10;
+            if (p.y < -10) p.y = height + 10;
+            if (p.y > height + 10) p.y = -10;
+
+            const dxp = p.x - pointer.x;
+            const dyp = p.y - pointer.y;
+            const pointerDistance = Math.hypot(dxp, dyp);
+
+            if (pointerDistance < 100 && pointerDistance > 0.1) {
+              p.x += (dxp / pointerDistance) * 0.45;
+              p.y += (dyp / pointerDistance) * 0.45;
+            }
+
+            ctx.beginPath();
+            ctx.fillStyle = p.orange ? "rgba(252,177,68,.72)" : "rgba(215,42,147,.56)";
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            for (let j = i + 1; j < particles.length; j += 1) {
+              const q = particles[j];
+              const dx = p.x - q.x;
+              const dy = p.y - q.y;
+              const distance = Math.hypot(dx, dy);
+
+              if (distance < 100) {
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(244,177,212,${(1 - distance / 100) * 0.09})`;
+                ctx.lineWidth = 0.7;
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(q.x, q.y);
+                ctx.stroke();
+              }
+            }
+          }
+
+          requestAnimationFrame(draw);
+        };
+
+        resizeCanvas();
+        draw();
+      }
+    })();
+  </script>
+</body>
+</html>

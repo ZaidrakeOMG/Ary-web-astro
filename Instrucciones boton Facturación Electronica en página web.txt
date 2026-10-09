@@ -1,0 +1,6 @@
+
+       <td width="40%" height="35"><div align="center"><strong>Ir al Sistema de Facturación en Línea</strong></div></td>
+       <td width="15%"><div align="center"></div></td>
+
+       <td align="center"><a href="https://grupoary.ecsmexico.com:2440/facturacionweb/" title="Facturación Electrónica" target="_blank" onmouseover="MM_swapImage('BtnFactura','','Images/btn_factura_02.png',1)" onmouseout="MM_swapImgRestore()"><img src="Images/btn_factura_01.png" alt="Boton Factura" width="213" height="41" id="BtnFactura" /></a></td>   
+       <td align="center">&nbsp;</td>
