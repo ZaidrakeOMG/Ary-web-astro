@@ -139,8 +139,12 @@ def main():
                 overflow=page.evaluate('document.documentElement.scrollWidth>window.innerWidth+1')
                 assert not overflow,(route,width,'horizontal overflow')
                 assert page.locator('h1').count()==1,(route,'one main heading')
-                for image in page.locator('img').all():
-                    if not OFFLINE: image.scroll_into_view_if_needed(); page.wait_for_timeout(15)
+                # Load even CSS-hidden desktop illustrations without trying to scroll to them.
+                # This changes only loading priority in the test, not layout or production HTML.
+                if not OFFLINE:
+                    page.locator('img').evaluate_all("images => images.forEach(i => i.loading = 'eager')")
+                    for image in page.locator('img').all():
+                        if image.is_visible(): image.scroll_into_view_if_needed(); page.wait_for_timeout(15)
                 page.wait_for_function('Array.from(document.images).every(i=>i.complete&&i.naturalWidth>0)')
                 if route=='/facturacion/':
                     page.locator('#tab-factura').click()
