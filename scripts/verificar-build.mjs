@@ -1,65 +1,80 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+const out=path.resolve(process.env.ARY_OUT_DIR || 'dist');
+const read=p=>fs.readFileSync(p,'utf8');
+const source=read('legacy/billing-original.htm');
+const billing=read(path.join(out,'facturacion/index.html'));
+const scripts=s=>[...s.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(x=>x[1]);
+const originalCore=scripts(source).find(x=>x.includes("const API = '/api/facturacion'"));
+const builtCore=scripts(billing).find(x=>x.includes("const API = '/api/facturacion'"));
+assert.ok(originalCore,'Missing baseline billing script');
+assert.equal(builtCore,originalCore,'STOP: operational billing code changed');
+const digest=createHash('sha256').update(builtCore).digest('base64');
+assert.ok(billing.includes('sha256-'+digest),'Billing inline script is not permitted by its CSP');
+assert.ok(billing.includes("connect-src 'self'") || billing.includes('connect-src &#39;self&#39;'),'Missing same-origin API CSP');
+const attrs=s=>Object.fromEntries([...s.matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)].map(x=>[x[1],x[2]??x[3]??x[4]??'']));
 
-const read = path => fs.readFileSync(path, 'utf8');
-const original = read('ary_facturacion.htm');
-const legacy = read('dist/ary_facturacion.htm');
-const astroBilling = read('dist/facturacion/index.html');
-const configOriginal = read('web.config');
-const configBuild = read('dist/web.config');
+// A successful Astro build can still inline a small UI module. Verify every
+// executable inline script, not just the preserved billing program.
+const cspTag=[...billing.matchAll(/<meta\b([^>]+)>/gi)].map(m=>attrs(m[1])).find(a=>a['http-equiv']?.toLowerCase()==='content-security-policy');
+assert.ok(cspTag?.content,'Billing CSP is missing');
+const policy=cspTag.content.replaceAll('&#39;',"'").replaceAll('&quot;','"');
+const scriptDirective=policy.split(';').map(s=>s.trim()).find(s=>s.startsWith('script-src '));
+assert.ok(scriptDirective && !scriptDirective.includes("'unsafe-inline'"),'Billing must not permit arbitrary inline JavaScript');
+for(const script of billing.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
+ const a=attrs(script[1]);
+ if(a.src){assert.ok(a.src.startsWith('/') && !a.src.startsWith('//'),'Unexpected external billing script origin');continue;}
+ if(a.type && !['module','text/javascript','application/javascript'].includes(a.type.toLowerCase()))continue;
+ if(!script[2].trim())continue;
+ const hash=createHash('sha256').update(script[2]).digest('base64');
+ assert.ok(scriptDirective.includes("'sha256-"+hash+"'"),'STOP: an inline script would be blocked by billing CSP');
+}
 
-// El bot ya funciona: se preserva el archivo de producción sin reescribir su JavaScript.
-assert.equal(legacy, original, 'El portal histórico se debe copiar sin alteraciones');
-const extractScripts = html => {
-  const scripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
-  assert.ok(scripts.length, 'No se encontró el script crítico de facturación');
-  return scripts.map(s=>s[1]).join('\n');
-};
-assert.equal(extractScripts(legacy), extractScripts(original), 'Script histórico modificado');
-assert.equal(extractScripts(astroBilling), extractScripts(original), 'La integración Astro modificó el script del bot');
-for(const token of ['id="form-factura"','id="form-alta"',"const API = '/api/facturacion'", "'/solicitudes'", "'/estado'", "'/recepcion'", 'X-ARY-Request-Id', 'X-ARY-CSRF']){
-  assert.ok(original.includes(token), `Falta componente del portal original: ${token}`);
-  assert.ok(astroBilling.includes(token), `Astro no conserva el componente: ${token}`);
+function contract(html){
+ const result={};
+ for(const form of html.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form>/gi)){
+  const id=attrs(form[1]).id;if(!id?.startsWith('form-'))continue;
+  result[id]=[...form[2].matchAll(/<(input|select)\b([^>]*)>/gi)].map(x=>{
+   const a=attrs(x[2]);const item={tag:x[1],name:a.name,type:a.type||(x[1]==='input'?'text':'select')};
+   for(const k of ['id','minlength','maxlength','pattern'])if(a[k]!==undefined)item[k]=a[k];
+   item.required=a.required!==undefined;return item;
+  }).sort((a,b)=>a.name.localeCompare(b.name));
+ }
+ return result;
 }
-assert.ok(astroBilling.includes('<base href="/"'), 'La ruta Astro debe resolver assets desde la raíz');
-assert.ok(astroBilling.includes('/media/ary-symbol.webp'), 'Logo nuevo no aplicado a facturación');
-assert.ok(astroBilling.includes('Facturar ticket') && astroBilling.includes('Dar de alta cliente'), 'Pestañas faltantes');
+assert.deepEqual(contract(billing),contract(source),'STOP: a billing field or validation changed');
+for(const id of [...new Set([...originalCore.matchAll(/\$\('([^']+)'\)/g)].map(x=>x[1]))])assert.ok(billing.includes(`id="${id}"`),`Missing original event target: ${id}`);
+const config=read(path.join(out,'web.config'));const rootConfig=read('web.config');
+const rule=s=>s.match(/<rule\b[^>]*name="ARY Portal Facturacion API"[\s\S]*?<\/rule>/)?.[0].replace(/\s+/g,'');
+assert.ok(rule(config),'Missing original API proxy');assert.equal(rule(config),rule(rootConfig),'STOP: backend API rule changed');
+const defaultFiles=config.match(/<defaultDocument\b[^>]*>[\s\S]*?<files>([\s\S]*?)<\/files>/)?.[1];assert.ok(defaultFiles);
+const names=[...defaultFiles.matchAll(/<add\b[^>]*value="([^"]+)"/g)].map(x=>x[1].toLowerCase());assert.equal(names[0],'index.html');assert.equal(names.length,new Set(names).size,'IIS duplicate defaultDocument entries');
+assert.ok(config.includes('mimeType="image/webp"'),'IIS must serve the new WebP photographs');
+assert.ok(!fs.existsSync(path.join(out,'Images')),'Obsolete images must not be deployed');assert.ok(!fs.existsSync(path.join(out,'legacy')),'Legacy source must remain private');
+const release=JSON.parse(read(path.join(out,'release.json')));
+for(const [file,target] of Object.entries(release.aliases)){const html=read(path.join(out,file));assert.ok(html.includes(`content="${target}"`));assert.ok(html.length<1600,'An old design was copied instead of an alias');}
+function walk(p){return fs.readdirSync(p,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(p,e.name)):[path.join(p,e.name)]);}
+let count=0;
+for(const file of walk(out).filter(p=>p.endsWith('.html'))){
+ const html=read(file);if(!html.includes('ary-release'))continue;count++;
+ const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);assert.equal(ids.length,new Set(ids).size,`Duplicate element IDs: ${file}`);
+ assert.ok(!/<iframe/i.test(html),`Embedded old site in ${file}`);
+ for(const m of html.matchAll(/\b(href|src)="([^"<>]+)"/g)){
+  let ref=m[2];if(/^(?:https?:|mailto:|tel:|#|data:)/i.test(ref) || ref.startsWith('//'))continue;
+  assert.ok(ref.startsWith('/'),`Relative link can escape the Astro route: ${ref}`);
+  ref=decodeURIComponent(ref.split(/[?#]/)[0]);
+  if(m[1]==='href')assert.ok(!/\.htm$/i.test(ref),`Navigation returns to the old site: ${ref}`);
+  const dest=path.join(out,ref);assert.ok(fs.existsSync(dest),`Broken local asset/link in ${file}: ${ref}`);
+ }
+}
+assert.ok(count>=11,'Not all Astro routes were generated');
+const results={builtPages:count,scriptSHA256:createHash('sha256').update(builtCore).digest('hex'),billingFields:'unchanged',apiProxy:'unchanged',aliases:Object.keys(release.aliases).length,legacyImagesPublished:false};
+fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify(results,null,2));
+console.log('PASS: '+JSON.stringify(results));
 
-// Evitar el 500.19 de IIS y conservar el rewrite exacto hacia el servidor privado del bot.
-const filesXml=configBuild.match(/<defaultDocument\b[^>]*>[\s\S]*?<files\b[^>]*>([\s\S]*?)<\/files>[\s\S]*?<\/defaultDocument>/i)?.[1];
-assert.ok(filesXml,'IIS defaultDocument/files ausente');
-const defaults=[...filesXml.matchAll(/<add\s+value=["']([^"']+)["']\s*\/>/gi)].map(m=>m[1].toLowerCase());
-assert.equal(defaults[0], 'index.html', 'Astro debe ser el documento principal de IIS');
-assert.equal(new Set(defaults).size, defaults.length, 'IIS HTTP 500.19: documento predeterminado duplicado');
-assert.ok(configBuild.includes('ARY Portal Facturacion API'), 'Regla del bot eliminada');
-assert.ok(configBuild.includes('10.20.20.182:8765'), 'El destino del bot cambió');
-assert.ok(configOriginal.includes('10.20.20.182:8765'), 'La configuración original del bot no coincide');
-assert.ok(configBuild.includes('ARY Astro - Facturacion'), 'No hay redirección de la facturación antigua');
-assert.ok(configBuild.includes('ARY Astro - Inicio'), 'No hay redirección del inicio antiguo');
-assert.ok(configBuild.includes('stopProcessing="true"'), 'IIS debe detener la evaluación de reglas coincidentes');
-
-const routes=['','empresa','estaciones','servicios','productos','contacto','consejos','credito','privacidad','facturacion','error','gracias'];
-for (const route of routes){
-  const file=`dist/${route ? route+'/' : ''}index.html`;
-  assert.ok(fs.existsSync(file), `La ruta Astro ${route||'/'} no fue compilada`);
-}
-for(const image of ['ary-1','ary-2','ary-3','ary-4','ary-5','ary-6','apache','ary-symbol','ary-logo','ary-mascota','ary-visual']){
-  const path=`dist/media/${image}.webp`;
-  assert.ok(fs.existsSync(path),`Falta la foto nueva: ${path}`);
-  const data=fs.readFileSync(path);
-  assert.equal(data.toString('ascii',0,4),'RIFF',`Imagen no es WebP: ${path}`);
-  assert.equal(data.toString('ascii',8,12),'WEBP',`Formato WebP inválido: ${path}`);
-}
-const home=read('dist/index.html');
-const stationPage=read('dist/estaciones/index.html');
-assert.ok(home.includes('/media/ary-3.webp') && home.includes('/facturacion/'), 'Portada nueva incompleta');
-for(const photo of ['ary-1','ary-2','ary-3','ary-4','ary-5','ary-6','apache']){
-  assert.ok(stationPage.includes('/media/'+photo+'.webp'), `Falta estación: ${photo}`);
-}
-const businessPages=routes.filter(p=>p!=='facturacion');
-for(const route of businessPages){
-  const page=read(`dist/${route?route+'/':''}index.html`);
-  assert.ok(!/<a\b[^>]*href="(?:default|ary_[^"#]+)\.htm"/i.test(page),`Enlace al sitio antiguo en ${route}`);
-}
-assert.ok(!fs.existsSync('dist/Images/_notes'), 'El build todavía publica assets viejos _notes');
-console.log('OK: Astro responsive, 7 estaciones, 11 imágenes nuevas, 12 rutas, facturación/alta sin cambios y reglas IIS correctas.');
+// The compiled ZIP can be deployed without reinstalling Node/npm dependencies.
+const manifest=Object.fromEntries(walk(out).filter(p=>path.basename(p)!=='sha256-manifest.json').sort().map(p=>[path.relative(out,p).split(path.sep).join('/'),createHash('sha256').update(fs.readFileSync(p)).digest('hex')]));
+fs.writeFileSync(path.join(out,'sha256-manifest.json'),JSON.stringify(manifest,null,2));
+console.log(`SHA256 manifest: ${Object.keys(manifest).length} files.`);

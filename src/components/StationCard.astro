@@ -1,14 +1,10 @@
 ---
-import {mapsLink, type Station} from '../data/site';
-interface Props {station:Station; priority?: boolean}
-const {station,priority=false}=Astro.props;
+import Icon from './Icon.astro';
+import { mapsLink, type Station } from '../data/site';
+interface Props { station: Station; index?: number }
+const { station, index = 0 } = Astro.props;
 ---
-<article class="station-card" data-city={station.city} id={station.id}>
-  <a class="station-photo" href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a ${station.name}`}>
-    <img src={station.image} alt={`Estación de servicio ${station.name}`} loading={priority?'eager':'lazy'} decoding="async" width="1152" height="864" />
-    <span class="station-index">{station.number} / 07</span>
-  </a>
-  <div class="station-info"><span class="station-city">⌖ {station.city}</span><h3>{station.name}</h3><p>{station.address}</p>
-    <a class="station-directions" href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer">Cómo llegar <span aria-hidden="true">↗</span></a>
-  </div>
+<article class="station-card" data-city={station.city} data-search={`${station.name} ${station.city} ${station.address}`} id={station.id}>
+  <div class="station-picture"><img src={`/media/${station.image}.webp`} alt={`Fotografía de ${station.name}`} width="1152" height="864" loading="lazy" decoding="async"/><span class="station-tag">{station.city}</span><span class="station-index">0{index+1}</span></div>
+  <div class="station-content"><span class="overline">ESTACIÓN {station.number}</span><h3>{station.name}</h3><p>{station.address}</p><a class="station-link" href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a ${station.name}, abre Google Maps`}>Cómo llegar <Icon name="external" size={20}/></a></div>
 </article>

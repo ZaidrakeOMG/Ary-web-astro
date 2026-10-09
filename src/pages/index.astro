@@ -1,45 +1,20 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import Icon from '../components/Icon.astro';
 import StationCard from '../components/StationCard.astro';
-import {stations, services} from '../data/site';
-const featured=[stations[0],stations[2],stations[6]];
+import CTA from '../components/CTA.astro';
+import { stations } from '../data/site';
+const quick=[['receipt','¿Necesitas tu factura?','Factura o registra tus datos','/facturacion/'],['pin','Una estación cerca de ti','Encuéntranos en La Laguna','/estaciones/'],['briefcase','Tu negocio, en movimiento','Conoce nuestras soluciones','/servicios/']];
+const services=[['car','Soluciones para flotillas','Opciones para organizar los consumos y acompañar la operación de tus vehículos.','/servicios/'],['card','Crédito empresarial','Conoce los requisitos y las alternativas de atención para tu empresa.','/credito/'],['receipt','Facturación en línea','Solicita tu factura o da de alta tus datos fiscales desde tu teléfono.','/facturacion/']];
 ---
-<SiteLayout title="Grupo ARY | Gasolinerías y soluciones para seguir avanzando" description="Gasolinerías Grupo ARY en Gómez Palacio, Lerdo y Torreón. Encuentra estaciones, servicios para flotillas, alta de clientes y facturación electrónica." active="inicio">
-  <section class="hero">
-    <div class="shell hero-grid">
-      <div>
-        <span class="eyebrow light">Gasolinerías Grupo ARY</span>
-        <h1><span>Tu camino.</span><span>Tu energía.</span><span class="accent-gold">Nuestra pasión.</span></h1>
-        <p>Cerca de ti cuando el camino llama. Estaciones de servicio, soluciones para flotillas y trámites más sencillos, todo en un mismo lugar.</p>
-        <div class="actions"><a class="button gold" href="/estaciones/">Encuentra tu estación <span aria-hidden="true">↗</span></a><a class="button outline" href="/facturacion/">Facturar o darme de alta <span aria-hidden="true">▤</span></a></div>
-        <div class="hero-chips"><span>7 ubicaciones</span><span>Durango y Coahuila</span><span>Facturación en línea</span></div>
-      </div>
-      <div class="hero-photo-wrap">
-        <div class="hero-photo"><img src="/media/ary-3.webp" width="1152" height="864" alt="Estación ARY iluminada por la noche" fetchpriority="high" decoding="async" /><div class="photo-credit"><div><small>Tu próxima parada</small><strong>ARY Super Servicios</strong></div><span aria-hidden="true">↗</span></div></div>
-        <div class="floating-mark"><img src="/media/ary-logo.webp" width="93" height="93" alt="" /><span>Siempre contigo</span></div>
-      </div>
-    </div>
-  </section>
-  <section class="ribbon" aria-label="Beneficios de Grupo ARY"><div class="shell ribbon-grid">
-    <div class="ribbon-item"><span class="ribbon-icon" aria-hidden="true">⌖</span><div><strong>Estamos cerca de ti</strong><small>7 estaciones para tus recorridos</small></div></div>
-    <div class="ribbon-item"><span class="ribbon-icon" aria-hidden="true">◈</span><div><strong>Soluciones para empresas</strong><small>Flotillas y control de consumos</small></div></div>
-    <div class="ribbon-item"><span class="ribbon-icon" aria-hidden="true">▤</span><div><strong>Facturación digital</strong><small>Alta fiscal y tickets en un mismo portal</small></div></div>
+<SiteLayout title="ARY Gasolinerías | Tu camino. Nuestra energía." description="Estaciones ARY en Gómez Palacio, Lerdo y Torreón. Ubicaciones, servicios para flotillas y facturación en línea." active="inicio">
+  <section class="home-hero"><div class="wrap hero-grid">
+    <div class="hero-copy"><span class="hero-kicker">CERCA DE TI, EN CADA TRAYECTO</span><h1><span>Tu camino.</span><span>Nuestra <em>energía.</em></span></h1><p>Desde tu primera parada del día hasta el regreso a casa. En ARY estamos para que sigas avanzando.</p><div class="button-row"><a class="button button-primary" href="/estaciones/">Ver estaciones <Icon name="external" size={18}/></a><a class="button button-outline" href="/facturacion/">Quiero facturar <Icon name="receipt" size={18}/></a></div><div class="hero-reassure"><Icon name="shield" size={19}/><span>Atención cercana.</span><span>Soluciones para tu camino.</span></div></div>
+    <div class="hero-image"><img src="/media/ary-3.webp" alt="Estación ARY III iluminada por la noche en Torreón" width="1152" height="864" fetchpriority="high" decoding="async"/><span class="hero-photo-label">ARY III · Torreón</span><div class="hero-image-card"><span class="icon-surface"><Icon name="pin" size={24}/></span><div><strong>Tu próxima parada, más cerca.</strong><small>7 estaciones en la Comarca Lagunera</small></div><a class="circle-link" href="/estaciones/" aria-label="Ver nuestras siete estaciones"><Icon name="external" size={20}/></a></div></div>
   </div></section>
-  <section class="section blush"><div class="shell">
-    <div class="heading-row"><div><span class="eyebrow">A tu lado, siempre</span><h2 class="section-title">Todo lo que necesitas.<br /><span class="accent">Sin complicaciones.</span></h2><p class="section-lead">Queremos que cada parada sea el inicio de algo bueno. Conoce todo lo que Grupo ARY tiene para ti.</p></div><a class="text-link" href="/servicios/">Ver todos los servicios ↗</a></div>
-    <div class="services-grid">{services.map(item=><article class="service-card"><span class="service-icon" aria-hidden="true">{item.icon}</span><span class="service-index">{item.id} / GRUPO ARY</span><h3>{item.title}</h3><p>{item.body}</p><a href={item.href}>Descubrir <span aria-hidden="true">→</span></a></article>)}</div>
-  </div></section>
-  <section class="section white"><div class="shell">
-    <div class="heading-row"><div><span class="eyebrow">Encuentra tu próxima parada</span><h2 class="section-title">Siempre hay una ARY<br /><span class="accent">en tu camino.</span></h2><p class="section-lead">Conoce algunas de nuestras estaciones en la Comarca Lagunera.</p></div><a class="text-link" href="/estaciones/">Ver las 7 estaciones ↗</a></div>
-    <div class="station-grid">{featured.map(station=><StationCard station={station} />)}</div>
-    <div style="text-align:center;margin-top:34px"><a class="button outline-light" href="/estaciones/">Explorar todas las ubicaciones <span aria-hidden="true">↗</span></a></div>
-  </div></section>
-  <section class="section blush"><div class="shell split-grid">
-    <div class="split-photo"><img src="/media/ary-2.webp" alt="Estación ARY de día" width="1152" height="864" loading="lazy" decoding="async" /></div>
-    <div class="split-text"><span class="eyebrow">Conoce a Grupo ARY</span><h2>Mucho más que <span class="accent">combustible.</span></h2><p>Nuestras estaciones forman parte del día a día de familias, conductores y negocios de la región. Trabajamos para que tu experiencia sea más fácil, cercana y confiable.</p><a class="button magenta" href="/empresa/">Conoce nuestra empresa <span aria-hidden="true">↗</span></a></div>
-  </div></section>
-  <section class="section compact white"><div class="shell">
-    <div class="feature-banner"><div><span class="eyebrow light">Tu trámite, donde estés</span><h2>Facturar nunca se vio tan fácil.</h2><p>Factura tu ticket o solicita tu alta fiscal. Revisa tus datos y consulta el estado de tu trámite desde tu celular.</p></div><a class="button gold" href="/facturacion/">Ir a facturación <span aria-hidden="true">↗</span></a></div>
-  </div></section>
-  <section class="section blush"><div class="shell mascot-bar"><img src="/media/ary-mascota.webp" alt="Mascota de Grupo ARY" loading="lazy" width="261" height="267" /><div><span class="eyebrow" style="margin-bottom:8px">Un consejo de ARY</span><h3>Cuida tu auto, disfruta el camino.</h3><p>Pequeños hábitos pueden hacer la diferencia en tus recorridos diarios.</p></div><a class="button magenta" href="/consejos/">Ver consejos ↗</a></div></section>
+  <div class="quick-strip"><div class="wrap quick-grid">{quick.map(([icon,title,detail,href])=><a class="quick-item" href={href}><Icon name={icon} size={24}/><div><strong>{title}</strong><small>{detail}</small></div><Icon name="arrow" class="quick-arrow"/></a>)}</div></div>
+  <section class="section"><div class="wrap"><div class="section-top"><div><span class="overline">MUCHO MÁS QUE UNA PARADA</span><h2>Todo para seguir <em>adelante.</em></h2><p>Servicios para ti, tu vehículo y el movimiento de tu negocio.</p></div><a class="text-link" href="/servicios/">Explora nuestros servicios <Icon name="external" size={18}/></a></div><div class="services-grid">{services.map(([icon,title,text,href],i)=><article class="service-tile"><div class="tile-head"><span class="tile-icon"><Icon name={icon} size={26}/></span><span class="tile-number">0{i+1}</span></div><h3>{title}</h3><p>{text}</p><a class="text-link" href={href}>Conocer más <Icon name="arrow" size={18}/></a></article>)}</div></div></section>
+  <section class="section station-section home-stations"><div class="wrap"><div class="section-top"><div><span class="overline">SOMOS PARTE DE TU RUTA</span><h2>Siempre hay un nuevo <em>destino.</em></h2><p>Gómez Palacio, Lerdo y Torreón. Encuentra tu estación y abre la ruta para llegar.</p></div><a class="text-link" href="/estaciones/">Ver las 7 estaciones <Icon name="external" size={18}/></a></div><div class="station-grid">{[stations[0],stations[1],stations[2]].map((station,i)=><StationCard station={station} index={i}/>)}</div><div class="stations-foot"><a class="button button-outline" href="/estaciones/">Encuentra tu próxima parada <Icon name="pin" size={18}/></a></div></div></section>
+  <section class="section"><div class="wrap billing-banner"><div class="billing-visual" aria-hidden="true"><div class="mini-receipt"><div class="receipt-logo">ARY.</div><p>Tu trámite, en un solo lugar.</p><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-total"><Icon name="receipt" size={18}/> Facturación en línea</div></div><div class="floating-badge"><Icon name="phone" size={19}/> Desde tu teléfono</div></div><div><span class="overline">MENOS VUELTAS. MÁS TIEMPO PARA TI.</span><h2>Tu factura,<br/><em>sin complicaciones.</em></h2><p>¿Ya eres cliente? Solicita tu factura. ¿Es tu primera vez? Registra tus datos fiscales desde el mismo portal.</p><ol class="simple-steps"><li><span>01</span> Elige tu trámite y tu estación.</li><li><span>02</span> Completa y revisa tus datos.</li><li><span>03</span> Conserva la referencia y consulta el avance.</li></ol><a class="button button-primary" href="/facturacion/">Ir a facturación <Icon name="external" size={18}/></a></div></div></section>
+  <CTA title="La energía de tu día. La confianza de siempre." description="Conoce al equipo de estaciones que acompaña tus recorridos en La Laguna." href="/empresa/" label="Conoce ARY"/>
 </SiteLayout>

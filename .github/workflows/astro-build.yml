@@ -1,35 +1,56 @@
-name: Compilar y comprobar Astro
-
+name: Astro Pro - navegador e IIS
 on:
   push:
-    branches: [main, astro-real-migracion-20261009, astro-ary-mobile-v2-20261009]
+    branches: [main, design-pro-android-20261009]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 15
     steps:
-      - name: Descargar codigo
-        uses: actions/checkout@v4
-      - name: Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - name: Instalar dependencias
-        run: npm install --no-audit --no-fund
-      - name: Construir sitio Astro
-        run: npm run build
-      - name: Verificar facturacion, alta e IIS
-        run: npm run test:integrity
-      - name: Archivar build Astro para revisión
-        if: success()
-        uses: actions/upload-artifact@v4
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
+      - run: npm run test:integrity
+      - uses: actions/setup-python@v5
         with:
-          name: grupo-ary-astro-dist
-          path: dist/
-          retention-days: 3
-          if-no-files-found: error
+          python-version: '3.12'
+      - run: pip install -r tests/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser regression with simulated billing only
+        run: |
+          python -m http.server 4173 --directory dist > /tmp/ary-test-http.log 2>&1 &
+          python tests/browser_test.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ary-browser-and-build
+          path: |
+            test-results/
+            dist/
+          include-hidden-files: true
+          retention-days: 7
+  windows-syntax:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run test:integrity
+      - name: Parse PowerShell scripts and IIS XML without changing services
+        shell: powershell
+        run: ./tests/windows_validation.ps1

@@ -1,0 +1,9 @@
+# Keep the signed billing script byte-identical on Windows and Linux.
+# HTML parsers normalize CRLF to LF before evaluating CSP script hashes.
+* text=auto eol=lf
+*.bat -text
+*.webp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

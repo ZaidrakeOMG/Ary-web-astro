@@ -1,85 +1,109 @@
-# Grupo ARY — Sitio web con Astro 5 + IIS
+# Grupo ARY — Astro Pro / Android · versión 2.0
 
-Esta **sí es una aplicación Astro real**, con componentes reutilizables, rutas .astro, TypeScript, CSS responsive, generación de HTML estático y compilación con npm run build.
+Sitio corporativo y portal de facturación con una sola identidad visual. La portada, estaciones, servicios, contacto y facturación están construidos con componentes Astro. No se incrusta ni se publica el diseño anterior.
 
-## Arquitectura
+## Qué cambia
 
-| Ruta de Astro | Página |
-| --- | --- |
-| / | Inicio con marca Grupo ARY, estaciones, servicios y accesos rápidos |
-| /empresa/ | Conoce Grupo ARY |
-| /estaciones/ | Siete ubicaciones ARY/Apache, con filtro por ciudad |
-| /servicios/ | Flotillas, tarjeta ARY, vales y servicios |
-| /productos/ | Combustible, lubricantes y productos |
-| /contacto/ | Medios de contacto |
-| /consejos/ | Consejos de mantenimiento y ahorro |
-| /credito/ | Información y contacto para crédito empresarial |
-| /facturacion/ | Portal de facturación y alta de clientes, conservado e integrado con Astro |
+- Diseño claro, magenta y vino; tipografía legible, navegación compartida y fotografías nuevas de cada estación.
+- Adaptación desde 320 px; menú móvil, barra de accesos, controles de al menos 48 px y campos de 16 px. La barra inferior se oculta al detectar el teclado reduciendo la ventana visible.
+- Facturación completamente rediseñada: pestañas, grupos de datos, ayuda de alta, confirmación, comprobante de recepción, errores y seguimiento.
+- Estaciones filtrables por ciudad y búsqueda; las fotografías corresponden a su estación.
+- Las 24 direcciones heredadas redirigen al portal nuevo. No hay enlaces de navegación interna a archivos antiguos.
+- Solo se distribuyen los nuevos recursos de `public/media`. Las imágenes viejas se eliminan del código actual y del contenido publicado. Git conserva el historial; el servidor conserva versiones anteriores para recuperación.
+- Sin fuentes externas, paquetes visuales pesados, rastreadores ni service worker que almacene trámites fiscales.
 
-La carpeta src/ contiene código Astro: src/layouts, src/components, src/data, src/styles y src/pages están organizados por responsabilidad.
+## Facturación: mismo funcionamiento, nueva presentación
 
-La carpeta public/media/ contiene **11 recursos nuevos WebP enviados por ARY**: fotografías ARY I–VI y Apache, logotipos y mascota. Los archivos antiguos public/Images se eliminaron del sitio compilado; los originales de la carpeta Images en la raíz permanecen como respaldo histórico y **no se publican**. Las rutas .htm se mantienen únicamente por compatibilidad y se redirigen a Astro en IIS.
+El archivo `legacy/billing-original.htm` es una referencia privada de compilación: **no se publica**. `src/lib/billing.mjs` extrae exactamente su JavaScript. Las páginas de Astro utilizan una estructura nueva manteniendo los identificadores, nombres de campo, restricciones y eventos esperados por ese código.
 
-## Facturación y alta de clientes: mantener la lógica original
+La verificación compara el script completo byte por byte, no solo sus nombres. También verifica el hash CSP que autoriza el script y los contratos de ambos formularios. Los métodos de pago, catálogos, rango de fechas, CSRF, modo seguro, identificadores, reintentos y seguimiento no se reescribieron.
 
-**No se alteraron el programa Polaris, el backend del bot, los nombres de los campos ni el JavaScript que envía solicitudes.**
+El servicio sigue utilizando:
 
-- En ary_facturacion.htm están los formularios de **Facturar ticket** y **Dar de alta cliente**.
-- Astro genera también /facturacion/ integrando el mismo documento original mediante src/pages/facturacion.astro. Solo añade CSS de presentación (src/styles/billing-skin.css), base href="/" y enlaces de navegación hacia páginas Astro. **El script de facturación permanece idéntico**.
-- El bot sigue usando las rutas /api/facturacion/opciones, /api/facturacion/solicitudes, /api/facturacion/estado y /api/facturacion/recepcion.
-- public/web.config conserva las reglas del proxy, HTTPS y destino privado. Prioriza index.html en defaultDocument y añade 12 reglas de redirección de páginas HTML antiguas a Astro. La configuración del proxy de facturación no cambia.
-- El alta fiscal es un trámite del bot: el sitio envía el tipo ALTA, no crea un cliente directamente desde el navegador ni evita validaciones del backend.
-- El modo seguro del bot permanece controlado por el servidor.
+- `GET /api/facturacion/opciones`
+- `POST /api/facturacion/solicitudes`, para `FACTURA` y `ALTA`
+- `POST /api/facturacion/estado`
+- `POST /api/facturacion/recepcion`
 
-El script npm run test:integrity comprueba estáticamente el archivo legado publicado, los formularios, rutas API y proxy IIS. **No sustituye una prueba real de facturación o alta en Polaris.**
+El bot y Polaris no están incluidos ni se modifican. El alta fiscal sigue siendo procesada por el bot. Una recepción no significa timbrado concluido. No se guardan datos fiscales en una base de datos nueva del navegador.
 
-## Requisitos en Windows Server
+## Publicar en el IIS existente
 
-- Node.js 20 o 22 LTS, y npm.
-- IIS instalado con HTTPS, bindings y certificado configurados.
-- IIS URL Rewrite y ARR/proxy habilitados para el web.config existente.
-- El backend original de facturación operativo y accesible por la red privada.
-- Permisos de administrador para modificar la ruta física de un sitio IIS.
+Antes de actualizar, conserva un respaldo del sitio y verifica que no tengas cambios locales pendientes. No uses `git reset --hard` ni `git clean` para resolver diferencias de producción.
 
-## Compilar y publicar con un BAT
+### Opción A: desde GitHub
 
-Desde C:\inetpub\wwwroot\grupoary:
-
-1. Haz respaldo antes de actualizar y revisa el resultado de git status.
-2. Actualiza el código con git pull --ff-only origin main **si no hay cambios locales sin resolver**.
-3. Haz clic derecho sobre **INICIAR_ARY_IIS.bat → Ejecutar como administrador**.
-4. El BAT instala Astro **solo si faltan dependencias**; después ejecuta npm run build y npm run test:integrity. Así evita repetir npm install durante cada publicación.
-5. Solo cuando todo sale bien, scripts/publicar-astro-iis.ps1 respalda la configuración de IIS y cambia únicamente un sitio cuya raíz coincida exactamente con la carpeta del proyecto o con su directorio dist.
-6. Inicia el sitio si estaba detenido y abre la web. Si no encuentra coincidencia exacta, no cambia ningún sitio y muestra qué ruta configurar manualmente.
-
-**No ejecuta iisreset, ni cambia puertos, dominios, certificados o el servicio Polaris.** No elimina archivos del directorio previo. Ante un error posterior al cambio intenta restaurar la ruta física.
-
-El sitio IIS debe apuntar a la carpeta dist, **no a la raíz del repositorio**, para evitar exponer archivos Git, herramientas y código fuente.
-
-## Desarrollo y comprobación local
+En CMD, dentro de la copia del proyecto:
 
     cd /d C:\inetpub\wwwroot\grupoary
-    npm install
-    npm run dev
+    git status
+    git pull --ff-only origin main
 
-Astro muestra la dirección de desarrollo (normalmente http://localhost:4321). **La facturación real no funciona ahí sin configurar un proxy seguro a /api/facturacion: prueba con IIS.**
+Solo continúa si el `pull` terminó correctamente. Ejecuta **INICIAR_ARY_IIS.bat como administrador**. Se requiere Node.js 22 actualizado o 24, npm, IIS y sus módulos ya configurados.
 
-Para compilar sin publicar:
+La primera ejecución instala las dependencias fijadas en `package-lock.json`. Si no cambia ese archivo, las siguientes reutilizan la instalación. **El sitio activo no se recompila encima de sí mismo**: se prepara en una carpeta separada.
 
+### Opción B: ZIP compilado, sin npm install
+
+El paquete de entrega incluye `paquete-publicacion/` con los archivos compilados, un manifiesto SHA256 y los scripts de publicación. Extrae el ZIP completo en la carpeta del proyecto (no en `dist`). El paquete no sobrescribe la carpeta `dist` que podría estar activa.
+
+Ejecuta **PUBLICAR_COMPILADO.bat como administrador**. Esta opción no instala dependencias ni requiere Node para publicar.
+
+### Qué hace el publicador
+
+1. Identifica exactamente un sitio IIS asociado con esta carpeta. Si hay ambigüedad, se detiene sin modificar sitios.
+2. Compila y verifica en `.ary-staging`, o valida el manifiesto del paquete compilado.
+3. Crea una carpeta versionada `.ary-releases/fecha-hora`.
+4. **Parte del `web.config` activo en tu servidor**, no sustituye la configuración por una genérica. Conserva bindings, certificado y configuración local. La regla `ARY Portal Facturacion API` debe conservar exactamente su XML.
+5. Actualiza únicamente el documento predeterminado, nuestras rutas heredadas, soporte WebP y un encabezado de versión. Valida que no haya `index.html` duplicados.
+6. Respalda la configuración IIS; cambia la ruta física de ese sitio; comprueba por HTTPS que responde 200 con la nueva versión. Ante una falla, intenta regresar a la ruta anterior.
+7. Consulta solamente las opciones del API. **No envía ninguna factura ni alta de prueba.** Una advertencia de conectividad requiere revisar el bot antes de habilitar atención real.
+
+No hace `iisreset`, no cambia puertos ni detiene Polaris. Puedes cerrar el BAT al terminar: IIS sirve archivos estáticos sin mantener una consola de Node abierta.
+
+Si el nombre/ruta del sitio no se detecta, indica explícitamente el sitio correcto en PowerShell de administrador:
+
+    cd C:\inetpub\wwwroot\grupoary
+    .\scripts\publicar-astro-iis.ps1 -SiteName 'NOMBRE EXACTO EN IIS' -UseCompiled
+
+No uses un nombre de ejemplo: copia el de tu Administrador de IIS.
+
+## Recuperación
+
+Ejecuta **RECUPERAR_VERSION_ANTERIOR.bat** como administrador. Muestra el sitio y la ruta anterior, exige escribir `RESTAURAR` y no elimina archivos. Solo actúa si la ruta activa sigue siendo la de la última publicación registrada.
+
+Mantén el sitio apuntando a `.ary-releases/...` después de publicar. No lo regreses a la raíz del repositorio: allí están los archivos de trabajo y `.git`.
+
+## Pruebas y límites de la validación
+
+    npm ci
+    npm run check
     npm run build
     npm run test:integrity
 
-## Verificaciones antes de liberar
+Las pruebas de navegador utilizan Python y Playwright:
 
-- Inicio, navegación, teléfonos y escritorio.
-- Página /estaciones/, fotografías nuevas ARY I–VI y Apache, filtros por ciudad y enlaces de mapas.\n- Menús y pie de página enlazados solo a rutas Astro y redirecciones de las antiguas .htm.\n- Diseño táctil con barra inferior de Estaciones y Facturar/Alta para móviles.
-- URLs /ary_facturacion.htm y /facturacion/ y sus dos formularios.
-- Carga de opciones de facturación, alta fiscal, envío y consulta de estado.
-- Certificado HTTPS, ARR, URL Rewrite, permisos y backend.
-- Bot en modo seguro y, posteriormente, pruebas controladas en producción.
+    pip install -r tests/requirements.txt
+    playwright install chromium
+    python -m http.server 4173 --directory dist
 
-**Seguridad:** evita subir .env, contraseñas, tokens, datos de clientes y respaldos. Los scripts PHP heredados se mantienen por compatibilidad; revísalos de manera independiente antes de activar PHP en IIS.
+En otra terminal:
 
-## Fotografías\n\n- Se convirtieron las fotos originales del ZIP a WebP de tamaño reducido para acelerar la carga en móvil.\n- Se retiraron del **build** las imágenes antiguas de public/Images; el directorio Images original del repositorio sirve como respaldo y no se despliega en dist.\n- El CSS y la galería se diseñaron para escritorio, tabletas y teléfonos sin exigir JavaScript para navegar.\n\n## Recuperación
+    python tests/browser_test.py
 
-Si necesitas volver al sitio anterior, restaura desde el Administrador de IIS la ruta física anterior a dist (el directorio original no se elimina). El script guarda también un respaldo de IIS mediante appcmd add backup GrupoARY-Astro-....
+Se comprueban 13 rutas a ocho tamaños, navegación, imágenes, campos, confirmación de factura, altas, errores, pausas, reintentos con mismo identificador y recuperación de seguimiento. El API está interceptado con respuestas simuladas; no se llama al backend real. El recorrido HTTP de CI conserva la CSP original. `test-results/browser-report.json` identifica qué comprobaciones se ejecutaron y si se usó el modo aislado de renderizado.
+
+**La emulación de Android no sustituye probar un teléfono físico. Compilar y probar respuestas simuladas tampoco valida una emisión real en Polaris ni tu configuración particular de IIS.** Antes de atender clientes, revisa desde tu Android los dos formularios y realiza las pruebas controladas correspondientes al modo seguro del bot.
+
+## Estructura
+
+- `src/pages/`: 13 páginas de Astro.
+- `src/components/`, `src/styles/`, `src/scripts/`: interfaz compartida.
+- `src/data/site.ts`: ubicaciones, correos y contactos del sitio.
+- `public/media/`: fotografías y marca nuevas.
+- `legacy/`: referencia operativa privada, excluida del sitio compilado.
+- `scripts/postbuild.mjs`: compatibilidad de URL e información de versión.
+- `scripts/verificar-build.mjs`: regresiones de funcionamiento y manifiesto de distribución.
+- `scripts/publicar-astro-iis.ps1`: publicación aislada y reversible.
+
+No subas contraseñas, `.env`, datos de clientes, certificados ni copias de producción al repositorio. Las herramientas de prueba y las versiones de recuperación no se publican como contenido web.

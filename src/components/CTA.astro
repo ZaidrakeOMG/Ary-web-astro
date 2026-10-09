@@ -1,0 +1,5 @@
+---
+import Icon from './Icon.astro';
+const { title = 'Tu siguiente parada empieza aquí.', description = 'Encuentra la estación ARY que queda en tu camino.', href='/estaciones/', label='Ver estaciones' } = Astro.props;
+---
+<section class="section cta-section"><div class="wrap"><div class="cta-banner"><div><span class="overline">SIGUE TU CAMINO CON ARY</span><h2>{title}</h2><p>{description}</p></div><a class="button button-white" href={href}>{label}<Icon name="external"/></a></div></div></section>
