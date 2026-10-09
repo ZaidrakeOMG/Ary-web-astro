@@ -78,6 +78,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Workflow changes require the user's connector, not this contents-only token.
+          git restore --source=HEAD -- .github/workflows
           git add -A
           git commit -m 'Redesign ARY mobile-first: new billing UI, supplied photographs, unified routes and staged IIS deployment'
           git push origin HEAD:design-pro-android-20261009
