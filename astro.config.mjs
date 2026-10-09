@@ -4,5 +4,7 @@ export default defineConfig({
   output: 'static', trailingSlash: 'always',
   outDir: process.env.ARY_OUT_DIR || './dist',
   build: { format: 'directory', inlineStylesheets: 'never' },
+  // Keep shared UI scripts external so billing CSP can remain strict.
+  vite: { build: { assetsInlineLimit: 0 } },
   compressHTML: true,
 });

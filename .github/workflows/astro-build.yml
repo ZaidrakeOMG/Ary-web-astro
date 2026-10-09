@@ -37,6 +37,7 @@ jobs:
           path: |
             test-results/
             dist/
+          include-hidden-files: true
           retention-days: 7
   windows-syntax:
     runs-on: windows-latest

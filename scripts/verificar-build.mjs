@@ -15,6 +15,23 @@ const digest=createHash('sha256').update(builtCore).digest('base64');
 assert.ok(billing.includes('sha256-'+digest),'Billing inline script is not permitted by its CSP');
 assert.ok(billing.includes("connect-src 'self'") || billing.includes('connect-src &#39;self&#39;'),'Missing same-origin API CSP');
 const attrs=s=>Object.fromEntries([...s.matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)].map(x=>[x[1],x[2]??x[3]??x[4]??'']));
+
+// A successful Astro build can still inline a small UI module. Verify every
+// executable inline script, not just the preserved billing program.
+const cspTag=[...billing.matchAll(/<meta\b([^>]+)>/gi)].map(m=>attrs(m[1])).find(a=>a['http-equiv']?.toLowerCase()==='content-security-policy');
+assert.ok(cspTag?.content,'Billing CSP is missing');
+const policy=cspTag.content.replaceAll('&#39;',"'").replaceAll('&quot;','"');
+const scriptDirective=policy.split(';').map(s=>s.trim()).find(s=>s.startsWith('script-src '));
+assert.ok(scriptDirective && !scriptDirective.includes("'unsafe-inline'"),'Billing must not permit arbitrary inline JavaScript');
+for(const script of billing.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
+ const a=attrs(script[1]);
+ if(a.src){assert.ok(a.src.startsWith('/') && !a.src.startsWith('//'),'Unexpected external billing script origin');continue;}
+ if(a.type && !['module','text/javascript','application/javascript'].includes(a.type.toLowerCase()))continue;
+ if(!script[2].trim())continue;
+ const hash=createHash('sha256').update(script[2]).digest('base64');
+ assert.ok(scriptDirective.includes("'sha256-"+hash+"'"),'STOP: an inline script would be blocked by billing CSP');
+}
+
 function contract(html){
  const result={};
  for(const form of html.matchAll(/<form\b([^>]*)>([\s\S]*?)<\/form>/gi)){
