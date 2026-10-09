@@ -1,65 +1,85 @@
-# Grupo ARY · Portal web para IIS
+# Grupo ARY — Sitio web con Astro 5 + IIS
 
-Sitio corporativo de **ARY Super Servicios**, con secciones de estaciones, servicios, productos, crédito, consejos y trámites de facturación.
+Esta **sí es una aplicación Astro real**, con componentes reutilizables, rutas .astro, TypeScript, CSS responsive, generación de HTML estático y compilación con npm run build.
 
-**Estado técnico:** hoy el sitio utiliza archivos estáticos `.htm` y el servidor web **IIS**. A pesar del nombre del repositorio `Ary-web-astro`, **no es todavía una aplicación de Astro Framework** (no existe `astro.config.mjs` ni `package.json`). Esta actualización prioriza mantener operativa la web publicada y el bot de facturación.
+## Arquitectura
 
-## Iniciar la página desde Windows Server
-
-1. Conserva la carpeta en `C:\inetpub\wwwroot\grupoary` o en la ubicación real asignada en IIS.
-2. Ejecuta **INICIAR_ARY_IIS.bat** como administrador desde la carpeta del proyecto.
-3. El script localiza el sitio IIS cuya ruta física coincide con esta carpeta (o contiene la carpeta), arranca su Application Pool y sitio si están detenidos y abre `default.htm` en el navegador.
-4. Si no lo encuentra, primero configura en IIS la ruta física, los bindings, el certificado HTTPS y el grupo de aplicaciones.
-
-El BAT **no** hace `iisreset`, **no** crea puertos ni bindings y **no** inicia Polaris ni el servicio de facturación; son servicios independientes. Tampoco instala Astro ni Node.
-
-## Facturación y alta de clientes
-
-El archivo `ary_facturacion.htm` incorpora dos pestañas:
-
-- **Facturar ticket** para clientes existentes.
-- **Dar de alta cliente** para registrar los datos fiscales mediante el bot.
-
-Se preservan los campos, el JavaScript, las validaciones y estas rutas del API:
-
-- `GET /api/facturacion/opciones`
-- `POST /api/facturacion/solicitudes` (tipo `FACTURA` o `ALTA`)
-- `POST /api/facturacion/estado`
-- `POST /api/facturacion/recepcion`
-
-**No se ha cambiado la lógica del bot.** Las mejoras en esa página son únicamente visuales (CSS). La configuración original `web.config` tampoco se alteró: contiene la redirección HTTPS y el proxy hacia el servicio interno de facturación.
-
-La prueba real de captura, registro del cliente en Polaris y timbrado debe realizarse en el servidor, siguiendo el modo seguro del bot y los procedimientos de producción.
-
-## Páginas y archivos relevantes
-
-| Ruta | Propósito |
+| Ruta de Astro | Página |
 | --- | --- |
-| `default.htm` | Inicio de Grupo ARY |
-| `ary_facturacion.htm` | Facturación + alta de clientes |
-| `ary_ubica_nuestras_estaciones.htm` | Estaciones |
-| `ary_tips_ahorro_combustible.htm` | Consejos de consumo (página nueva) |
-| `ary_servicios_solicitud_credito.htm` | Información de crédito (página nueva, sin solicitud automática) |
-| `assets/ary-extras.css` | Diseño y accesos móviles |
-| `INICIAR_ARY_IIS.bat` | Arranque de la página en IIS |
-| `scripts/iniciar-ary-iis.ps1` | Detección e inicio del sitio |
-| `web.config` | Configuración existente de IIS, HTTPS y API |
+| / | Inicio con marca Grupo ARY, estaciones, servicios y accesos rápidos |
+| /empresa/ | Conoce Grupo ARY |
+| /estaciones/ | Siete ubicaciones ARY/Apache, con filtro por ciudad |
+| /servicios/ | Flotillas, tarjeta ARY, vales y servicios |
+| /productos/ | Combustible, lubricantes y productos |
+| /contacto/ | Medios de contacto |
+| /consejos/ | Consejos de mantenimiento y ahorro |
+| /credito/ | Información y contacto para crédito empresarial |
+| /facturacion/ | Portal de facturación y alta de clientes, conservado e integrado con Astro |
 
-## Llevar los cambios de GitHub al servidor
+La carpeta src/ contiene código Astro: src/layouts, src/components, src/data, src/styles y src/pages están organizados por responsabilidad.
 
-**Antes de actualizar, respalda tu sitio y revisa `git status`.** Si hay cambios locales, resuélvelos antes de traer la rama remota.
+La carpeta public/ mantiene **las rutas y archivos heredados** necesarios para publicar en IIS: imágenes, páginas .htm, formularios, favicon.ico y web.config. Esto permite conservar los enlaces existentes.
 
-```cmd
-cd /d C:\inetpub\wwwroot\grupoary
-git status
-git pull --ff-only origin main
-```
+## Facturación y alta de clientes: mantener la lógica original
 
-No uses `git reset --hard` ni `git clean -fd` sobre la web productiva sin respaldar.
+**No se alteraron el programa Polaris, el backend del bot, los nombres de los campos ni el JavaScript que envía solicitudes.**
 
-## Recomendaciones de seguridad
+- En ary_facturacion.htm están los formularios de **Facturar ticket** y **Dar de alta cliente**.
+- Astro genera también /facturacion/ integrando el mismo documento original mediante src/pages/facturacion.astro. Solo añade la etiqueta HTML base href="/" para recursos relativos; no reescribe el JavaScript del portal.
+- El bot sigue usando las rutas /api/facturacion/opciones, /api/facturacion/solicitudes, /api/facturacion/estado y /api/facturacion/recepcion.
+- public/web.config conserva las reglas del proxy, HTTPS y destino privado. La única diferencia respecto de web.config original es la prioridad de index.html en defaultDocument.
+- El alta fiscal es un trámite del bot: el sitio envía el tipo ALTA, no crea un cliente directamente desde el navegador ni evita validaciones del backend.
+- El modo seguro del bot permanece controlado por el servidor.
 
-- No subas contraseñas, secretos, tokens, datos personales, respaldos ni bases de datos.
-- Mantén el puerto privado del bot detrás del proxy y de las reglas de firewall existentes.
-- Revisa que URL Rewrite/ARR siga activado y que `GET /api/facturacion/opciones` responda correctamente bajo HTTPS.
-- Las páginas PHP heredadas son módulos distintos del bot; si alguna se usa, revisa su compatibilidad y su seguridad antes de habilitar PHP en IIS.
+El script npm run test:integrity comprueba estáticamente el archivo legado publicado, los formularios, rutas API y proxy IIS. **No sustituye una prueba real de facturación o alta en Polaris.**
+
+## Requisitos en Windows Server
+
+- Node.js 20 o 22 LTS, y npm.
+- IIS instalado con HTTPS, bindings y certificado configurados.
+- IIS URL Rewrite y ARR/proxy habilitados para el web.config existente.
+- El backend original de facturación operativo y accesible por la red privada.
+- Permisos de administrador para modificar la ruta física de un sitio IIS.
+
+## Compilar y publicar con un BAT
+
+Desde C:\inetpub\wwwroot\grupoary:
+
+1. Haz respaldo antes de actualizar y revisa el resultado de git status.
+2. Actualiza el código con git pull --ff-only origin main **si no hay cambios locales sin resolver**.
+3. Haz clic derecho sobre **INICIAR_ARY_IIS.bat → Ejecutar como administrador**.
+4. El BAT ejecuta npm install, npm run build y npm run test:integrity.
+5. Solo cuando todo sale bien, scripts/publicar-astro-iis.ps1 respalda la configuración de IIS y cambia únicamente un sitio cuya raíz coincida exactamente con la carpeta del proyecto o con su directorio dist.
+6. Inicia el sitio si estaba detenido y abre la web. Si no encuentra coincidencia exacta, no cambia ningún sitio y muestra qué ruta configurar manualmente.
+
+**No ejecuta iisreset, ni cambia puertos, dominios, certificados o el servicio Polaris.** No elimina archivos del directorio previo. Ante un error posterior al cambio intenta restaurar la ruta física.
+
+El sitio IIS debe apuntar a la carpeta dist, **no a la raíz del repositorio**, para evitar exponer archivos Git, herramientas y código fuente.
+
+## Desarrollo y comprobación local
+
+    cd /d C:\inetpub\wwwroot\grupoary
+    npm install
+    npm run dev
+
+Astro muestra la dirección de desarrollo (normalmente http://localhost:4321). **La facturación real no funciona ahí sin configurar un proxy seguro a /api/facturacion: prueba con IIS.**
+
+Para compilar sin publicar:
+
+    npm run build
+    npm run test:integrity
+
+## Verificaciones antes de liberar
+
+- Inicio, navegación, teléfonos y escritorio.
+- Página /estaciones/, filtros por ciudad y enlaces de mapas.
+- URLs /ary_facturacion.htm y /facturacion/ y sus dos formularios.
+- Carga de opciones de facturación, alta fiscal, envío y consulta de estado.
+- Certificado HTTPS, ARR, URL Rewrite, permisos y backend.
+- Bot en modo seguro y, posteriormente, pruebas controladas en producción.
+
+**Seguridad:** evita subir .env, contraseñas, tokens, datos de clientes y respaldos. Los scripts PHP heredados se mantienen por compatibilidad; revísalos de manera independiente antes de activar PHP en IIS.
+
+## Recuperación
+
+Si necesitas volver al sitio anterior, restaura desde el Administrador de IIS la ruta física anterior a dist (el directorio original no se elimina). El script guarda también un respaldo de IIS mediante appcmd add backup GrupoARY-Astro-....
