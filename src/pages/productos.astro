@@ -1,0 +1,67 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+const items = [
+  {
+    tag: "Combustible",
+    title: "Combustible para tu camino",
+    text: "Consulta las estaciones y conoce dónde puedes realizar tu próxima carga de combustible.",
+    image: "/Images/ubica_estaciones_de_servicio.jpg",
+    alt: "Estación de servicio y área de carga",
+  },
+  {
+    tag: "Mantenimiento",
+    title: "Lubricantes",
+    text: "Descubre productos para el cuidado y mantenimiento de tu vehículo. Pregunta por disponibilidad en tu estación.",
+    image: "/Images/productos_quaker_01.jpg",
+    alt: "Imagen de productos lubricantes",
+  },
+  {
+    tag: "Soluciones",
+    title: "Productos complementarios",
+    text: "Conoce alternativas para acompañar el uso cotidiano de tu automóvil y mantenerlo en buenas condiciones.",
+    image: "/Images/productos_quaker_02.jpg",
+    alt: "Productos de cuidado automotriz",
+  },
+];
+---
+<SiteLayout
+  title="Productos para tu vehículo | Grupo ARY"
+  description="Conoce los combustibles, lubricantes y productos para vehículos que presenta Grupo ARY."
+  active="productos"
+>
+  <section class="page-hero">
+    <div class="container page-hero-split">
+      <div>
+        <span class="eyebrow">Productos ARY</span>
+        <h1>El cuidado de tu auto <span class="highlight">nos importa.</span></h1>
+        <p>Conoce nuestra oferta de productos y servicios complementarios para mantener tu vehículo listo para lo que viene.</p>
+        <div class="hero-actions"><a class="btn btn-accent" href="#catalogo">Explorar productos ↓</a>
+          <a class="btn btn-outline" href="/estaciones/">Ubicar una estación <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="page-hero-media"><img src="/Images/productos_quaker_01.jpg" alt="Productos automotrices mostrados por Grupo ARY" decoding="async" /></div>
+    </div>
+  </section>
+  <section class="section surface-light" id="catalogo">
+    <div class="container">
+      <span class="eyebrow">Conoce nuestra oferta</span>
+      <h2 class="section-title">Productos para seguir avanzando.</h2>
+      <p class="section-subtitle">La disponibilidad puede variar por estación; solicita información al personal del establecimiento.</p>
+      <div class="product-grid" style="margin-top:33px">
+        {items.map(item => (
+          <article class="product-card">
+            <img src={item.image} alt={item.alt} loading="lazy" decoding="async" />
+            <div><span class="pill">{item.tag}</span><h3>{item.title}</h3><p>{item.text}</p></div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+  <section class="section section-tight">
+    <div class="container"><div class="feature-band"><div class="feature-band-inner">
+      <div><span class="eyebrow" style="color:#ffe0a9">Tu siguiente parada</span><h2>Encuentra tu estación ARY.</h2>
+        <p>Localiza la estación que mejor se adapte a tu recorrido y consulta su ubicación.</p></div>
+      <a class="btn btn-accent" href="/estaciones/">Ver ubicaciones <span aria-hidden="true">↗</span></a>
+    </div></div></div>
+  </section>
+</SiteLayout>

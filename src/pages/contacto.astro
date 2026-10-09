@@ -1,0 +1,57 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+---
+<SiteLayout
+  title="Contáctanos | Grupo ARY"
+  description="Comunícate con Grupo ARY para información sobre estaciones, servicios, flotillas y facturación."
+  active="contacto"
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Estamos para ayudarte</span>
+      <h1>Hablemos de <span class="highlight">lo que necesitas.</span></h1>
+      <p>¿Tienes alguna pregunta sobre nuestras estaciones, servicios, flotillas o facturación? Encuentra aquí nuestros medios de contacto.</p>
+    </div>
+  </section>
+  <section class="section surface-light">
+    <div class="container contact-grid">
+      <section class="contact-panel" aria-labelledby="contactEmailTitle">
+        <span class="eyebrow">Atención Grupo ARY</span>
+        <h2 id="contactEmailTitle">Escríbenos.</h2>
+        <p>Envíanos tus comentarios o solicitudes y comparte el detalle de tu consulta para que podamos canalizarla.</p>
+        <a class="contact-link" href="mailto:contacto@grupoary.com.mx">contacto@grupoary.com.mx ↗</a>
+        <p style="margin-top:28px">También nos puedes encontrar en redes sociales:</p>
+        <div class="contact-social">
+          <a href="https://www.facebook.com/share/19FWi6jZ7P/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">Facebook ↗</a>
+          <a href="https://www.instagram.com/grupo_ary" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+        </div>
+      </section>
+      <aside class="contact-side">
+        <div>
+          <span class="eyebrow" style="color:#ffe0b4">Ubicaciones</span>
+          <h2>Estamos cerca de ti.</h2>
+          <p>Explora las ubicaciones publicadas por Grupo ARY en Gómez Palacio, Lerdo y Torreón.</p>
+        </div>
+        <a class="btn btn-accent" href="/estaciones/">Encuentra una estación <span aria-hidden="true">↗</span></a>
+      </aside>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container">
+      <div class="section-head"><div><span class="eyebrow">Accesos rápidos</span><h2>¿Qué trámite necesitas?</h2>
+        <p class="section-subtitle">Llega directamente al área que estás buscando.</p></div></div>
+      <div class="billing-promo">
+        <article class="billing-card"><span class="step-tag">TRÁMITE DIGITAL</span>
+          <h2>Facturación y alta fiscal</h2>
+          <p>Factura tu ticket si ya estás registrado o solicita tu alta fiscal desde el portal existente.</p>
+          <a class="btn btn-primary" href="/facturacion/">Ir a facturación <span aria-hidden="true">↗</span></a>
+        </article>
+        <article class="billing-card is-alt"><span class="step-tag">EMPRESAS Y FLOTILLAS</span>
+          <h2>Información de crédito</h2>
+          <p>Conoce cómo solicitar información sobre las opciones de Grupo ARY para tu negocio.</p>
+          <a class="btn btn-accent" href="/credito/">Ver información <span aria-hidden="true">↗</span></a>
+        </article>
+      </div>
+    </div>
+  </section>
+</SiteLayout>
