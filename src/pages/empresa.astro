@@ -1,0 +1,54 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+---
+<SiteLayout
+  title="Conoce nuestra empresa | Grupo ARY"
+  description="Conoce a Grupo ARY: estaciones de servicio y soluciones para empresas en la Comarca Lagunera."
+  active="empresa"
+>
+  <section class="page-hero">
+    <div class="container page-hero-split">
+      <div>
+        <span class="eyebrow">Conoce a Grupo ARY</span>
+        <h1>Mucho más que <span class="highlight">combustible.</span></h1>
+        <p>Nos dedicamos a acompañar el movimiento de las personas y los negocios con estaciones de servicio y opciones para empresas y flotillas.</p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="/estaciones/">Ver nuestras estaciones <span aria-hidden="true">↗</span></a>
+          <a class="btn btn-outline" href="/contacto/">Habla con nosotros</a>
+        </div>
+      </div>
+      <div class="page-hero-media">
+        <img src="/Images/Ary-super-servicios-III.jpg" alt="Fotografía de una estación de servicio ARY" width="800" height="540" decoding="async" />
+      </div>
+    </div>
+  </section>
+  <section class="section surface-light">
+    <div class="container">
+      <span class="eyebrow">Nuestra esencia</span>
+      <h2 class="section-title">Trabajamos para que sigas avanzando.</h2>
+      <p class="section-subtitle">Grupo ARY reúne estaciones de servicio y soluciones orientadas a las necesidades de conductores, familias, negocios y flotillas de la región.</p>
+      <div class="value-grid" style="margin-top:34px">
+        <article class="value-card"><span class="value-icon" aria-hidden="true">⌖</span><h3>Cercanía</h3><p>Queremos que encuentres una alternativa conveniente en tus trayectos por la Comarca Lagunera.</p></article>
+        <article class="value-card"><span class="value-icon" aria-hidden="true">✦</span><h3>Atención</h3><p>Valoramos una experiencia clara y accesible, tanto en las estaciones como en los servicios digitales.</p></article>
+        <article class="value-card"><span class="value-icon" aria-hidden="true">◈</span><h3>Soluciones</h3><p>Complementamos la carga de combustible con herramientas de facturación y opciones para flotillas.</p></article>
+      </div>
+    </div>
+  </section>
+  <section class="section">
+    <div class="container product-split">
+      <div>
+        <span class="eyebrow">Una red en movimiento</span>
+        <h2>Presentes en <span class="highlight">La Laguna.</span></h2>
+        <p>Encuentra estaciones ARY y Servicio Apache en Gómez Palacio, Lerdo y Torreón.</p>
+        <ul class="check-list">
+          <li>Estaciones en Durango y Coahuila</li>
+          <li>Servicios y productos para tu vehículo</li>
+          <li>Alternativas para flotillas y negocios</li>
+          <li>Portal de facturación y alta fiscal de clientes</li>
+        </ul>
+        <a class="btn btn-primary" href="/estaciones/">Descubre nuestras ubicaciones <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="product-photo"><img src="/Images/imagen-estacion-apache.png" alt="Imagen de estación de servicio Apache" loading="lazy" decoding="async" /></div>
+    </div>
+  </section>
+</SiteLayout>

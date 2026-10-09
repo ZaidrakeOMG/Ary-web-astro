@@ -1,0 +1,51 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import StationCard from "../components/StationCard.astro";
+import { stations } from "../data/site";
+const cities = ["Todas", "Gómez Palacio", "Lerdo", "Torreón"];
+---
+<SiteLayout
+  title="Ubica nuestras estaciones | Grupo ARY"
+  description="Encuentra las ubicaciones de estaciones ARY y Servicio Apache en Gómez Palacio, Ciudad Lerdo y Torreón."
+  active="estaciones"
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Siempre cerca de ti</span>
+      <h1>Tu estación, <span class="highlight">a un clic.</span></h1>
+      <p>Elige tu ciudad y descubre nuestras ubicaciones. Abre la ruta en Google Maps para llegar fácilmente.</p>
+    </div>
+  </section>
+  <section class="section" id="ubicaciones">
+    <div class="container">
+      <div class="section-head">
+        <div><span class="eyebrow">Red ARY</span>
+          <h2>Explora nuestras estaciones.</h2>
+          <p class="section-subtitle">Todas las ubicaciones publicadas por Grupo ARY, organizadas por ciudad.</p>
+        </div>
+      </div>
+      <div class="filters" role="group" aria-label="Filtrar estaciones por ciudad">
+        {cities.map((city,index) => (
+          <button class="filter-button" type="button" data-filter={city} aria-pressed={index === 0 ? "true" : "false"}>{city}</button>
+        ))}
+      </div>
+      <div class="showcase-grid" id="stationList">
+        {stations.map((station,index) => <StationCard station={station} priority={index < 3} />)}
+      </div>
+      <p class="text-callout" style="margin-top:30px">Para confirmar servicios específicos, horarios o disponibilidad de productos en una estación, te recomendamos contactar directamente al establecimiento.</p>
+    </div>
+  </section>
+</SiteLayout>
+<script>
+  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-filter]");
+  const cards = document.querySelectorAll<HTMLElement>(".station-card[data-city]");
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter || "Todas";
+      buttons.forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
+      cards.forEach((card) => {
+        card.hidden = filter !== "Todas" && card.dataset.city !== filter;
+      });
+    });
+  });
+</script>

@@ -1,0 +1,118 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import StationCard from "../components/StationCard.astro";
+import { stations, quickServices } from "../data/site";
+
+const featured = [stations[0], stations[2], stations[6]];
+---
+<SiteLayout
+  active="inicio"
+  title="Grupo ARY | Gasolinerías, estaciones y servicios"
+  description="Grupo ARY: estaciones de servicio, atención a flotillas y facturación electrónica en la Comarca Lagunera. Encuentra tu estación."
+>
+  <section class="hero-home">
+    <div class="container hero-grid">
+      <div class="hero-content">
+        <span class="eyebrow">Bienvenido a Grupo ARY</span>
+        <h1><span class="line">Tu camino</span><span class="line">nos <span class="highlight">mueve.</span></span></h1>
+        <p>Mucho más que cargar combustible. Somos parte de tu día a día, con estaciones, soluciones para flotillas y una atención que te acompaña en cada trayecto.</p>
+        <div class="hero-actions">
+          <a class="btn btn-accent" href="/estaciones/">Encuentra tu estación <span aria-hidden="true">↗</span></a>
+          <a class="btn btn-outline" href="/facturacion/">Facturación y alta <span aria-hidden="true">▤</span></a>
+        </div>
+        <div class="hero-trust" aria-label="Servicios principales">
+          <span>Atención cercana</span><span class="dot" aria-hidden="true"></span>
+          <span>Control de flotillas</span><span class="dot" aria-hidden="true"></span>
+          <span>Trámites en línea</span>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-photo">
+          <img src="/Images/Ary-super-servicios-I.jpg" alt="" width="720" height="600" fetchpriority="high" decoding="async" />
+          <div class="hero-photo-label">
+            <div><span>Siempre en movimiento</span><strong>ARY Super Servicios</strong></div>
+            <span>↗</span>
+          </div>
+        </div>
+        <div class="hero-floating"><span>Encuéntranos en</span><b>La Laguna</b><span>Durango · Coahuila</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="info-bar">
+    <div class="container">
+      <div class="info-bar-item"><span class="info-bar-symbol" aria-hidden="true">⌖</span><div><strong>7 ubicaciones</strong><span>Estaciones ARY y Servicio Apache</span></div></div>
+      <div class="info-bar-item"><span class="info-bar-symbol" aria-hidden="true">◇</span><div><strong>Soluciones empresariales</strong><span>Control de consumos y flotillas</span></div></div>
+      <div class="info-bar-item"><span class="info-bar-symbol" aria-hidden="true">▤</span><div><strong>Facturación en línea</strong><span>Factura tu ticket o solicita tu alta fiscal</span></div></div>
+    </div>
+  </div>
+
+  <section class="section surface-light" id="servicios">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Lo que hacemos</span>
+          <h2>Todo lo que necesitas.<br /><span style="color:#b61a78">En un solo lugar.</span></h2>
+          <p class="section-subtitle">Servicios pensados para hacer más fácil tu día, tu ruta y la operación de tu negocio.</p>
+        </div>
+        <a class="link-arrow" href="/servicios/">Explorar servicios <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="service-grid">
+        {quickServices.map((service) => (
+          <article class="service-card">
+            <div class="service-icon" aria-hidden="true">{service.icon}</div>
+            <small>{service.number} / GRUPO ARY</small>
+            <h3>{service.title}</h3>
+            <p>{service.description}</p>
+            <a href={service.href} aria-label={"Conocer más sobre " + service.title}>Conocer más <span aria-hidden="true">→</span></a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="estaciones">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Estamos cerca</span>
+          <h2>Donde comienza<br /><span class="highlight">tu siguiente destino.</span></h2>
+          <p class="section-subtitle">Conoce algunas de nuestras ubicaciones. Estamos presentes en Gómez Palacio, Lerdo y Torreón.</p>
+        </div>
+        <a class="link-arrow" href="/estaciones/">Ver todas las estaciones <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="showcase-grid">
+        {featured.map((station) => <StationCard station={station} />)}
+      </div>
+      <div class="more-action"><a class="btn btn-outline" href="/estaciones/">Explorar todas las ubicaciones <span aria-hidden="true">↗</span></a></div>
+    </div>
+  </section>
+
+  <section class="section surface-light">
+    <div class="container">
+      <div class="product-split">
+        <div class="product-photo"><img src="/Images/productos_quaker_01.jpg" alt="Presentación de productos de mantenimiento automotriz" width="720" height="540" loading="lazy" decoding="async" /></div>
+        <div>
+          <span class="eyebrow">Más para tu vehículo</span>
+          <h2>Todo para seguir <span style="color:#b61a78">adelante.</span></h2>
+          <p style="color:#665362">Conoce nuestra oferta de productos y soluciones complementarias para el cuidado de tu automóvil y tu operación diaria.</p>
+          <a class="btn btn-primary" href="/productos/">Explorar productos <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tight">
+    <div class="container">
+      <div class="feature-band">
+        <div class="feature-band-inner">
+          <div><span class="eyebrow" style="color:#ffe0a9">Trámites digitales</span>
+            <h2>Tu factura, sin vueltas.</h2>
+            <p>¿Ya eres cliente? Envía tu ticket. ¿Es tu primera vez? Registra tus datos fiscales desde el mismo portal.</p>
+          </div>
+          <a class="btn btn-accent" href="/facturacion/">Ir a facturación <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</SiteLayout>
