@@ -1,19 +1,14 @@
 ---
-import { mapsLink, type Station } from "../data/site";
-interface Props { station: Station; priority?: boolean }
-const { station, priority = false } = Astro.props;
+import {mapsLink, type Station} from '../data/site';
+interface Props {station:Station; priority?: boolean}
+const {station,priority=false}=Astro.props;
 ---
 <article class="station-card" data-city={station.city} id={station.id}>
-  <div class="station-image">
-    <img src={station.image} alt={"Vista de " + station.name} loading={priority ? "eager" : "lazy"} decoding="async" />
-    <span class="station-city"><span aria-hidden="true">⌖</span> {station.city}</span>
-  </div>
-  <div class="station-body">
-    <span class="station-label">{station.shortName}</span>
-    <h3>{station.name}</h3>
-    <p>{station.address}</p>
-    <a href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer" aria-label={"Ver ubicación de " + station.name + " en Google Maps"}>
-      Cómo llegar <span aria-hidden="true">↗</span>
-    </a>
+  <a class="station-photo" href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer" aria-label={`Cómo llegar a ${station.name}`}>
+    <img src={station.image} alt={`Estación de servicio ${station.name}`} loading={priority?'eager':'lazy'} decoding="async" width="1152" height="864" />
+    <span class="station-index">{station.number} / 07</span>
+  </a>
+  <div class="station-info"><span class="station-city">⌖ {station.city}</span><h3>{station.name}</h3><p>{station.address}</p>
+    <a class="station-directions" href={mapsLink(station.address)} target="_blank" rel="noopener noreferrer">Cómo llegar <span aria-hidden="true">↗</span></a>
   </div>
 </article>

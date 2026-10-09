@@ -1,67 +1,13 @@
 ---
-import SiteLayout from "../layouts/SiteLayout.astro";
-const items = [
-  {
-    tag: "Combustible",
-    title: "Combustible para tu camino",
-    text: "Consulta las estaciones y conoce dónde puedes realizar tu próxima carga de combustible.",
-    image: "/Images/ubica_estaciones_de_servicio.jpg",
-    alt: "Estación de servicio y área de carga",
-  },
-  {
-    tag: "Mantenimiento",
-    title: "Lubricantes",
-    text: "Descubre productos para el cuidado y mantenimiento de tu vehículo. Pregunta por disponibilidad en tu estación.",
-    image: "/Images/productos_quaker_01.jpg",
-    alt: "Imagen de productos lubricantes",
-  },
-  {
-    tag: "Soluciones",
-    title: "Productos complementarios",
-    text: "Conoce alternativas para acompañar el uso cotidiano de tu automóvil y mantenerlo en buenas condiciones.",
-    image: "/Images/productos_quaker_02.jpg",
-    alt: "Productos de cuidado automotriz",
-  },
+import SiteLayout from '../layouts/SiteLayout.astro';
+const products=[
+  {tag:'Combustible',title:'Tu próxima carga',text:'Encuentra una estación ARY o Apache conveniente para tu recorrido y conoce su ubicación.',image:'/media/ary-2.webp',alt:'Estación ARY de día'},
+  {tag:'Lubricantes',title:'Cuida tu vehículo',text:'Consulta los productos de mantenimiento y lubricantes disponibles en cada establecimiento.',image:'/media/ary-4.webp',alt:'Estación de servicio con surtidores'},
+  {tag:'Atención',title:'Más soluciones',text:'Pregunta directamente en tu estación por las alternativas de servicio y productos complementarios.',image:'/media/ary-6.webp',alt:'Estación ARY iluminada por la noche'},
 ];
 ---
-<SiteLayout
-  title="Productos para tu vehículo | Grupo ARY"
-  description="Conoce los combustibles, lubricantes y productos para vehículos que presenta Grupo ARY."
-  active="productos"
->
-  <section class="page-hero">
-    <div class="container page-hero-split">
-      <div>
-        <span class="eyebrow">Productos ARY</span>
-        <h1>El cuidado de tu auto <span class="highlight">nos importa.</span></h1>
-        <p>Conoce nuestra oferta de productos y servicios complementarios para mantener tu vehículo listo para lo que viene.</p>
-        <div class="hero-actions"><a class="btn btn-accent" href="#catalogo">Explorar productos ↓</a>
-          <a class="btn btn-outline" href="/estaciones/">Ubicar una estación <span aria-hidden="true">↗</span></a>
-        </div>
-      </div>
-      <div class="page-hero-media"><img src="/Images/productos_quaker_01.jpg" alt="Productos automotrices mostrados por Grupo ARY" decoding="async" /></div>
-    </div>
-  </section>
-  <section class="section surface-light" id="catalogo">
-    <div class="container">
-      <span class="eyebrow">Conoce nuestra oferta</span>
-      <h2 class="section-title">Productos para seguir avanzando.</h2>
-      <p class="section-subtitle">La disponibilidad puede variar por estación; solicita información al personal del establecimiento.</p>
-      <div class="product-grid" style="margin-top:33px">
-        {items.map(item => (
-          <article class="product-card">
-            <img src={item.image} alt={item.alt} loading="lazy" decoding="async" />
-            <div><span class="pill">{item.tag}</span><h3>{item.title}</h3><p>{item.text}</p></div>
-          </article>
-        ))}
-      </div>
-    </div>
-  </section>
-  <section class="section section-tight">
-    <div class="container"><div class="feature-band"><div class="feature-band-inner">
-      <div><span class="eyebrow" style="color:#ffe0a9">Tu siguiente parada</span><h2>Encuentra tu estación ARY.</h2>
-        <p>Localiza la estación que mejor se adapte a tu recorrido y consulta su ubicación.</p></div>
-      <a class="btn btn-accent" href="/estaciones/">Ver ubicaciones <span aria-hidden="true">↗</span></a>
-    </div></div></div>
-  </section>
+<SiteLayout title="Productos y combustibles | Grupo ARY" description="Conoce las estaciones, combustibles, lubricantes y productos complementarios de Grupo ARY." active="productos">
+  <section class="page-hero"><div class="shell page-hero-grid"><div><span class="eyebrow light">Productos y soluciones</span><h1>El cuidado de tu auto <span class="accent-gold">nos importa.</span></h1><p>Todo comienza con una buena parada. Conoce nuestros productos y encuentra una estación para seguir tu trayecto.</p><div class="actions"><a class="button gold" href="#catalogo">Explora los productos ↓</a><a class="button outline" href="/estaciones/">Ubicar estación ↗</a></div></div><div class="page-hero-img"><img src="/media/ary-2.webp" alt="Gasolinería ARY con surtidores" width="1152" height="864" /></div></div></section>
+  <section class="section blush" id="catalogo"><div class="shell"><span class="eyebrow">Conoce nuestra oferta</span><h2 class="section-title">Todo para continuar <span class="accent">tu viaje.</span></h2><p class="section-lead">Consulta los productos directamente con tu estación; la disponibilidad puede variar.</p><div class="product-grid" style="margin-top:32px">{products.map(item=><article class="product-card"><img src={item.image} alt={item.alt} loading="lazy" width="1152" height="864" /><div><span class="tag">{item.tag}</span><h3>{item.title}</h3><p>{item.text}</p></div></article>)}</div></div></section>
+  <section class="section compact white"><div class="shell feature-banner"><div><span class="eyebrow light">Tu ruta empieza aquí</span><h2>Encuentra tu estación ARY.</h2><p>Consulta las ubicaciones en Gómez Palacio, Lerdo y Torreón.</p></div><a class="button gold" href="/estaciones/">Ver estaciones ↗</a></div></section>
 </SiteLayout>

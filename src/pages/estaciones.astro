@@ -1,51 +1,23 @@
 ---
-import SiteLayout from "../layouts/SiteLayout.astro";
-import StationCard from "../components/StationCard.astro";
-import { stations } from "../data/site";
-const cities = ["Todas", "Gómez Palacio", "Lerdo", "Torreón"];
+import SiteLayout from '../layouts/SiteLayout.astro';
+import StationCard from '../components/StationCard.astro';
+import {stations} from '../data/site';
+const cities=['Todas','Gómez Palacio','Lerdo','Torreón'];
 ---
-<SiteLayout
-  title="Ubica nuestras estaciones | Grupo ARY"
-  description="Encuentra las ubicaciones de estaciones ARY y Servicio Apache en Gómez Palacio, Ciudad Lerdo y Torreón."
-  active="estaciones"
->
-  <section class="page-hero">
-    <div class="container">
-      <span class="eyebrow">Siempre cerca de ti</span>
-      <h1>Tu estación, <span class="highlight">a un clic.</span></h1>
-      <p>Elige tu ciudad y descubre nuestras ubicaciones. Abre la ruta en Google Maps para llegar fácilmente.</p>
-    </div>
-  </section>
-  <section class="section" id="ubicaciones">
-    <div class="container">
-      <div class="section-head">
-        <div><span class="eyebrow">Red ARY</span>
-          <h2>Explora nuestras estaciones.</h2>
-          <p class="section-subtitle">Todas las ubicaciones publicadas por Grupo ARY, organizadas por ciudad.</p>
-        </div>
-      </div>
-      <div class="filters" role="group" aria-label="Filtrar estaciones por ciudad">
-        {cities.map((city,index) => (
-          <button class="filter-button" type="button" data-filter={city} aria-pressed={index === 0 ? "true" : "false"}>{city}</button>
-        ))}
-      </div>
-      <div class="showcase-grid" id="stationList">
-        {stations.map((station,index) => <StationCard station={station} priority={index < 3} />)}
-      </div>
-      <p class="text-callout" style="margin-top:30px">Para confirmar servicios específicos, horarios o disponibilidad de productos en una estación, te recomendamos contactar directamente al establecimiento.</p>
-    </div>
-  </section>
+<SiteLayout title="Estaciones ARY y Apache | Ubicaciones" description="Ubica las siete estaciones ARY y Servicio Apache en Gómez Palacio, Lerdo y Torreón." active="estaciones">
+  <section class="page-hero"><div class="shell page-hero-grid"><div><span class="eyebrow light">Tu próxima parada</span><h1>Donde estés, <span class="accent-gold">hay una ARY.</span></h1><p>Busca por ciudad y encuentra la estación más conveniente para ti. Abre la ruta de tu elección directamente en Google Maps.</p></div><div class="page-hero-img"><img src="/media/ary-5.webp" width="1152" height="864" alt="Estación ARY iluminada" decoding="async" /></div></div></section>
+  <section class="section blush" id="lista-estaciones"><div class="shell"><div class="heading-row"><div><span class="eyebrow">Conoce nuestras ubicaciones</span><h2 class="section-title">7 estaciones.<br /><span class="accent">Muchos caminos.</span></h2><p class="section-lead">Filtra por ciudad o consulta todas las ubicaciones publicadas.</p></div></div>
+    <div class="filter-row" role="group" aria-label="Filtrar estaciones por ciudad">{cities.map((city,i)=><button type="button" class="filter-button" data-city-filter={city} aria-pressed={i===0?'true':'false'}>{city}</button>)}</div>
+    <div class="station-grid" id="station-results">{stations.map(station=><StationCard station={station} />)}</div>
+    <p class="notice" style="margin:27px 0 0">Las fotografías corresponden a las ubicaciones proporcionadas por Grupo ARY. Los horarios y servicios pueden variar según cada estación.</p>
+  </div></section>
+  <script>
+    const buttons=document.querySelectorAll<HTMLButtonElement>('[data-city-filter]');
+    const cards=document.querySelectorAll<HTMLElement>('.station-card[data-city]');
+    buttons.forEach(button=>button.addEventListener('click',()=>{
+      const city=button.dataset.cityFilter||'Todas';
+      buttons.forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
+      cards.forEach(card=>card.hidden=city!=='Todas'&&card.dataset.city!==city);
+    }));
+  </script>
 </SiteLayout>
-<script>
-  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-filter]");
-  const cards = document.querySelectorAll<HTMLElement>(".station-card[data-city]");
-  buttons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const filter = button.dataset.filter || "Todas";
-      buttons.forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
-      cards.forEach((card) => {
-        card.hidden = filter !== "Todas" && card.dataset.city !== filter;
-      });
-    });
-  });
-</script>

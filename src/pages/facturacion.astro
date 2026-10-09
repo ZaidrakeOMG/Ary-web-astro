@@ -1,12 +1,27 @@
 ---
-/*
- * Facturación y alta con Astro: el documento de producción se integra
- * tal cual mediante un import raw para conservar el JavaScript, campos,
- * encabezados CSRF, idempotencia y API /api/facturacion.
- * Solo se añade base href para que los enlaces relativos funcionen
- * también desde /facturacion/ (además de /ary_facturacion.htm).
- */
-import legacyBillingPage from "../../ary_facturacion.htm?raw";
-const html = legacyBillingPage.replace(/<head\s*>/i, '<head><base href="/" />');
+// Importamos el portal validado sin modificar su JavaScript, formularios ni API.
+// Solo renovamos estilos y convertimos navegación heredada a rutas Astro.
+import legacyBillingPage from '../../ary_facturacion.htm?raw';
+import mobileSkin from '../styles/billing-skin.css?raw';
+const firstScript=legacyBillingPage.indexOf('<script>');
+if(firstScript<0)throw new Error('No se encontró el script original del portal de facturación');
+const markup=legacyBillingPage.slice(0,firstScript);
+const unchangedScript=legacyBillingPage.slice(firstScript);
+const linkMap:Record<string,string>={
+  'default.htm':'/',
+  'ary_conoce_nuestra_empresa.htm':'/empresa/',
+  'ary_ubica_nuestras_estaciones.htm':'/estaciones/',
+  'ary_servicios.htm':'/servicios/',
+  'ary_productos.htm':'/productos/',
+  'ary_tips_ahorro_combustible.htm':'/consejos/',
+  'ary_contacto.htm':'/contacto/',
+  'ary_facturacion.htm':'/facturacion/',
+};
+const updatedMarkup=markup
+  .replace(/<head\s*>/i,'<head><base href="/" />')
+  .replace(/href="([^"]+)"/g,(full,path:string)=>`href="${linkMap[path]??path}"`)
+  .replace(/src="images\/Arylogo2\.png"/i,'src="/media/ary-symbol.webp"')
+  .replace(/<\/style>/i,`${mobileSkin}\n</style>`);
+const html=updatedMarkup+unchangedScript;
 ---
 <Fragment set:html={html} />
