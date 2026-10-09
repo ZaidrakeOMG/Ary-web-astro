@@ -1,0 +1,22 @@
+name: Preparar revision de diseno
+on:
+  push:
+    branches: [design-pro-android-20261009]
+    paths: [.github/workflows/design-workspace.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: tar --exclude=.git --exclude=workspace.tar.gz -czf /tmp/workspace.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ary-design-workspace
+          path: /tmp/workspace.tar.gz
+          retention-days: 3
