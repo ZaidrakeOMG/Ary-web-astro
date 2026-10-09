@@ -1,0 +1,130 @@
+name: Aplicar diseno verificado y comprobar
+on:
+  push:
+    branches: [design-pro-android-20261009]
+    paths: [.github/workflows/apply-design.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    outputs:
+      revision: ${{ steps.commit.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: design-pro-android-20261009
+      - uses: actions/download-artifact@v4
+        with:
+          name: ary-design-workspace
+          run-id: 38001861021
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: /tmp/ary-reference
+      - name: Validate checksum and restore reviewed source files
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64, hashlib, json, lzma, pathlib, tarfile
+          root = pathlib.Path.cwd()
+          encoded = ''.join((root / f'.github/design-payload.part{i}').read_text().strip() for i in range(6))
+          packed = base64.b64decode(encoded, validate=True)
+          assert hashlib.sha256(packed).hexdigest() == 'ca3ab18e33538e9a6a01e4e8e23194610aaa1830ac9d147cc5ab8abbe695dbc0', 'Source transfer checksum mismatch'
+          manifest = json.loads(lzma.decompress(packed))
+          def checked(name):
+              rel = pathlib.PurePosixPath(name)
+              assert not rel.is_absolute() and '..' not in rel.parts and '.git' not in rel.parts, name
+              dest = root.joinpath(*rel.parts)
+              assert not dest.is_symlink(), name
+              return dest
+          baseline = checked(manifest['copyBaseline']).read_bytes()
+          assert hashlib.sha256(baseline).hexdigest() == manifest['baselineSHA256'], 'Operational billing baseline changed'
+          private = checked('legacy/billing-original.htm')
+          private.parent.mkdir(parents=True, exist_ok=True)
+          private.write_bytes(baseline)
+          for name, text in manifest['files'].items():
+              dest = checked(name)
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              if name.endswith('.bat'):
+                  dest.write_bytes(text.replace('\r\n', '\n').replace('\n', '\r\n').encode('utf-8'))
+              else:
+                  dest.write_bytes(text.encode('utf-8'))
+          archive = pathlib.Path('/tmp/ary-reference/workspace.tar.gz')
+          with tarfile.open(archive, 'r:gz') as tf:
+              member = next(m for m in tf.getmembers() if m.name.removeprefix('./') == 'package-lock.json')
+              lock = json.load(tf.extractfile(member))
+          pkg = json.loads(checked('package.json').read_text())
+          lock['version'] = pkg['version']
+          for key in ('version', 'dependencies', 'devDependencies', 'engines'):
+              lock['packages'][''][key] = pkg[key]
+          checked('package-lock.json').write_text(json.dumps(lock, indent=2) + '\n')
+          for name in manifest['deletes']:
+              dest = checked(name)
+              if dest.exists():
+                  assert dest.is_file(), name
+                  dest.unlink()
+          for i in range(6):
+              checked(f'.github/design-payload.part{i}').unlink()
+          checked('.github/workflows/apply-design.yml').unlink()
+          print(f'Restored {len(manifest["files"])} reviewed text files; removed {len(manifest["deletes"])} legacy paths.')
+          print('Original billing program retained privately and SHA256 verified.')
+          PY
+      - name: Commit source to design branch only
+        id: commit
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Redesign ARY mobile-first: new billing UI, supplied photographs, unified routes and staged IIS deployment'
+          git push origin HEAD:design-pro-android-20261009
+          echo "revision=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  frontend:
+    needs: apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.apply.outputs.revision }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
+        env:
+          GITHUB_SHA: ${{ needs.apply.outputs.revision }}
+      - run: npm run test:integrity
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tests/requirements.txt
+      - run: python -m playwright install --with-deps chromium
+      - name: Browser regression with simulated billing only
+        run: |
+          python -m http.server 4173 --directory dist > /tmp/ary-test-http.log 2>&1 &
+          python tests/browser_test.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ary-pro-browser-and-build
+          path: |
+            test-results/
+            dist/
+          retention-days: 7
+  windows-syntax:
+    needs: apply
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.apply.outputs.revision }}
+      - name: Parse PowerShell and IIS XML without changing services
+        shell: powershell
+        run: ./tests/windows_validation.ps1
