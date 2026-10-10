@@ -85,6 +85,9 @@ try {
   foreach ($name in @('index.html','facturacion\index.html','web.config','verification.json','release.json')) {
     if (-not (Test-Path -LiteralPath (Join-Path $stage $name))) { throw "Falta archivo requerido: $name" }
   }
+  $releaseInfo=Get-Content -LiteralPath (Join-Path $stage 'release.json') -Raw | ConvertFrom-Json
+  $expectedDesign=[string]$releaseInfo.design
+  if (-not $expectedDesign -or $expectedDesign -notmatch '^ary-[a-zA-Z0-9._-]+$') { throw 'El paquete no contiene un identificador de version valido. No se modificara IIS.' }
   $template=Load-Xml (Join-Path $stage 'web.config'); Assert-NoDuplicateDefaults $template
   $release=Join-Path $releaseRoot $stamp
   [void](New-Item -Path $release -ItemType Directory -Force)
@@ -135,7 +138,7 @@ try {
   for($attempt=0;$attempt -lt 3;$attempt++) {
     try {
       $response=Invoke-WebRequest -Uri ($url+'?ary_check='+$stamp) -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
-      if ($response.StatusCode -eq 200 -and $response.Headers['X-ARY-Release'] -eq $stamp -and $response.Content.Contains('ary-pro-20261009-v2')) { $verified=$true;break }
+      if ($response.StatusCode -eq 200 -and $response.Headers['X-ARY-Release'] -eq $stamp -and $response.Content.Contains($expectedDesign)) { $verified=$true;break }
     } catch { Write-Host 'Esperando respuesta del sitio HTTPS...' -ForegroundColor Yellow }
     Start-Sleep -Seconds 2
   }
