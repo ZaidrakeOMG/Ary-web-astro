@@ -24,5 +24,9 @@ const escapeRE=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const rules=Object.entries(aliases).map(([name,target],i)=>`    <rule name="ARY Astro alias ${i+1}" stopProcessing="true"><match url="^${escapeRE(name)}$" ignoreCase="true"/><action type="Redirect" url="${target}" redirectType="Found" appendQueryString="true"/></rule>`).join('\n');
 config=config.replace('</rules>',rules+'\n  </rules>');
 fs.writeFileSync(path.join(out,'web.config'),config);
-fs.writeFileSync(path.join(out,'release.json'),JSON.stringify({version:'2.0.0',design:'ary-pro-20261009-v2',builtAt:new Date().toISOString(),commit:process.env.GITHUB_SHA || 'local-build',aliases},null,2));
+// Read the built page marker so the manifest and IIS verification cannot drift.
+const home=fs.readFileSync(path.join(out,'index.html'),'utf8');
+const design=home.match(/<meta\b[^>]*name="ary-release"[^>]*content="([a-zA-Z0-9._-]+)"[^>]*>/)?.[1];
+if(!design) throw new Error('Missing or invalid ary-release marker in compiled home page');
+fs.writeFileSync(path.join(out,'release.json'),JSON.stringify({version:'2.0.0',design,builtAt:new Date().toISOString(),commit:process.env.GITHUB_SHA || 'local-build',aliases},null,2));
 console.log(`Prepared ${Object.keys(aliases).length} compatibility routes; old designs are not published.`);
