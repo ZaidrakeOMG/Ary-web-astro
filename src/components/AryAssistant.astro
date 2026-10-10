@@ -28,12 +28,12 @@
     </div>
     <footer class="ary-assistant-footer">Esta guía no lee tus datos ni envía solicitudes por ti.</footer>
   </section>
-  <button id="ary-assistant-launcher" class="ary-assistant-launcher" type="button" aria-controls="ary-assistant-panel" aria-expanded="false" aria-label="Abrir ayuda paso a paso de ARY">
+  <button id="ary-assistant-launcher" class="ary-assistant-launcher" type="button" aria-controls="ary-assistant-panel" aria-expanded="false" aria-label="Abrir ayuda paso a paso de ARY" title="Asistente ARY · Arrastra para mover">
     <img src="/media/ary-mascota.webp" alt="" width="58" height="58" decoding="async"/>
     <span><strong>¿Te ayudo?</strong><small>Asistente ARY</small></span><span class="ary-assistant-dot" aria-hidden="true"></span>
   </button>
 </div>
-<script is:inline defer src="/scripts/ary-assistant.js"></script>
+<script is:inline defer src="/scripts/ary-assistant.js?v=2"></script>
 <style>
   .ary-assistant{position:fixed;right:20px;bottom:22px;z-index:110;width:min(352px,calc(100vw - 32px));color:var(--ink);font-size:14px;line-height:1.55;pointer-events:none}
   .ary-assistant-panel,.ary-assistant-launcher{pointer-events:auto}
@@ -74,4 +74,23 @@
   @media(max-height:540px){.ary-assistant-panel{max-height:calc(100dvh - 135px)}.ary-assistant-header{padding:8px 12px}.ary-assistant-avatar,.ary-assistant-subtitle,.ary-assistant-footer{display:none}.ary-assistant-body{padding:12px}.ary-assistant-header h2{font-size:17px}.ary-assistant-launcher{min-height:44px}.ary-assistant-launcher img{height:35px}.ary-assistant{bottom:12px}}
   @media(prefers-reduced-motion:reduce){:global(html:has(.ary-assistant-target)){scroll-behavior:auto}}
   @media print{.ary-assistant{display:none!important}:global(.ary-assistant-target){outline:none!important}:global(body.ary-assistant-space){padding-bottom:0!important}}
+  /* The small launcher is a true draggable viewport bubble on every Astro page.
+     Unlike the old sidebar card, its fixed panel is positioned by the script. */
+  .ary-assistant{width:74px;height:74px;right:20px;bottom:22px;left:auto;top:auto;pointer-events:none;z-index:110}
+  .ary-assistant[hidden],.ary-assistant-panel[hidden]{display:none!important}
+  .ary-assistant-panel{position:fixed;left:12px;top:12px;width:min(360px,calc(100vw - 24px));max-height:calc(100dvh - 24px);margin:0;box-sizing:border-box;pointer-events:auto;touch-action:pan-y}
+  .ary-assistant-launcher{width:74px;height:74px;min-width:74px;min-height:74px;max-width:none;padding:7px;margin:0;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(145deg,#fff,#fff1fa);border:2px solid #d694bb;box-shadow:0 7px 22px #4c173a36;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;position:relative;transition:box-shadow .15s ease,border-color .15s ease}
+  .ary-assistant-launcher img{width:58px;height:58px;object-fit:contain;pointer-events:none;animation:ary-assistant-float 3.3s ease-in-out infinite}
+  .ary-assistant-launcher>span:not(.ary-assistant-dot){display:none}
+  .ary-assistant-dot{position:absolute;top:8px;right:8px;margin:0;width:9px;height:9px;border:2px solid white}
+  .ary-assistant-launcher:focus-visible{outline:3px solid #681444;outline-offset:4px}
+  .ary-assistant.is-dragging .ary-assistant-launcher{cursor:grabbing;box-shadow:0 13px 32px #4c173a4d;border-color:var(--magenta)}
+  .ary-assistant.is-dragging .ary-assistant-launcher img{animation-play-state:paused}
+  .ary-assistant-launcher:disabled{opacity:.8;cursor:default}
+  @keyframes ary-assistant-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  @media(min-width:1100px){:global(body.is-billing) .ary-assistant{right:20px;left:auto;width:74px}}
+  @media(max-width:700px){.ary-assistant{width:66px;height:66px;right:12px;bottom:calc(86px + env(safe-area-inset-bottom,0px))}.ary-assistant-launcher{width:66px;height:66px;min-width:66px;min-height:66px;padding:5px;border-radius:50%}.ary-assistant-launcher img{width:54px;height:54px}.ary-assistant-panel{margin:0;max-height:calc(100dvh - 24px)}}
+  @media(max-height:540px){.ary-assistant{bottom:12px}.ary-assistant-panel{max-height:calc(100dvh - 24px)}}
+  @media(prefers-reduced-motion:reduce){.ary-assistant-launcher img{animation:none}.ary-assistant-launcher{transition:none}}
+  @media print{.ary-assistant{display:none!important}}
 </style>

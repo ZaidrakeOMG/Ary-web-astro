@@ -159,13 +159,36 @@ def main():
         page.locator('#tab-factura').click()
         expect(page.locator('#ary-assistant-kind')).to_have_text('Facturar ticket')
         page.locator('#menuButton').click()
-        expect(page.locator('#ary-assistant')).to_be_hidden()
+        expect(page.locator('#ary-assistant')).to_be_visible()
         page.keyboard.press('Escape')
         expect(page.locator('#ary-assistant')).to_be_visible()
         page.emulate_media(media='print')
         expect(page.locator('#ary-assistant')).to_be_hidden()
         page.emulate_media(media='screen')
         finish(page, 'assistant:manual-tab-mobile-menu-print')
+
+
+        # New regression: draggable floating bubble keeps its location across Astro pages.
+        page = launch(browser, '/', width=390, height=844)
+        bubble = page.locator('#ary-assistant-launcher')
+        first = bubble.bounding_box()
+        page.mouse.move(first['x'] + first['width'] / 2, first['y'] + first['height'] / 2)
+        page.mouse.down()
+        page.mouse.move(70, 205, steps=10)
+        page.mouse.up()
+        moved = bubble.bounding_box()
+        assert abs(first['x'] - moved['x']) > 50 and abs(first['y'] - moved['y']) > 50
+        expect(page.locator('#ary-assistant-panel')).to_be_hidden()
+        for route in ['/estaciones/', '/productos/', '/contacto/', '/facturacion/', '/servicios/']:
+            page.goto(BASE + route, wait_until='networkidle')
+            expect(page.locator('#ary-assistant-launcher')).to_be_visible()
+            current = page.locator('#ary-assistant-launcher').bounding_box()
+            assert abs(current['x'] - moved['x']) < 5 and abs(current['y'] - moved['y']) < 5, route
+        page.locator('#ary-assistant-launcher').click()
+        expect(page.locator('#ary-assistant-panel')).to_be_visible()
+        page.goto(BASE + '/empresa/', wait_until='networkidle')
+        expect(page.locator('#ary-assistant-panel')).to_be_visible()
+        finish(page, 'assistant:floating-draggable-persists-on-every-section')
 
         for kind in ['alta', 'factura']:
             page = launch(browser, width=1280, height=900)
@@ -174,7 +197,9 @@ def main():
             page.locator('#form-' + kind + ' .submit').click()
             if kind == 'factura':
                 expect(page.locator('#reviewDialog')).to_be_visible()
-                expect(page.locator('#ary-assistant')).to_be_hidden()
+                expect(page.locator('#ary-assistant')).to_be_visible()
+                expect(page.locator('#ary-assistant-panel')).to_be_hidden()
+                expect(page.locator('#ary-assistant-launcher')).to_be_disabled()
                 assert not page._test[1]
                 page.locator('#reviewBack').click()
                 expect(page.locator('#ary-assistant')).to_be_visible()
