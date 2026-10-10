@@ -246,7 +246,7 @@ def main():
             for alias,target in release['aliases'].items():
                 page=launch_page(b,route='/'+alias)
                 expect(page).to_have_url(BASE+target)
-                assert page.locator('meta[name=ary-release]').get_attribute('content')=='ary-pro-20261009-v2'
+                assert page.locator('meta[name=ary-release]').get_attribute('content')=='ary-pro-20261010-mascota-v1'
                 finish(page,'legacy-alias:'+alias)
             page=launch_page(b,route='/facturacion/?tramite=factura')
             expect(page.locator('#panel-factura')).to_be_visible()
