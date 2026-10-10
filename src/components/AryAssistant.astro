@@ -1,0 +1,77 @@
+---
+// The original mascot is already part of the site. No remote services or AI keys.
+---
+<div id="ary-assistant" class="ary-assistant" hidden>
+  <section id="ary-assistant-panel" class="ary-assistant-panel" role="dialog" aria-modal="false" aria-labelledby="ary-assistant-title" hidden>
+    <header class="ary-assistant-header">
+      <span class="ary-assistant-avatar"><img src="/media/ary-mascota.webp" alt="" width="76" height="76" decoding="async"/></span>
+      <div><span class="ary-assistant-eyebrow">ESTOY PARA AYUDARTE</span><h2 id="ary-assistant-title">Tu asistente ARY</h2><span class="ary-assistant-subtitle">Vamos paso a paso.</span></div>
+      <button id="ary-assistant-close" class="ary-assistant-icon" type="button" aria-label="Minimizar la ayuda" title="Minimizar la ayuda">×</button>
+    </header>
+    <div class="ary-assistant-body">
+      <div id="ary-assistant-home">
+        <p class="ary-assistant-welcome">¡Hola! Soy tu asistente ARY. <strong>¿Qué necesitas hacer?</strong></p>
+        <a class="ary-assistant-choice" data-ary-guide="factura" href="/facturacion/?guia=factura"><span aria-hidden="true">01</span><div><strong>Quiero facturar</strong><small>Ya tengo mi RFC registrado.</small></div><span aria-hidden="true">→</span></a>
+        <a class="ary-assistant-choice" data-ary-guide="alta" href="/facturacion/?guia=alta"><span aria-hidden="true">02</span><div><strong>Quiero darme de alta</strong><small>Es mi primera vez como cliente.</small></div><span aria-hidden="true">→</span></a>
+        <details class="ary-assistant-faq"><summary>Tengo una duda</summary><p><strong>¿Dónde encuentro el idCIF?</strong><br/>En tu constancia de situación fiscal. En este portal se capturan sus 11 dígitos; no es tu RFC.</p><p><strong>¿Una referencia significa que ya tengo factura?</strong><br/>No. La referencia sirve para consultar el avance. Espera la confirmación del trámite.</p><a href="/contacto/">Necesito ayuda del equipo ARY →</a></details>
+      </div>
+      <div id="ary-assistant-tour" hidden>
+        <div class="ary-assistant-progress-label"><span id="ary-assistant-kind"></span><span id="ary-assistant-count" role="status" aria-live="polite"></span></div>
+        <progress id="ary-assistant-progress" value="1" max="1" aria-label="Avance de la guía"></progress>
+        <h3 id="ary-assistant-step" tabindex="-1"></h3>
+        <p id="ary-assistant-description"></p>
+        <p id="ary-assistant-notice" class="ary-assistant-notice" hidden></p>
+        <button id="ary-assistant-field" class="ary-assistant-field" type="button">Ir al campo señalado ↗</button>
+        <div class="ary-assistant-actions"><button id="ary-assistant-prev" type="button">Anterior</button><button id="ary-assistant-next" class="ary-assistant-next" type="button">Siguiente →</button></div>
+        <button id="ary-assistant-menu" class="ary-assistant-menu" type="button">Volver al menú de ayuda</button>
+      </div>
+    </div>
+    <footer class="ary-assistant-footer">Esta guía no lee tus datos ni envía solicitudes por ti.</footer>
+  </section>
+  <button id="ary-assistant-launcher" class="ary-assistant-launcher" type="button" aria-controls="ary-assistant-panel" aria-expanded="false" aria-label="Abrir ayuda paso a paso de ARY">
+    <img src="/media/ary-mascota.webp" alt="" width="58" height="58" decoding="async"/>
+    <span><strong>¿Te ayudo?</strong><small>Asistente ARY</small></span><span class="ary-assistant-dot" aria-hidden="true"></span>
+  </button>
+</div>
+<script is:inline defer src="/scripts/ary-assistant.js"></script>
+<style>
+  .ary-assistant{position:fixed;right:20px;bottom:22px;z-index:110;width:min(352px,calc(100vw - 32px));color:var(--ink);font-size:14px;line-height:1.55;pointer-events:none}
+  .ary-assistant-panel,.ary-assistant-launcher{pointer-events:auto}
+  .ary-assistant-panel{overflow:hidden;display:flex;flex-direction:column;max-height:calc(100dvh - 164px);margin-bottom:12px;background:var(--paper);border:1px solid #dec4d6;border-radius:22px;box-shadow:0 16px 54px #3c12352b}
+  .ary-assistant-header{display:flex;align-items:center;gap:12px;padding:17px 14px 17px 17px;background:linear-gradient(125deg,#f9e6f2,#fff8fb);border-bottom:1px solid var(--line);flex-shrink:0}
+  .ary-assistant-avatar{display:grid;place-items:center;width:64px;height:70px;flex-shrink:0;background:#fff;border-radius:18px;border:1px solid #eddae6}
+  .ary-assistant-avatar img{width:58px;height:66px;object-fit:contain}
+  .ary-assistant-eyebrow{display:block;font-size:8px;letter-spacing:.12em;font-weight:800;color:var(--magenta);margin-bottom:5px}
+  .ary-assistant-header h2{font-size:20px;letter-spacing:-.035em;margin:0 0 3px;line-height:1.15}
+  .ary-assistant-subtitle{font-size:12px;color:var(--muted)}
+  .ary-assistant-icon{align-self:flex-start;margin-left:auto;border:1px solid var(--line);border-radius:50%;background:#fff;width:36px;height:36px;flex-shrink:0;font-size:25px;line-height:1;color:var(--wine)}
+  .ary-assistant-body{padding:19px;overflow:auto;overscroll-behavior:contain;min-height:0}
+  .ary-assistant-welcome{margin:0 0 15px;color:var(--muted)}
+  .ary-assistant-welcome strong{display:block;color:var(--ink);font-size:17px;margin-top:5px}
+  .ary-assistant-choice{display:flex;align-items:center;gap:11px;padding:14px 12px;margin-bottom:10px;background:#fff;border:1px solid var(--line);border-radius:13px;text-decoration:none;min-height:70px}
+  .ary-assistant-choice:hover{border-color:var(--magenta);background:var(--blush)}
+  .ary-assistant-choice>span:first-child{display:grid;place-items:center;width:31px;height:35px;background:var(--blush);color:var(--magenta);font-size:11px;font-weight:800;border-radius:9px;flex-shrink:0}
+  .ary-assistant-choice>span:last-child{margin-left:auto;color:var(--magenta)}
+  .ary-assistant-choice strong{font-size:14px;display:block}.ary-assistant-choice small{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+  .ary-assistant-faq{margin-top:7px}.ary-assistant-faq summary{padding:10px 0;cursor:pointer;font-weight:650;color:var(--magenta);min-height:44px}.ary-assistant-faq p{font-size:13px;margin:10px 0}.ary-assistant-faq a{display:inline-block;min-height:44px;padding-top:9px;color:var(--magenta);font-weight:700}
+  .ary-assistant-progress-label{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:700;color:var(--magenta);margin-bottom:8px}
+  .ary-assistant-panel progress{display:block;width:100%;height:5px;border:0;border-radius:8px;appearance:none;background:#f1e4ed;margin-bottom:16px;accent-color:var(--magenta)}
+  .ary-assistant-panel progress::-webkit-progress-bar{background:#f1e4ed;border-radius:8px}.ary-assistant-panel progress::-webkit-progress-value{background:var(--magenta);border-radius:8px}.ary-assistant-panel progress::-moz-progress-bar{background:var(--magenta);border-radius:8px}
+  .ary-assistant-body h3{font-size:21px;line-height:1.15;letter-spacing:-.025em;margin:0 0 10px}.ary-assistant-body h3:focus{outline:none}
+  #ary-assistant-description{font-size:14px;margin-bottom:12px;line-height:1.65}
+  .ary-assistant-notice{padding:9px 11px;background:var(--blush);border-left:3px solid var(--magenta);font-size:12px;margin:0 0 12px}
+  .ary-assistant-field{padding:7px 0;margin-bottom:8px;min-height:40px;text-align:left;border:0;background:transparent;color:var(--magenta);font-size:12px;font-weight:700}
+  .ary-assistant-actions{display:flex;gap:9px}.ary-assistant-actions button{border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);padding:10px 12px;min-height:44px;font-size:13px;font-weight:700;flex:1}.ary-assistant-actions .ary-assistant-next{background:var(--magenta);border-color:var(--magenta);color:#fff}.ary-assistant-next:hover{background:var(--magenta-dark)}
+  .ary-assistant-menu{display:block;min-height:40px;width:100%;padding:9px 0 0;background:none;border:0;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}
+  .ary-assistant-footer{padding:10px 16px;border-top:1px solid var(--line);background:#fff;font-size:10px;line-height:1.5;color:var(--muted);flex-shrink:0}
+  .ary-assistant-launcher{display:flex;align-items:center;gap:10px;margin-left:auto;min-height:68px;padding:5px 16px 5px 8px;border-radius:20px;border:1px solid #e6ccde;background:#fff;box-shadow:0 6px 26px #3c12351b;color:var(--ink);text-align:left;max-width:100%}
+  .ary-assistant-launcher img{height:57px;width:52px;object-fit:contain}.ary-assistant-launcher strong{display:block;font-size:14px;line-height:1.3}.ary-assistant-launcher small{display:block;font-size:10px;color:var(--magenta);margin-top:3px}.ary-assistant-dot{width:7px;height:7px;border-radius:50%;background:var(--magenta);margin-left:6px}
+  .ary-assistant-launcher:hover{border-color:var(--magenta)}
+  :global(.ary-assistant-target){outline:3px solid var(--magenta)!important;outline-offset:5px;border-radius:8px;scroll-margin-top:110px}
+  :global(body.ary-assistant-space){padding-bottom:var(--ary-assistant-space,0px)!important}
+  @media(min-width:1100px){:global(body.is-billing) .ary-assistant{right:auto;left:20px;width:320px}:global(body.is-billing) .ary-assistant-launcher{margin-left:0}}
+  @media(max-width:700px){.ary-assistant{right:12px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px)}.ary-assistant-panel{max-height:calc(100dvh - 196px);margin-bottom:8px;border-radius:18px}.ary-assistant-header{padding:12px 13px;gap:10px}.ary-assistant-avatar{width:49px;height:56px;border-radius:13px}.ary-assistant-avatar img{width:45px;height:53px}.ary-assistant-header h2{font-size:19px}.ary-assistant-body{padding:15px}.ary-assistant-launcher{min-height:57px;padding:4px 12px 4px 5px;border-radius:16px}.ary-assistant-launcher img{height:47px;width:44px}.ary-assistant-launcher strong{font-size:13px}.ary-assistant-footer{font-size:9px}.ary-assistant-body h3{font-size:19px}}
+  @media(max-height:540px){.ary-assistant-panel{max-height:calc(100dvh - 135px)}.ary-assistant-header{padding:8px 12px}.ary-assistant-avatar,.ary-assistant-subtitle,.ary-assistant-footer{display:none}.ary-assistant-body{padding:12px}.ary-assistant-header h2{font-size:17px}.ary-assistant-launcher{min-height:44px}.ary-assistant-launcher img{height:35px}.ary-assistant{bottom:12px}}
+  @media(prefers-reduced-motion:reduce){:global(html:has(.ary-assistant-target)){scroll-behavior:auto}}
+  @media print{.ary-assistant{display:none!important}:global(.ary-assistant-target){outline:none!important}:global(body.ary-assistant-space){padding-bottom:0!important}}
+</style>

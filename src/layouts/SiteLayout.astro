@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import Icon from '../components/Icon.astro';
+import AryAssistant from '../components/AryAssistant.astro';
 interface Props { title: string; description: string; active?: string; billing?: boolean; scriptHash?: string }
 const { title, description, active = '', billing = false, scriptHash = '' } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
@@ -15,7 +16,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta name="theme-color" content="#951361"/>
-    <meta name="ary-release" content="ary-pro-20261009-v2"/>
+    <meta name="ary-release" content="ary-pro-20261010-mascota-v1"/>
     <meta name="description" content={description}/>
     {billing && <meta http-equiv="Content-Security-Policy" content={csp}/>}
     {billing && <meta name="robots" content="noindex,nofollow"/>}
@@ -33,6 +34,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     <nav class="bottom-nav" aria-label="Accesos rápidos">
       {nav.map(([href,icon,label,key]) => <a href={href} class:list={[{ selected: key === active }]} aria-current={key === active ? 'page' : undefined}><Icon name={icon} size={21}/><span>{label}</span></a>)}
     </nav>
+    <AryAssistant/>
     <slot name="scripts"/>
     <script src="../scripts/ui.ts"></script>
   </body>
