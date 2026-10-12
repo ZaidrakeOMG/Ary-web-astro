@@ -21,3 +21,9 @@
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
 @media print{.site-header,.footer,.bottom-nav,.button-row{display:none}body{padding:0;background:white;color:black}.section{padding:20px 0}.wrap{width:100%}}
 @media(max-width:720px){.home-stations .station-grid{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:88%;overflow-x:auto;scroll-snap-type:x mandatory;gap:14px;padding:0 0 16px;scrollbar-width:thin;scrollbar-color:#dbc7d6 transparent}.home-stations .station-card{scroll-snap-align:start}.home-stations .station-grid .station-card{display:block}.home-stations .station-content h3{font-size:22px}.footer-grid>div>a:not(.brand){min-height:44px}}
+
+/* Botón dedicado al portal de flotillas en la cabecera. */
+.header-flotillas{flex-shrink:0;min-height:43px;padding:12px 14px;font-size:12px;white-space:nowrap;border-color:var(--magenta);color:var(--magenta)}
+@media(max-width:999px){.header-flotillas{margin-left:auto}.header-cta{margin-left:0}}
+@media(max-width:720px){.header-row{gap:8px}.header-flotillas{font-size:11px;padding:9px 10px;min-height:40px;gap:4px}.header-flotillas svg{display:none}.header-cta{gap:4px;padding:9px 10px}.header-cta svg:last-child{display:none}}
+@media(max-width:360px){.header-row{gap:6px}.header-flotillas{font-size:10px;padding:8px}.header-cta{font-size:10px;padding:8px}.brand{gap:5px}.brand-word strong{font-size:25px}}
