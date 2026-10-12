@@ -2,7 +2,7 @@
 import Icon from './Icon.astro';
 interface Props { active?: string; billing?: boolean }
 const { active = '', billing = false } = Astro.props;
-const links = [['/','Inicio','inicio'],['/empresa/','Nosotros','empresa'],['/estaciones/','Estaciones','estaciones'],['/servicios/','Servicios','servicios'],['/contacto/','Contacto','contacto']];
+const links = [['/','Inicio','inicio'],['/empresa/','Nosotros','empresa'],['/estaciones/','Estaciones','estaciones'],['/servicios/','Servicios','servicios'],['/servicios/#flotillas','Flotillas','flotillas'],['/contacto/','Contacto','contacto']];
 ---
 <header class="site-header" data-billing={billing ? 'true' : 'false'}>
   <div class="wrap header-row">
