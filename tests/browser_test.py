@@ -19,6 +19,7 @@ BASE = os.getenv("ARY_TEST_URL", "http://127.0.0.1:4173").rstrip("/")
 SOURCE = (ROOT / "legacy/billing-original.htm").read_text(encoding="utf-8")
 CATALOG = json.loads(re.search(r"const INITIAL = (\{.*?\});", SOURCE)[1])
 RESULTS: list[dict] = []
+EXPECTED_RELEASE = re.search(r'<meta name="ary-release" content="([^"]+)"', (ROOT / 'src/layouts/SiteLayout.astro').read_text(encoding='utf-8'))[1]
 
 
 def embedded(route: str) -> str:
@@ -28,13 +29,13 @@ def embedded(route: str) -> str:
     for t in html.find_all("meta", attrs={"http-equiv": True}):
         t.decompose()
     for t in html.find_all("link", rel="stylesheet"):
-        p = ROOT / "dist" / t["href"].lstrip("/")
+        p = ROOT / "dist" / urlparse(t["href"]).path.lstrip("/")
         s = html.new_tag("style"); s.string = p.read_text(encoding="utf-8"); t.replace_with(s)
     for t in html.find_all("script", src=True):
-        p = ROOT / "dist" / t["src"].lstrip("/")
+        p = ROOT / "dist" / urlparse(t["src"]).path.lstrip("/")
         del t["src"]; t.string = p.read_text(encoding="utf-8")
     for t in html.find_all("img", src=True):
-        p = ROOT / "dist" / t["src"].lstrip("/")
+        p = ROOT / "dist" / urlparse(t["src"]).path.lstrip("/")
         t["src"] = "data:" + mimetypes.guess_type(p)[0] + ";base64," + base64.b64encode(p.read_bytes()).decode()
         t["loading"] = "eager"
     return str(html)
@@ -217,6 +218,7 @@ def main():
         api=API(safe=False);page=launch_page(b,api=api);fill(page)
         expect(page.locator('#modeBanner')).to_be_hidden()
         page.locator('#form-alta .submit').click();expect(page.locator('#receipt')).to_be_visible()
+        assert api.sent[0]['body']['sitio_web']==''
         assert api.sent[0]['headers']['x-ary-mode']=='real'
         finish(page,'server-mode:propagates-mode-with-mock-only')
         api=API();page=launch_page(b,api=api,storage={'ary_portal_pendiente':'a'*32})
@@ -246,7 +248,7 @@ def main():
             for alias,target in release['aliases'].items():
                 page=launch_page(b,route='/'+alias)
                 expect(page).to_have_url(BASE+target)
-                assert page.locator('meta[name=ary-release]').get_attribute('content')=='ary-pro-20261010-mascota-v1'
+                assert page.locator('meta[name=ary-release]').get_attribute('content')==EXPECTED_RELEASE
                 finish(page,'legacy-alias:'+alias)
             page=launch_page(b,route='/facturacion/?tramite=factura')
             expect(page.locator('#panel-factura')).to_be_visible()
