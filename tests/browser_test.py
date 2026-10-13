@@ -58,13 +58,16 @@ class API:
             if self.scenario == "retry" and count == 1: return {"status": 500, "data": {"error": "Recepcion incierta simulada"}}
             if self.scenario == "reject": return {"status": 400, "data": {"error": "Datos rechazados en simulacion"}}
             if self.scenario == "review": self.receipt["estado"] = "REVISION_REQUERIDA"
-            if self.scenario in ("no_registro", "sin_regimen"):
+            if self.scenario in ("no_registro", "sin_regimen", "verificacion"):
                 self.receipt["estado"] = "REVISION_REQUERIDA"
                 self.receipt["codigo_cliente"] = ("CLIENTE_NO_REGISTRADO" if self.scenario == "no_registro"
-                                                   else "CLIENTE_SIN_REGIMEN")
+                                                   else "CLIENTE_SIN_REGIMEN" if self.scenario == "sin_regimen"
+                                                   else "VERIFICACION_FISCAL_PENDIENTE")
                 self.receipt["mensaje"] = ("Su cliente no está dado de alta en nuestro sistema de facturación. Regístrese primero para poder solicitar su factura."
                                           if self.scenario == "no_registro"
-                                          else "Su cliente no está dado de alta correctamente para facturar. Falta registrar su régimen fiscal.")
+                                          else "Su cliente no está dado de alta correctamente para facturar. Falta registrar su régimen fiscal."
+                                          if self.scenario == "sin_regimen"
+                                          else "No fue posible confirmar una coincidencia única con los clientes registrados.")
             if self.scenario == "queue": self.receipt["estado"] = "EN_COLA"
             return {"status": 200, "data": self.receipt}
         if endpoint in ("recepcion", "estado"):
@@ -266,6 +269,7 @@ def main():
         for scenario, codigo, esperado in [
             ('no_registro','CLIENTE_NO_REGISTRADO','no está dado de alta'),
             ('sin_regimen','CLIENTE_SIN_REGIMEN','régimen fiscal'),
+            ('verificacion','VERIFICACION_FISCAL_PENDIENTE','coincidencia única'),
         ]:
             api=API(scenario);page=launch_page(b,api=api);fill(page,'factura')
             page.locator('#form-factura .submit').click()
