@@ -27,26 +27,25 @@
   const guides = {
     factura: [
       step('#factura-estacion', '1. Elige tu estación', 'Selecciona la estación donde cargaste combustible. Revisa su nombre y número en el ticket para no enviar tu solicitud a otra estación.'),
-      step('#factura-rfc', '2. Escribe tu RFC registrado', 'Captura el RFC que ya está dado de alta en esa estación. Si es tu primera vez, usa “Quiero darme de alta” y espera la confirmación del registro antes de facturar.'),
+      step('#factura-constancia', '2. Adjunta tu constancia fiscal', 'Selecciona el PDF digital original de la Constancia de Situación Fiscal del SAT (máximo 2 MB). El bot verificará RFC, razón social y calle para encontrar una única coincidencia en Polaris. No necesitas escribir el RFC.'),
       step('#factura-ticket', '3. Captura el folio del ticket', 'Escribe únicamente el folio numérico de tu ticket. Revisa cada dígito: no se trata del importe ni del número de estación.'),
       step('#factura-fecha', '4. Indica la fecha del ticket', 'Elige la fecha que aparece en el ticket. Consulta el rango permitido junto al campo y en el calendario del portal; no cambies la fecha de tu compra para intentar continuar.'),
       step('#factura-pago', '5. Selecciona cómo pagaste', 'Elige la forma de pago con la que realizaste esta compra. Debe coincidir con tu ticket; no selecciones otra solo para avanzar.'),
       step('#factura-uso', '6. Elige el uso de CFDI', 'Selecciona el uso que corresponde a tu solicitud. Si tienes dudas sobre cuál necesitas, confírmalo con tu contador antes de enviar.'),
       step('#factura-correo', '7. Escribe tu correo', 'Captura un correo al que tengas acceso. Revisa letras, puntos y dominio para que la información de tu trámite llegue al destinatario correcto.'),
       step('#factura-confirmacion', '8. Confirma tu correo', 'Escribe nuevamente el mismo correo. Ambos campos deben coincidir; esta segunda captura ayuda a detectar errores.'),
-      step('#form-factura input[name="confirmado"]', '9. Revisa y confirma tus datos', 'Revisa estación, RFC, folio, fecha, forma de pago, uso de CFDI y correo. Marca tú mismo la casilla únicamente cuando todo sea correcto.'),
+      step('#form-factura input[name="confirmado"]', '9. Revisa y confirma tus datos', 'Revisa estación, constancia PDF adjunta, folio, fecha, forma de pago, uso de CFDI y correo. Marca tú mismo la casilla únicamente cuando todo sea correcto.'),
       step('#form-factura .submit', '10. Abre la revisión final', 'Presiona “Revisar y enviar” en el formulario. Se abrirá un resumen: puedes elegir “Volver a revisar” o, solo después de comprobarlo, “Sí, enviar solicitud”. Los botones de esta guía nunca envían tu factura.'),
       followUp
     ],
     alta: [
       step('#alta-estacion', '1. Elige la estación', 'Selecciona la estación donde vas a solicitar tus facturas. Este registro corresponde a la estación elegida.'),
-      step('#alta-rfc', '2. Captura tu RFC', 'Escribe tu RFC de 12 o 13 caracteres tal como aparece en tu constancia de situación fiscal. Revisa que no falte ninguna letra o número.'),
-      step('#alta-idcif', '3. Encuentra tu idCIF', 'Busca el identificador idCIF en tu constancia de situación fiscal y captura sus 11 dígitos, sin espacios. No es tu RFC. También puedes abrir “¿Dónde encuentro mi idCIF?” en el formulario.'),
-      step('#alta-telefono', '4. Agrega tu teléfono', 'Escribe un número de contacto e incluye la lada. El equipo ARY utilizará los datos del formulario para dar seguimiento a tu solicitud.'),
-      step('#alta-correo', '5. Escribe tu correo', 'Captura un correo al que tengas acceso y comprueba que esté bien escrito. Ahí podrás recibir información relacionada con tu registro.'),
-      step('#alta-confirmacion', '6. Confirma tu correo', 'Escribe otra vez el mismo correo. Comprueba que las dos direcciones coincidan antes de continuar.'),
-      step('#form-alta input[name="confirmado"]', '7. Comprueba tus datos', 'Revisa estación, RFC, idCIF, teléfono y correo. Marca tú mismo la casilla de confirmación solamente si todos los datos son correctos.'),
-      step('#form-alta .submit', '8. Solicita tu alta', 'Cuando estés listo, pulsa “Solicitar mi alta” en el formulario. Ese botón sí envía tu solicitud de registro. Esta guía no lo presiona por ti. Espera la confirmación de tu alta antes de solicitar una factura.'),
+      step('#alta-constancia', '2. Sube tu constancia fiscal', 'Adjunta el PDF digital original descargado desde el SAT (máximo 2 MB). El bot leerá RFC, razón social, calle e idCIF de 11 dígitos directamente del archivo; no tienes que capturarlos.'),
+      step('#alta-telefono', '3. Teléfono opcional', 'Puedes indicar un número de contacto con lada, pero este campo no es obligatorio.'),
+      step('#alta-correo', '4. Escribe tu correo', 'Captura un correo al que tengas acceso y comprueba que esté bien escrito. Ahí podrás recibir información relacionada con tu registro.'),
+      step('#alta-confirmacion', '5. Confirma tu correo', 'Escribe otra vez el mismo correo. Comprueba que las dos direcciones coincidan antes de continuar.'),
+      step('#form-alta input[name="confirmado"]', '6. Comprueba tus datos', 'Revisa la estación, el PDF de constancia adjunto y el correo. Marca tú mismo la casilla de confirmación cuando todo sea correcto.'),
+      step('#form-alta .submit', '7. Solicita tu alta', 'Cuando estés listo, pulsa “Solicitar mi alta” en el formulario. Ese botón sí envía tu solicitud; esta guía no lo presiona por ti. Espera la confirmación del registro antes de facturar.'),
       followUp
     ]
   };

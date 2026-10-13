@@ -2890,23 +2890,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
          </div>
 
-         <div class="field">
-
-          <label for="factura-rfc">
-
-           RFC del cliente
-
-           <span class="required">
-
-            *
-
-           </span>
-
-          </label>
-
-          <input autocapitalize="characters" class="control rfc" id="factura-rfc" maxlength="13" minlength="12" name="rfc" placeholder="RFC de 12 o 13 caracteres" required="" spellcheck="false"/>
-
-         </div>
+         <div class="field full"><label for="factura-constancia">Constancia de situación fiscal (PDF) <span class="required">*</span></label><input class="control" id="factura-constancia" name="constancia_archivo" type="file" accept=".pdf,application/pdf" required><small>Obligatoria: PDF original del SAT, máximo 2 MB. El bot comparará RFC, razón social y calle.</small></div>
 
          <div class="field">
 
@@ -3084,7 +3068,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
          <span>
 
-          Revisé la estación, el RFC, el ticket, la fecha del ticket, la forma de pago, el uso de CFDI y el correo. Confirmo que corresponden a mi solicitud.
+          Adjunté mi constancia fiscal PDF y revisé estación, ticket, fecha, forma de pago, uso de CFDI y correo. Confirmo que corresponden a mi solicitud.
 
          </span>
 
@@ -3196,47 +3180,9 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
          </div>
 
-         <div class="field">
+         <div class="field full"><label for="alta-constancia">Constancia de situación fiscal (PDF) <span class="required">*</span></label><input class="control" id="alta-constancia" name="constancia_archivo" type="file" accept=".pdf,application/pdf" required><small>PDF digital del SAT, máximo 2 MB, con idCIF de 11 dígitos legible.</small></div>
 
-          <label for="alta-rfc">
-
-           RFC
-
-           <span class="required">
-
-            *
-
-           </span>
-
-          </label>
-
-          <input autocapitalize="characters" class="control rfc" id="alta-rfc" maxlength="13" minlength="12" name="rfc" placeholder="RFC de 12 o 13 caracteres" required="" spellcheck="false"/>
-
-         </div>
-
-         <div class="field">
-
-          <label for="alta-idcif">
-
-           idCIF
-
-           <span class="required">
-
-            *
-
-           </span>
-
-          </label>
-
-          <input class="control" id="alta-idcif" inputmode="numeric" maxlength="11" minlength="11" name="idcif" pattern="[0-9]{11}" placeholder="11 dígitos" required=""/>
-
-          <small>
-
-           Captura los 11 dígitos de tu idCIF, sin espacios.
-
-          </small>
-
-         </div>
+         
 
          <div class="field full">
 
@@ -3320,7 +3266,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
          <span>
 
-          Revisé mi RFC, idCIF y correo (teléfono opcional), y autorizo registrar mi alta de cliente en la estación seleccionada.
+          Adjunté mi constancia fiscal PDF, revisé mi correo (teléfono opcional) y autorizo registrar mi alta de cliente en la estación seleccionada.
 
          </span>
 
@@ -4017,7 +3963,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
 
 
-      reviewItem('RFC',values.rfc),
+      reviewItem('Constancia fiscal','PDF adjunto: se comprobarán RFC, razón social y calle'),
 
 
 
@@ -4352,9 +4298,11 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
       msg:data.mensaje || 'Estamos atendiendo tu solicitud.'
     })};
     const clienteError = data.tipo === 'FACTURA'
-      && ['CLIENTE_NO_REGISTRADO','CLIENTE_SIN_REGIMEN'].includes(data.codigo_cliente);
+      && ['CLIENTE_NO_REGISTRADO','CLIENTE_SIN_REGIMEN','VERIFICACION_FISCAL_PENDIENTE'].includes(data.codigo_cliente);
     if(clienteError && ['REVISION_REQUERIDA','REVISION_CERRADA'].includes(data.estado)){
-      state.title = data.codigo_cliente === 'CLIENTE_NO_REGISTRADO' ? 'Cliente no registrado' : 'Registro fiscal incompleto';
+      state.title = data.codigo_cliente === 'CLIENTE_NO_REGISTRADO'
+        ? 'Cliente no registrado'
+        : data.codigo_cliente === 'VERIFICACION_FISCAL_PENDIENTE' ? 'Verificación fiscal pendiente' : 'Registro fiscal incompleto';
       state.msg = data.mensaje;
       state.error = true;
     }
@@ -4555,6 +4503,23 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
   // ============================================================
 
+
+  const MAX_CONSTANCIA=2*1024*1024;
+  function leerConstancia(file) {
+    if(!file || !/\.pdf$/i.test(file.name||'') || file.size<200 || file.size>MAX_CONSTANCIA)
+      throw new Error('Adjunta el PDF digital original de la Constancia de Situación Fiscal (máx. 2 MB).');
+    return new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onerror=()=>reject(new Error('No se pudo leer el PDF de la constancia.'));
+      reader.onload=()=>{
+        const value=String(reader.result||'');
+        const start=value.indexOf('base64,');
+        if(start<0){reject(new Error('No se pudo codificar la constancia PDF.'));return;}
+        resolve(value.slice(start+7));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
   async function send(kind, event) {
 
 
@@ -4595,7 +4560,9 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
 
 
-      values.rfc=values.rfc.trim().toUpperCase();
+      try { values.constancia_pdf=await leerConstancia(form.elements.constancia_archivo.files[0]); }
+      catch(error) { formError(kind,error.message); return; }
+      delete values.constancia_archivo;
 
 
 
