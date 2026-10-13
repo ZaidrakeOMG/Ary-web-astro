@@ -4,6 +4,7 @@ Micrófono, voz hablada y API fiscal simulados. No toca Polaris ni facturas.
 import json
 import os
 import re
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright, expect
@@ -88,6 +89,15 @@ def finish(page, name):
     print('PASS',name,flush=True)
     context.close()
 
+def wait(page, expression, arg=None, timeout=6.0):
+    """Polling through Playwright evaluate (wait_for_function uses eval blocked by CSP)."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if page.evaluate(expression, arg):
+            return
+        page.wait_for_timeout(60)
+    raise AssertionError('No se cumplió la condición simulada: ' + expression)
+
 def open_help(page):
     if page.locator('#ary-assistant-panel').is_hidden():
         page.locator('#ary-assistant-launcher').click()
@@ -95,14 +105,14 @@ def open_help(page):
 def active(page):
     expect(page.locator('#ary-voice-toggle')).to_have_text('Desactivar voz')
     expect(page.locator('#ary-voice-toggle')).to_have_attribute('aria-pressed','true')
-    page.wait_for_function('Boolean(__voice.active?.onresult)')
+    wait(page, 'Boolean(__voice.active?.onresult)')
 
 def say(page, text):
     active(page)
     page.evaluate('(text)=>__emitVoice(text)', text)
 
 def spoken(page, text):
-    page.wait_for_function('(text)=>__voice.spoken.some(s=>s.includes(text))',arg=text)
+    wait(page, 'text => __voice.spoken.some(s=>s.includes(text))', text)
 
 def run():
     with sync_playwright() as p:
@@ -135,7 +145,7 @@ def run():
             spoken(page,'Elige tu estación')
             before=page.evaluate('__voice.spoken.length')
             say(page,'repetir')
-            page.wait_for_function('(n)=>__voice.spoken.length>n',arg=before)
+            wait(page, 'n => __voice.spoken.length>n', before)
             say(page,'quiero darme de alta')
             expect(page.locator('#tab-alta')).to_have_attribute('aria-selected','true')
             expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 9')
@@ -158,7 +168,7 @@ def run():
         say(page,'quiero facturar')
         spoken(page,'Elige tu estación')
         original=page.evaluate('__voice.listens')
-        page.wait_for_function('(n)=>__voice.listens>n',arg=original)
+        wait(page, 'n => __voice.listens>n', original)
         page.locator('#ary-assistant-next').click()
         spoken(page,'Escribe tu RFC registrado')
         expect(page.locator('#ary-voice-toggle')).to_have_text('Desactivar voz')
@@ -188,10 +198,10 @@ def run():
         page=launch(browser)
         open_help(page)
         page.evaluate("__voiceError('no-speech')")
-        page.wait_for_function('__voice.listens>=2')
+        wait(page, '__voice.listens>=2')
         active(page)
         page.evaluate("__endVoice()")
-        page.wait_for_function('__voice.listens>=3')
+        wait(page, '__voice.listens>=3')
         active(page)
         finish(page,'voice:autorestart-after-silence-and-end')
 
@@ -218,7 +228,7 @@ def run():
         open_help(page)
         page.evaluate('document.getElementById("reviewDialog").showModal()')
         expect(page.locator('#ary-assistant-panel')).to_be_hidden()
-        page.wait_for_function('__voice.active.onresult===null')
+        wait(page, '__voice.active.onresult===null')
         assert page.evaluate('__voice.aborts')>=1
         finish(page,'voice:review-modal-stops-microphone')
 
