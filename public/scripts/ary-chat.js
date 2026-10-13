@@ -112,7 +112,7 @@
   function localAnswer(text) {
     const q = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     if (/flot|flota/.test(q)) return 'Usa el botón Flotillas de la cabecera o “Abrir Flotillas” aquí abajo. Abre el portal empresarial en el puerto 4443. No puedo consultar tu saldo ni recuperar contraseñas; para eso contacta al equipo ARY.';
-    if (/idcif|constancia/.test(q)) return 'La guía de alta indica buscar el idCIF en tu constancia y capturar sus 11 dígitos en el formulario, no aquí. No es tu RFC. Abre “Guía de alta” para ver el campo correspondiente.';
+    if (/idcif|constancia/.test(q)) return 'Descarga tu Constancia de Situación Fiscal original en PDF desde el SAT y adjúntala en la página de facturación o alta (máximo 2 MB). El bot leerá RFC, razón social, calle e idCIF cuando corresponda. No escribas esos datos en este chat.';
     if (/alta|registr/.test(q)) return 'Abre “Guía de alta”. Te acompaña para elegir la estación, completar el formulario y revisar tus datos. La solicitud y su confirmación se realizan en el portal, nunca desde este chat.';
     if (/estado|referencia|llego|recib|seguimiento/.test(q)) return 'Consulta el avance con tu referencia y “Actualizar estado” en el portal de facturación. Una referencia no significa que tu factura ya esté emitida. No puedo consultar trámites desde este chat.';
     if (/factur|ticket|cfdi/.test(q)) return 'Abre “Guía de factura”. Elige la estación de tu ticket y revisa los campos del portal. Si aún no estás registrado, comienza con “Guía de alta”. No puedo emitir facturas ni decidir por ti el uso de CFDI.';
