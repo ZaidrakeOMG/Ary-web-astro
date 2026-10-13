@@ -86,9 +86,11 @@ def begin(page, kind):
 def fill(page, kind):
     page.locator('#tab-' + kind).click()
     page.locator('#' + kind + '-estacion').select_option('ARY I')
-    page.locator('#' + kind + '-rfc').fill('AAA010101AAA')
+    page.locator('#' + kind + '-constancia').set_input_files({
+        'name': 'constancia-sat-prueba.pdf', 'mimeType': 'application/pdf',
+        'buffer': b'%PDF-1.4\n' + b'PDF-SINTETICO-EXCLUSIVO-PRUEBAS\n' * 10
+    })
     if kind == 'alta':
-        page.locator('#alta-idcif').fill('12345678901')
         page.locator('#alta-telefono').fill('8711234567')
     else:
         page.locator('#factura-ticket').fill('12345')
@@ -116,7 +118,7 @@ def main():
             page.keyboard.press('Escape')
             expect(page.locator('#ary-assistant-launcher')).to_be_focused()
             finish(page, f'assistant:home:{width}')
-            for kind, count in [('alta', 9), ('factura', 11)]:
+            for kind, count in [('alta', 8), ('factura', 11)]:
                 page = launch(browser, '/facturacion/?guia=' + kind, width, height)
                 expect(page.locator('#ary-assistant-count')).to_have_text(f'Paso 1 de {count}')
                 expect(page.locator('#tab-' + kind)).to_have_attribute('aria-selected', 'true')
@@ -139,18 +141,21 @@ def main():
         page = launch(browser)
         begin(page, 'alta')
         page.locator('#ary-assistant-next').click()
-        expect(page.locator('#alta-rfc')).to_have_attribute('aria-describedby', re.compile('ary-assistant-description'))
+        expect(page.locator('#alta-constancia')).to_have_attribute('aria-describedby', re.compile('ary-assistant-description'))
         page.locator('#ary-assistant-field').click()
         expect(page.locator('#ary-assistant-panel')).to_be_hidden()
-        expect(page.locator('#alta-rfc')).to_be_focused()
-        page.locator('#alta-rfc').fill('AAA010101AAA')
+        expect(page.locator('#alta-constancia')).to_be_focused()
+        page.locator('#alta-constancia').set_input_files({
+            'name': 'constancia-sat-prueba.pdf', 'mimeType': 'application/pdf',
+            'buffer': b'%PDF-1.4\n' + b'PDF-SINTETICO-EXCLUSIVO-PRUEBAS\n' * 10
+        })
         page.locator('#ary-assistant-launcher').click()
-        expect(page.locator('#ary-assistant-count')).to_have_text('Paso 2 de 9')
+        expect(page.locator('#ary-assistant-count')).to_have_text('Paso 2 de 8')
         page.locator('#ary-assistant-next').click()
         page.locator('#ary-assistant-prev').click()
-        expect(page.locator('#alta-rfc')).to_have_value('AAA010101AAA')
+        assert page.locator('#alta-constancia').evaluate('e => e.files.length') == 1
         page.keyboard.press('Escape')
-        expect(page.locator('#alta-rfc')).to_have_attribute('aria-describedby', 'alta-rfc-hint')
+        expect(page.locator('#alta-constancia')).not_to_have_attribute('aria-describedby', re.compile('ary-assistant-description'))
         assert not page._test[1]
         finish(page, 'assistant:editing-resume-preserve-value-and-hint')
 
@@ -214,7 +219,7 @@ def main():
 
         page = launch(browser, offline=True)
         begin(page, 'alta')
-        for _ in range(7):
+        for _ in range(6):
             page.locator('#ary-assistant-next').click()
         expect(page.locator('#ary-assistant-notice')).to_be_visible()
         expect(page.locator('#ary-assistant-field')).to_be_disabled()
