@@ -1,191 +1,239 @@
-/* ARY chat: separate from billing and the existing guided tours.
- * Only explicitly typed chat messages may leave the page, after opt-in.
- * No form reads, automatic submissions, remote scripts, or API keys. */
+/* ARY voice guide. This historical asset path is kept for IIS compatibility.
+ * No chat, AI endpoint, recordings, transcript storage or form-field reads.
+ * Voice commands only choose/navigate the EXISTING guide. Never submit a form.
+ */
 (() => {
   'use strict';
   const root = document.getElementById('ary-assistant');
-  const home = document.getElementById('ary-assistant-home');
-  const launcher = document.getElementById('ary-assistant-launcher');
-  const panel = document.getElementById('ary-assistant-panel');
-  if (!root || !home || !launcher || !panel || root.dataset.chatReady) return;
-  root.dataset.chatReady = 'true';
+  const byId = name => document.getElementById('ary-assistant-' + name);
+  const panel = byId('panel'), home = byId('home'), tour = byId('tour');
+  if (!root || !panel || !home || !tour || root.dataset.voiceReady) return;
+  root.dataset.voiceReady = 'true';
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const synthesis = window.speechSynthesis;
+  const canSpeak = Boolean(synthesis && window.SpeechSynthesisUtterance);
+  const canListen = Boolean(Recognition && window.isSecureContext);
+  const modal = document.getElementById('reviewDialog');
+  const body = root.querySelector('.ary-assistant-body');
   const make = (tag, className, text) => {
-    const el = document.createElement(tag);
-    if (className) el.className = className;
-    if (text) el.textContent = text;
-    return el;
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
   };
-  root.querySelectorAll('img').forEach(img => { img.src = '/media/ary-mascota-pemex.webp'; });
-  launcher.setAttribute('aria-label', 'Abrir el asistente ARY: chat y ayuda paso a paso');
+  const button = (id, text) => {
+    const node = make('button', '', text);
+    node.type = 'button'; node.id = id;
+    return node;
+  };
+  root.querySelectorAll('img').forEach(image => { image.src = '/media/ary-mascota-pemex.webp'; });
+  byId('title').textContent = 'Guía de voz ARY';
   const footer = root.querySelector('.ary-assistant-footer');
-  if (footer) footer.textContent = 'No leo tus formularios ni envío trámites. Solo se comparte con la IA lo que escribes en el chat y autorizas enviar.';
+  if (footer) footer.textContent = 'El dictado elige y recorre la guía. Tú capturas, revisas y envías tus datos en el formulario.';
+  const welcome = home.querySelector('.ary-assistant-welcome');
+  if (welcome) welcome.textContent = 'Dime qué necesitas o elige una opción. Al iniciar una guía puedes escuchar cada indicación.';
 
-  // A quiet greeting, once per tab/session. No modal, focus stealing or sounds.
-  const greeting = make('aside', 'ary-greeting');
-  greeting.id = 'ary-greeting'; greeting.hidden = true;
-  const greetOpen = make('button', 'ary-greeting-open'); greetOpen.type = 'button';
-  greetOpen.append(make('strong', '', '¡Hola! ¿Te puedo ayudar en algo?'), make('span', '', 'Soy tu asistente ARY. Toca aquí.'));
-  const greetClose = make('button', 'ary-greeting-close', '×'); greetClose.type = 'button';
-  greetClose.setAttribute('aria-label', 'Cerrar mensaje de bienvenida');
-  greeting.append(greetOpen, greetClose); root.append(greeting);
-  const greetingKey = 'ary-greeting-dismissed-v1';
-  let dismissed = false, greetingDue = false, positionFrame = 0;
-  try { dismissed = sessionStorage.getItem(greetingKey) === '1'; } catch { /* optional UI storage */ }
-  function dismissGreeting() {
-    dismissed = true; greeting.hidden = true;
-    try { sessionStorage.setItem(greetingKey, '1'); } catch { /* optional UI storage */ }
-  }
-  function positionGreeting() {
-    positionFrame = 0;
-    const opened = launcher.getAttribute('aria-expanded') === 'true';
-    if (opened) dismissGreeting();
-    const menuOpen = document.getElementById('menuButton')?.getAttribute('aria-expanded') === 'true';
-    const modalOpen = Boolean(document.getElementById('reviewDialog')?.open);
-    const vv = window.visualViewport;
-    const keyboardOpen = Boolean(vv && window.innerHeight - vv.height > 140);
-    greeting.hidden = !greetingDue || dismissed || root.hidden || opened || menuOpen || modalOpen || keyboardOpen || root.classList.contains('is-dragging');
-    if (greeting.hidden) return;
-    const r = launcher.getBoundingClientRect();
-    const w = greeting.offsetWidth, h = greeting.offsetHeight;
-    const vw = document.documentElement.clientWidth, vh = window.innerHeight;
-    const x = Math.max(12, Math.min(r.right - w, vw - w - 12));
-    const y = r.top - h - 12 >= 12 ? r.top - h - 12 : r.bottom + 12;
-    greeting.style.left = Math.round(x) + 'px';
-    greeting.style.top = Math.max(12, Math.min(y, vh - h - 12)) + 'px';
-  }
-  function schedulePosition() { if (!positionFrame) positionFrame = requestAnimationFrame(positionGreeting); }
-  greetClose.addEventListener('click', dismissGreeting);
-  greetOpen.addEventListener('click', () => { dismissGreeting(); if (launcher.getAttribute('aria-expanded') !== 'true') launcher.click(); });
-  const uiObserver = new MutationObserver(schedulePosition);
-  uiObserver.observe(root, { attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
-  uiObserver.observe(launcher, { attributes: true, attributeFilter: ['aria-expanded', 'disabled'] });
-  for (const [id, attribute] of [['menuButton', 'aria-expanded'], ['reviewDialog', 'open']]) {
-    const el = document.getElementById(id);
-    if (el) uiObserver.observe(el, { attributes: true, attributeFilter: [attribute] });
-  }
-  window.addEventListener('resize', schedulePosition, { passive: true });
-  window.visualViewport?.addEventListener('resize', schedulePosition, { passive: true });
-  setTimeout(() => { greetingDue = true; schedulePosition(); }, 2400);
+  // Outside home/tour: microphone and audio controls remain available on every step.
+  const voice = make('section', 'ary-voice'); voice.id = 'ary-voice';
+  voice.setAttribute('aria-labelledby', 'ary-voice-title');
+  const title = make('h3', '', 'Dictado por voz'); title.id = 'ary-voice-title';
+  const hint = make('p', 'ary-voice-hint', 'Di “quiero facturar”, “quiero darme de alta”, “siguiente”, “anterior” o “repetir”.');
+  const actions = make('div', 'ary-voice-actions');
+  const mic = button('ary-voice-mic', '🎙 Dictar una instrucción');
+  mic.setAttribute('aria-pressed', 'false');
+  const audio = button('ary-voice-audio', 'Escuchar indicaciones');
+  audio.setAttribute('aria-pressed', 'false');
+  const repeat = button('ary-voice-repeat', 'Repetir indicación');
+  actions.append(mic, audio, repeat);
+  const status = make('p', 'ary-voice-status', 'El micrófono se activa solo cuando lo pulsas.');
+  status.id = 'ary-voice-status'; status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
+  mic.setAttribute('aria-describedby', status.id);
+  const privacy = make('p', 'ary-voice-privacy', 'No dictes RFC, correos ni otros datos personales aquí. El navegador puede usar su servicio de voz para procesar el audio. ARY no guarda grabaciones ni transcripciones.');
+  voice.append(title, hint, actions, status, privacy);
+  body.prepend(voice);
 
-  const chat = make('details', 'ary-chat'); chat.id = 'ary-chat';
-  const summary = make('summary', '', 'Conversar con el asistente');
-  const status = make('p', 'ary-chat-status', 'Modo guía local · IA opcional');
-  status.id = 'ary-chat-status'; status.setAttribute('role', 'status');
-  const privacy = make('p', 'ary-chat-privacy', 'No escribas RFC, idCIF, correos, teléfonos, contraseñas ni datos de pago. La guía local no envía tus mensajes.');
-  privacy.id = 'ary-chat-privacy';
-  const consentLabel = make('label', 'ary-chat-consent');
-  const consent = make('input'); consent.type = 'checkbox'; consent.id = 'ary-chat-consent';
-  consentLabel.append(consent, make('span', '', 'Usar IA de OpenAI. Autorizo enviar mis mensajes del chat para recibir respuestas. Puede equivocarse.'));
-  const log = make('div', 'ary-chat-log'); log.id = 'ary-chat-log'; log.setAttribute('role', 'log'); log.setAttribute('aria-live', 'polite'); log.setAttribute('aria-relevant', 'additions'); log.setAttribute('aria-label', 'Conversación con el asistente ARY');
-  const label = make('label', 'ary-chat-label', 'Escribe tu pregunta'); label.htmlFor = 'ary-chat-message';
-  const input = make('textarea', 'ary-chat-input'); input.id = 'ary-chat-message'; input.rows = 2; input.maxLength = 500; input.placeholder = 'Por ejemplo: ¿cómo entro a Flotillas?'; input.setAttribute('aria-describedby', 'ary-chat-privacy'); input.autocomplete = 'off';
-  const actions = make('div', 'ary-chat-actions');
-  const send = make('button', 'ary-chat-send', 'Enviar'); send.id = 'ary-chat-send'; send.type = 'button';
-  const clear = make('button', 'ary-chat-clear', 'Borrar chat'); clear.type = 'button';
-  actions.append(send, clear);
-  const quick = make('div', 'ary-chat-links');
-  for (const [href, text] of [['/facturacion/?guia=factura', 'Guía de factura'], ['/facturacion/?guia=alta', 'Guía de alta'], ['https://www.grupoary.com.mx:4443/', 'Abrir Flotillas'], ['/contacto/', 'Atención ARY']]) {
-    const a = make('a', '', text); a.href = href; quick.append(a);
+  let enabled = false, preferenceSet = false, recognition = null;
+  let listenTimer = 0, speakTimer = 0, serial = 0, lastStep = '', resizeFrame = 0;
+  const available = () => !root.hidden && !panel.hidden && !modal?.open && document.visibilityState !== 'hidden';
+  function resizePanel() {
+    if (!resizeFrame) resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0; window.dispatchEvent(new Event('resize'));
+    });
   }
-  chat.append(summary, status, privacy, consentLabel, log, label, input, actions, quick);
-  home.append(chat);
-  const welcome = '¡Hola! Puedo orientarte sobre facturación, alta de clientes, estaciones y acceso a Flotillas. ¿Qué necesitas?';
-  let history = [], busy = false, controller = null, generation = 0;
-  function addMessage(who, text) {
-    const item = make('div', 'ary-chat-message ' + (who === 'Tú' ? 'is-user' : 'is-assistant'));
-    item.append(make('strong', '', who), make('p', '', text)); log.append(item);
-    while (log.children.length > 16) log.firstElementChild.remove();
-    log.scrollTop = log.scrollHeight;
-  }
-  addMessage('Asistente ARY · guía local', welcome);
-  function repositionPanel() { window.dispatchEvent(new Event('resize')); }
-  chat.addEventListener('toggle', repositionPanel);
-  // Reflow the existing floating panel; never inspect billing values.
-  if (window.ResizeObserver) {
-    let lastHeight = 0;
-    new ResizeObserver(entries => {
-      const height = Math.round(entries[0].contentRect.height);
-      if (height !== lastHeight) { lastHeight = height; repositionPanel(); }
-    }).observe(chat);
-  }
-  const sensitive = text => /\b[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}\b/i.test(text) || /[^\s@]+@[^\s@]+\.[^\s@]+/.test(text) || /(?:\d[\s().+-]*){10,}/.test(text) || /\bsk-[a-z0-9_-]{12,}/i.test(text);
-  function localAnswer(text) {
-    const q = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    if (/flot|flota/.test(q)) return 'Usa el botón Flotillas de la cabecera o “Abrir Flotillas” aquí abajo. Abre el portal empresarial en el puerto 4443. No puedo consultar tu saldo ni recuperar contraseñas; para eso contacta al equipo ARY.';
-    if (/idcif|constancia/.test(q)) return 'La guía de alta indica buscar el idCIF en tu constancia y capturar sus 11 dígitos en el formulario, no aquí. No es tu RFC. Abre “Guía de alta” para ver el campo correspondiente.';
-    if (/alta|registr/.test(q)) return 'Abre “Guía de alta”. Te acompaña para elegir la estación, completar el formulario y revisar tus datos. La solicitud y su confirmación se realizan en el portal, nunca desde este chat.';
-    if (/estado|referencia|llego|recib|seguimiento/.test(q)) return 'Consulta el avance con tu referencia y “Actualizar estado” en el portal de facturación. Una referencia no significa que tu factura ya esté emitida. No puedo consultar trámites desde este chat.';
-    if (/factur|ticket|cfdi/.test(q)) return 'Abre “Guía de factura”. Elige la estación de tu ticket y revisa los campos del portal. Si aún no estás registrado, comienza con “Guía de alta”. No puedo emitir facturas ni decidir por ti el uso de CFDI.';
-    if (/estacion|direccion|ubic|cerca/.test(q)) return 'En “Estaciones” de la cabecera puedes consultar las ubicaciones y abrir las rutas. No tengo tu ubicación ni información de tráfico en tiempo real.';
-    if (/precio|costo|litro|promoc|credito|horario/.test(q)) return 'Para precios, promociones, horarios o condiciones de crédito vigentes, consulta al equipo ARY desde “Atención ARY”. No tengo datos en tiempo real y no quiero darte información incorrecta.';
-    if (/hola|gracia|ayuda/.test(q)) return welcome;
-    return 'En modo guía local solo respondo dudas básicas de ARY. Prueba con facturación, alta, estaciones o flotillas; también puedes abrir “Atención ARY”. La opción de IA necesita que el servicio esté configurado.';
-  }
-  async function getJSON(path, options, signal) {
-    const response = await fetch('/api/asistente/' + path, { ...options, signal, credentials: 'omit', cache: 'no-store', mode: 'same-origin', redirect: 'error' });
-    if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error('IA no disponible');
-    return response.json();
-  }
-  function cancelPending() {
-    generation++; controller?.abort(); controller = null; busy = false;
-    send.disabled = false; send.textContent = 'Enviar';
-  }
-  consent.addEventListener('change', async () => {
-    cancelPending(); history = []; // No old local conversation is forwarded after opt-in.
-    if (!consent.checked) { status.textContent = 'Modo guía local · mensajes sin enviar a IA'; return; }
-    const myGeneration = generation;
-    status.textContent = 'Comprobando disponibilidad de IA…';
-    send.disabled = true;
-    controller = new AbortController(); const healthController = controller;
-    const timeout = setTimeout(() => healthController.abort(), 4000);
-    try {
-      const data = await getJSON('salud', { method: 'GET' }, healthController.signal);
-      if (myGeneration !== generation) return;
-      if (data.ready !== true) throw new Error('No configurada');
-      status.textContent = 'IA habilitada · solo enviaré lo que escribas a partir de ahora';
-    } catch {
-      if (myGeneration !== generation) return;
-      consent.checked = false;
-      status.textContent = 'IA no disponible. Puedes usar la guía local.';
-    } finally {
-      clearTimeout(timeout);
-      if (myGeneration === generation) { controller = null; send.disabled = false; }
+  function message(text) { status.textContent = text; resizePanel(); }
+  function stopListening() {
+    clearTimeout(listenTimer);
+    const previous = recognition; recognition = null;
+    if (previous) {
+      previous.onresult = previous.onerror = previous.onend = previous.onstart = null;
+      try { previous.abort(); } catch { /* Already ended. */ }
     }
+    mic.textContent = '🎙 Dictar una instrucción';
+    mic.setAttribute('aria-pressed', 'false');
+  }
+  function stopSpeaking() {
+    clearTimeout(speakTimer); serial++;
+    try { synthesis?.cancel(); } catch { /* Speech is optional. */ }
+  }
+  function setAudio(value) {
+    enabled = Boolean(value && canSpeak); preferenceSet = true;
+    audio.textContent = enabled ? 'Silenciar indicaciones' : 'Escuchar indicaciones';
+    audio.setAttribute('aria-pressed', String(enabled));
+    if (!enabled) stopSpeaking();
+  }
+  function speak(text) {
+    if (!enabled || !canSpeak || !available() || !text) return;
+    stopListening(); stopSpeaking();
+    const token = serial;
+    try {
+      const utterance = new window.SpeechSynthesisUtterance(text);
+      utterance.lang = 'es-MX'; utterance.rate = 0.95;
+      const voices = synthesis.getVoices();
+      const selected = voices.find(v => /^es[-_]MX$/i.test(v.lang)) || voices.find(v => /^es(?:[-_]|$)/i.test(v.lang));
+      if (selected) utterance.voice = selected;
+      utterance.onstart = () => { if (token === serial) message('Leyendo la indicación…'); };
+      utterance.onend = () => { if (token === serial) message('Toca el micrófono para dictar otra instrucción o usa los botones.'); };
+      utterance.onerror = () => {
+        if (token === serial) message('No se pudo reproducir la voz. Puedes leer el paso o pulsar Repetir indicación.');
+      };
+      synthesis.speak(utterance);
+    } catch { message('La voz no está disponible. La guía escrita sigue funcionando.'); }
+  }
+  function currentInstruction() {
+    if (tour.hidden) return '¿Qué necesitas hacer? Puedes decir: quiero facturar, o quiero darme de alta.';
+    // Only predefined guide copy, never input values, receipt details or billing data.
+    return [byId('count').textContent, byId('step').textContent.replace(/^\d+\.\s*/, ''), byId('description').textContent].join('. ');
+  }
+  function readCurrent() { lastStep = currentInstruction(); speak(lastStep); }
+  function sync() {
+    if (!available()) {
+      const wasListening = Boolean(recognition);
+      stopListening(); stopSpeaking(); lastStep = '';
+      if (wasListening) message('Dictado detenido. No se ejecutó ninguna instrucción pendiente.');
+      return;
+    }
+    const instruction = currentInstruction();
+    if (instruction === lastStep) return;
+    lastStep = instruction;
+    stopListening(); stopSpeaking();
+    if (enabled) speakTimer = setTimeout(() => speak(currentInstruction()), 80);
+  }
+  function normalise(text) {
+    return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/[^a-z0-9ñ ]/g, ' ').replace(/\s+/g, ' ').trim()
+      .replace(/^(?:hola )?(?:ary )?/, '').replace(/(?: por favor)$/, '').trim();
+  }
+  function command(text) {
+    const q = normalise(text);
+    // Exact commands: negations, mixed intentions and personal data are not guessed.
+    if (/^(?:(?:quiero|necesito) )?(?:facturar(?: (?:mi|un|el) ticket)?|una factura)$/.test(q)) return 'factura';
+    if (/^(?:(?:quiero|necesito) )?(?:darme de alta|registrarme|alta de cliente)$/.test(q)) return 'alta';
+    if (/^(?:siguiente(?: paso)?|continuar|continua|avanza)$/.test(q)) return 'next';
+    if (/^(?:anterior|paso anterior|regresar|regresa)$/.test(q)) return 'prev';
+    if (/^(?:repite(?: la indicacion| el paso)?|repetir(?: indicacion| paso)?|otra vez|no entendi)$/.test(q)) return 'repeat';
+    if (/^(?:silencio|silenciar|deja de hablar|silenciar indicaciones)$/.test(q)) return 'mute';
+    if (/^(?:activar voz|habla|escuchar indicaciones)$/.test(q)) return 'audio';
+    if (/^(?:menu|volver al menu|inicio)$/.test(q)) return 'menu';
+    if (/^(?:cerrar ayuda|cerrar guia|terminar guia)$/.test(q)) return 'close';
+    return null;
+  }
+  function explain(text) { message(text); if (enabled) speak(text); }
+  function execute(text) {
+    if (!available()) return;
+    const action = command(text);
+    if (!action) {
+      explain('No reconocí una instrucción. Di quiero facturar, quiero darme de alta, siguiente, anterior o repetir. Los datos y el envío se confirman en el formulario.');
+      return;
+    }
+    if (action === 'mute') { setAudio(false); message('Indicaciones silenciadas. El dictado sigue disponible al pulsar el micrófono.'); return; }
+    if (action === 'audio' || action === 'repeat') { setAudio(true); readCurrent(); return; }
+    if (action === 'factura' || action === 'alta') {
+      message(action === 'factura' ? 'Abriendo la guía para facturar.' : 'Abriendo la guía para darte de alta.');
+      if (document.getElementById('form-factura') && document.getElementById('form-alta')) {
+        home.querySelector('[data-ary-guide="' + action + '"]').click();
+      } else {
+        stopListening(); stopSpeaking();
+        // Two fixed same-origin destinations, never a URL dictated by the visitor.
+        window.location.assign('/facturacion/?guia=' + action + '&voz=1');
+      }
+      return;
+    }
+    if (action === 'close') { byId('close').click(); return; }
+    if (action === 'menu') { byId('menu').click(); return; }
+    if (tour.hidden) { explain('Primero elige quiero facturar o quiero darme de alta.'); return; }
+    const target = byId(action); // Only next or prev; NEVER form submit/checkbox.
+    if (target.disabled) { explain('Ya estás en el primer paso.'); return; }
+    target.click();
+  }
+  function listen() {
+    if (!available()) return;
+    if (recognition) { stopListening(); message('Dictado detenido.'); return; }
+    if (!canListen) { message('El dictado no está disponible en este navegador. Usa los botones de la guía.'); return; }
+    stopSpeaking();
+    if (!preferenceSet) setAudio(true);
+    let current;
+    try { current = new Recognition(); } catch { message('No se pudo iniciar el dictado en este navegador. Usa los botones.'); return; }
+    recognition = current;
+    current.lang = 'es-MX'; current.continuous = false; current.interimResults = false; current.maxAlternatives = 1;
+    current.onstart = () => {
+      if (recognition !== current) return;
+      mic.textContent = '■ Detener dictado'; mic.setAttribute('aria-pressed', 'true');
+      message('Escuchando una instrucción…');
+    };
+    current.onresult = event => {
+      if (recognition !== current || !available()) return;
+      const result = event.results?.[event.resultIndex ?? 0];
+      if (!result?.isFinal) return;
+      const text = result[0]?.transcript || '';
+      stopListening(); execute(text); // Transcript is not rendered, logged or stored.
+    };
+    current.onerror = event => {
+      if (recognition !== current) return;
+      stopListening();
+      const messages = {
+        'not-allowed': 'El micrófono no tiene permiso. Puedes permitirlo desde el navegador o seguir con los botones.',
+        'service-not-allowed': 'El servicio de dictado no está disponible. Usa los botones de la guía.',
+        'audio-capture': 'No se detectó un micrófono disponible. Usa los botones de la guía.',
+        'no-speech': 'No escuché una instrucción. Pulsa el micrófono e inténtalo otra vez.',
+        network: 'El servicio de voz no respondió. Puedes seguir con los botones de la guía.'
+      };
+      message(messages[event.error] || 'Se detuvo el dictado. Puedes intentarlo de nuevo o usar los botones.');
+    };
+    current.onend = () => {
+      if (recognition !== current) return;
+      stopListening(); message('El dictado terminó. Pulsa el micrófono para intentarlo otra vez.');
+    };
+    listenTimer = setTimeout(() => {
+      if (recognition !== current) return;
+      stopListening(); message('No llegó una instrucción a tiempo. Usa los botones o vuelve a pulsar el micrófono.');
+    }, 15000);
+    try { current.start(); } catch { stopListening(); message('No se pudo activar el micrófono. Usa los botones de la guía.'); }
+  }
+  mic.disabled = !canListen;
+  audio.disabled = repeat.disabled = !canSpeak;
+  if (!canListen) message('Dictado no disponible aquí. Usa los botones; la voz de las indicaciones depende de tu navegador.');
+  if (!canSpeak) message('Este navegador no ofrece lectura en voz alta. Puedes seguir la guía escrita.');
+  if (new URL(window.location.href).searchParams.get('voz') === '1' && canSpeak) {
+    message('Guía lista. Toca Escuchar indicaciones para activar el audio en esta página.');
+  }
+  mic.addEventListener('click', listen);
+  audio.addEventListener('click', () => {
+    stopListening(); setAudio(!enabled);
+    if (enabled) readCurrent(); else message('Indicaciones silenciadas.');
   });
-  async function sendMessage() {
-    if (busy || send.disabled) return;
-    const message = input.value.trim();
-    if (!message) { input.focus(); return; }
-    if (message.length > 500 || sensitive(message)) {
-      status.textContent = 'Escribe una pregunta general, sin datos personales, folios largos ni claves. No se envió tu mensaje.';
-      input.focus(); return;
-    }
-    addMessage('Tú', message); input.value = '';
-    if (!consent.checked) { addMessage('Asistente ARY · guía local', localAnswer(message)); repositionPanel(); return; }
-    busy = true; send.disabled = true; send.textContent = 'Consultando…';
-    status.textContent = 'Consultando a la IA…';
-    controller = new AbortController(); const requestController = controller;
-    const myGeneration = generation;
-    const timeout = setTimeout(() => requestController.abort(), 16000);
-    try {
-      const data = await getJSON('chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-ARY-Chat': '1' }, body: JSON.stringify({ message, history }) }, requestController.signal);
-      if (myGeneration !== generation) return;
-      if (data.mode !== 'ia' || typeof data.reply !== 'string' || !data.reply.trim() || data.reply.length > 2000) throw new Error('Respuesta inválida');
-      addMessage('Asistente ARY · IA', data.reply);
-      history = [...history, { role: 'user', content: message }, { role: 'assistant', content: data.reply.slice(0, 500) }].slice(-6);
-      status.textContent = 'Respuesta de IA · comprueba la información importante con ARY';
-    } catch {
-      if (myGeneration !== generation) return;
-      consent.checked = false; history = [];
-      status.textContent = 'La IA no respondió. Sigo en modo guía local.';
-      addMessage('Asistente ARY · guía local', localAnswer(message));
-    } finally {
-      clearTimeout(timeout);
-      if (myGeneration === generation) { busy = false; controller = null; send.disabled = false; send.textContent = 'Enviar'; repositionPanel(); }
-    }
-  }
-  send.addEventListener('click', sendMessage);
-  input.addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); sendMessage(); } });
-  clear.addEventListener('click', () => { cancelPending(); history = []; consent.checked = false; input.value = ''; log.replaceChildren(); addMessage('Asistente ARY · guía local', welcome); status.textContent = 'Chat borrado · modo guía local'; repositionPanel(); });
-  window.addEventListener('pagehide', () => { cancelPending(); history = []; });
+  repeat.addEventListener('click', () => { stopListening(); setAudio(true); readCurrent(); });
+  // Manual guide selection also speaks, unless the visitor deliberately muted it.
+  root.addEventListener('click', event => {
+    if (!event.target.closest?.('[data-ary-guide]')) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    if (event.isTrusted && !preferenceSet) setAudio(true);
+  }, true);
+  const observer = new MutationObserver(sync);
+  for (const element of [panel, home, tour]) observer.observe(element, { attributes: true, attributeFilter: ['hidden'] });
+  if (modal) observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
+  for (const element of [byId('step'), byId('description'), byId('count')]) observer.observe(element, { childList: true, characterData: true, subtree: true });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sync(); });
+  window.addEventListener('pagehide', () => { stopListening(); stopSpeaking(); });
+  resizePanel(); sync();
 })();
