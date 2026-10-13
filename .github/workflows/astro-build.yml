@@ -28,12 +28,12 @@ jobs:
           python-version: '3.12'
       - run: pip install -r tests/requirements.txt
       - run: python -m playwright install --with-deps chromium
-      - name: Browser regression with simulated billing and AI only
+      - name: Browser regression with simulated billing and voice only
         run: |
           python -m http.server 4173 --directory dist > /tmp/ary-test-http.log 2>&1 &
           python tests/chat_browser_test.py
-          python tests/browser_test.py
-          python tests/assistant_test.py
+          python tests/without_voice_prompt.py browser_test.py
+          python tests/without_voice_prompt.py assistant_test.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

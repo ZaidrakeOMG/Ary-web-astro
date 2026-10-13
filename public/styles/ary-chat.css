@@ -1,9 +1,41 @@
-/* Additive assistant styles; never target billing inputs or global navigation. */
-.ary-greeting{position:fixed;width:min(278px,calc(100vw - 24px));display:flex;align-items:start;gap:4px;pointer-events:auto;background:#fff;border:1px solid #ddb5ce;border-radius:17px;box-shadow:0 8px 30px #3c12352b;box-sizing:border-box;color:var(--ink);z-index:1}
-.ary-greeting[hidden]{display:none!important}.ary-greeting-open{flex:1;border:0;background:transparent;padding:15px 0 15px 16px;text-align:left;min-height:70px;color:inherit;border-radius:17px;font:inherit;cursor:pointer}.ary-greeting-open strong{display:block;font-size:14px;line-height:1.45;color:var(--magenta)}.ary-greeting-open span{display:block;margin-top:4px;font-size:11px;color:var(--muted)}.ary-greeting-close{flex-shrink:0;border:0;background:transparent;border-radius:12px;font-size:23px;line-height:1;min-width:44px;min-height:44px;color:var(--muted);cursor:pointer}
-.ary-chat{margin-top:15px;padding-top:7px;border-top:1px solid var(--line)}.ary-chat>summary{cursor:pointer;color:var(--magenta);font-weight:750;font-size:14px;min-height:44px;padding:11px 0}.ary-chat-status{margin:0 0 8px;font-size:11px;color:var(--magenta);line-height:1.5}.ary-chat-privacy{font-size:11px!important;color:var(--muted);line-height:1.5;margin:0 0 10px}.ary-chat-consent{display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:11px;line-height:1.5;cursor:pointer}.ary-chat-consent input{width:17px!important;height:17px;min-height:17px;flex-shrink:0;padding:0;margin:2px 0 0;accent-color:var(--magenta)}.ary-chat-log{max-height:210px;overflow:auto;overscroll-behavior:contain;padding:2px 3px 2px 0;scrollbar-width:thin}.ary-chat-message{padding:10px 12px;background:var(--blush);border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow-wrap:anywhere}.ary-chat-message.is-user{margin-left:22px;background:#fff}.ary-chat-message strong{display:block;font-size:10px;color:var(--magenta);margin-bottom:4px}.ary-chat-message p{font-size:13px;line-height:1.6;white-space:pre-wrap;margin:0}.ary-chat-label{display:block;font-size:12px;font-weight:700;margin:12px 0 5px}.ary-chat-input{display:block;width:100%;min-height:74px;border:1px solid #cbb9c5;border-radius:10px;background:#fff;color:var(--ink);padding:10px;resize:vertical;font-size:16px;line-height:1.5;box-sizing:border-box}.ary-chat-actions{display:flex;gap:8px;margin-top:8px}.ary-chat-actions button{flex:1;min-height:44px;border-radius:10px;padding:10px;border:1px solid var(--line);font-size:12px;font-weight:700;cursor:pointer}.ary-chat-send{background:var(--magenta);color:#fff}.ary-chat-clear{background:#fff;color:var(--muted)}.ary-chat-links{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:10px}.ary-chat-links a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:9px;border:1px solid var(--line);padding:7px;text-decoration:none;text-align:center;color:var(--magenta);font-size:11px;font-weight:650}
-@media(max-height:540px){.ary-chat-log{max-height:125px}.ary-greeting{display:none!important}}
-@media print{.ary-greeting,.ary-chat{display:none!important}}
-/* On wide billing screens dock guided help in the sidebar, never over form actions.
-   Keep the draggable launcher and all other pages/mobile positioning unchanged. */
+/* Voice controls; historical asset name retained for existing IIS installations. */
+.ary-voice{padding:13px;margin-bottom:16px;border:1px solid var(--line,#e6ccde);border-radius:14px;background:var(--blush,#fff1fa);overflow-wrap:anywhere}
+.ary-voice h3{font-size:16px!important;line-height:1.3!important;margin:0 0 7px!important}
+.ary-voice-hint{font-size:12px;line-height:1.55;margin:0 0 10px}
+.ary-voice-actions{display:grid;grid-template-columns:1fr;gap:7px}
+.ary-voice-actions button{min-height:44px;border:1px solid var(--line,#e6ccde);border-radius:10px;padding:8px;background:#fff;color:var(--wine,#681444);font:inherit;font-size:11px;font-weight:700;line-height:1.4;cursor:pointer}
+.ary-voice-actions #ary-voice-toggle{width:100%;background:var(--magenta,#951361);color:#fff;border-color:var(--magenta,#951361);font-size:14px}
+.ary-voice-actions #ary-voice-toggle[aria-pressed=true]{background:var(--wine,#681444)}
+.ary-voice-actions button:focus-visible{outline:3px solid var(--wine,#681444);outline-offset:3px}
+.ary-voice-actions button:disabled{opacity:.55;cursor:not-allowed}
+.ary-voice-status{font-size:12px;line-height:1.5;margin:10px 0 0;color:var(--wine,#681444);min-height:18px}
+.ary-voice-privacy{font-size:10px;line-height:1.5;margin:8px 0 0;color:var(--muted,#675d65)}
+@media(max-width:360px){.ary-voice{padding:10px}.ary-voice-actions{gap:5px}}
+@media(prefers-reduced-motion:reduce){.ary-voice *{animation:none!important;transition:none!important}}
+@media print{.ary-voice{display:none!important}}
+/* Keep the existing desktop billing dock clear of the form actions. */
 @media(min-width:1100px){.is-billing #ary-assistant-panel:has(#ary-assistant-tour:not([hidden])){left:max(12px,calc((100vw - 1180px)/2))!important;width:310px}}
+/* Keep the mobile guide non-modal: tabs and form remain accessible.
+   The existing scrolling body retains all voice controls and step text. */
+@media(max-width:1099px){.is-billing #ary-assistant-panel:has(#ary-assistant-tour:not([hidden])){max-height:min(42dvh,350px)!important}}
+
+/* Initial opt-in is a real accessible dialog. The microphone remains off until Yes. */
+.ary-voice-consent{width:min(450px,calc(100vw - 32px));max-height:calc(100dvh - 32px);box-sizing:border-box;padding:0;border:1px solid #e5cfdd;border-radius:24px;background:#fffafc;color:#321128;box-shadow:0 20px 70px #220b2345;overflow:auto;overscroll-behavior:contain}
+.ary-voice-consent:not([open]){display:none!important}
+.ary-voice-consent::backdrop{background:#210d2c88;backdrop-filter:blur(4px)}
+.ary-voice-consent-card{padding:26px;text-align:center;line-height:1.6;font-family:inherit}
+.ary-voice-consent-image{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 14px}
+.ary-voice-consent-eyebrow{color:#951361;font-size:10px;font-weight:800;letter-spacing:.13em;margin:0 0 8px}
+.ary-voice-consent h2{font-size:24px;line-height:1.15;letter-spacing:-.025em;margin:0 0 16px;color:#321128}
+.ary-voice-consent p{font-size:14px;margin:0 0 14px}
+.ary-voice-consent .ary-voice-consent-note{font-size:11px;color:#695a65;margin-bottom:20px}
+.ary-voice-consent-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ary-voice-consent-actions button{min-height:48px;padding:12px 14px;border:1px solid #c89ab9;border-radius:12px;font:inherit;font-size:14px;font-weight:750;cursor:pointer;background:#fff;color:#681444}
+.ary-voice-consent-actions #ary-voice-consent-allow{background:#951361;color:white;border-color:#951361}
+.ary-voice-consent-actions button:focus-visible{outline:3px solid #681444;outline-offset:3px}
+.ary-voice-consent-actions button:disabled{opacity:.5;cursor:not-allowed}
+body.ary-voice-consent-open{overflow:hidden}
+.ary-voice-consent[data-fallback-open]{position:fixed;inset:0;margin:auto;z-index:10000;box-shadow:0 0 0 100vmax #210d2c88}
+@media(max-width:390px){.ary-voice-consent-card{padding:20px}.ary-voice-consent h2{font-size:22px}.ary-voice-consent-actions{grid-template-columns:1fr}}
+@media(max-height:550px){.ary-voice-consent-card{padding:16px}.ary-voice-consent-image{width:58px;height:58px;margin-bottom:8px}.ary-voice-consent h2{font-size:20px}}
+@media print{.ary-voice-consent{display:none!important}body.ary-voice-consent-open{overflow:visible}}
