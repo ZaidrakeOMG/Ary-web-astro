@@ -58,6 +58,13 @@ class API:
             if self.scenario == "retry" and count == 1: return {"status": 500, "data": {"error": "Recepcion incierta simulada"}}
             if self.scenario == "reject": return {"status": 400, "data": {"error": "Datos rechazados en simulacion"}}
             if self.scenario == "review": self.receipt["estado"] = "REVISION_REQUERIDA"
+            if self.scenario in ("no_registro", "sin_regimen"):
+                self.receipt["estado"] = "REVISION_REQUERIDA"
+                self.receipt["codigo_cliente"] = ("CLIENTE_NO_REGISTRADO" if self.scenario == "no_registro"
+                                                   else "CLIENTE_SIN_REGIMEN")
+                self.receipt["mensaje"] = ("Su cliente no está dado de alta en nuestro sistema de facturación. Regístrese primero para poder solicitar su factura."
+                                          if self.scenario == "no_registro"
+                                          else "Su cliente no está dado de alta correctamente para facturar. Falta registrar su régimen fiscal.")
             if self.scenario == "queue": self.receipt["estado"] = "EN_COLA"
             return {"status": 200, "data": self.receipt}
         if endpoint in ("recepcion", "estado"):
@@ -181,6 +188,15 @@ def main():
             expect(page.locator('#progressTrack')).to_have_attribute('aria-valuenow','100')
             page.screenshot(path=str(OUT/f'{kind}-receipt-android.png'),full_page=True)
             finish(page,'submit:'+kind+':contract-and-receipt')
+        # El telefono opcional debe funcionar con el contrato del bot y sin inventar dato.
+        api=API();page=launch_page(b,api=api);fill(page,'alta')
+        page.locator('#alta-telefono').clear()
+        assert not page.locator('#alta-telefono').evaluate('e=>e.required')
+        page.locator('#form-alta .submit').click()
+        expect(page.locator('#receipt')).to_be_visible()
+        assert api.sent[0]['body']['telefono'] == ''
+        finish(page,'alta:telefono-opcional')
+
         api=API();page=launch_page(b,api=api);fill(page)
         page.locator('#alta-confirmacion').fill('otro@example.com')
         page.locator('#form-alta .submit').click();page.wait_for_timeout(100)
@@ -234,6 +250,25 @@ def main():
         expect(page.locator('#finalResult')).to_be_visible()
         assert page.locator('#finalResult a').get_attribute('href')=='tel:+528711651404'
         finish(page,'result:review-required-and-contact')
+        # Dos errores reales distintos: la API entrega el codigo y la web lo muestra.
+        # No se reenvia la factura durante seguimiento; todos los datos son simulados.
+        for scenario, codigo, esperado in [
+            ('no_registro','CLIENTE_NO_REGISTRADO','no está dado de alta'),
+            ('sin_regimen','CLIENTE_SIN_REGIMEN','régimen fiscal'),
+        ]:
+            api=API(scenario);page=launch_page(b,api=api);fill(page,'factura')
+            page.locator('#form-factura .submit').click()
+            page.locator('#reviewConfirm').click()
+            expect(page.locator('#receipt')).to_be_visible()
+            expect(page.locator('#finalResult')).to_be_visible()
+            assert esperado in page.locator('#finalResult').inner_text()
+            assert esperado in page.locator('#progressMessage').inner_text()
+            assert esperado in page.locator('#receiptMessage').inner_text()
+            assert api.receipt['codigo_cliente'] == codigo
+            assert len(api.sent) == 1
+            page.locator('#refreshStatus').click()
+            assert len(api.sent) == 1
+            finish(page,'result:'+scenario+':visible-without-resubmit')
         api=API('queue');page=launch_page(b,api=api);fill(page)
         page.locator('#form-alta .submit').click();expect(page.locator('#receipt')).to_be_visible()
         page.locator('#refreshStatus').click();expect(page.locator('#receiptState')).to_have_text('ALTA CONFIRMADA')
