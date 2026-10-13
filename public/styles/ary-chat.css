@@ -18,3 +18,24 @@
 /* Keep the mobile guide non-modal: tabs and form remain accessible.
    The existing scrolling body retains all voice controls and step text. */
 @media(max-width:1099px){.is-billing #ary-assistant-panel:has(#ary-assistant-tour:not([hidden])){max-height:min(42dvh,350px)!important}}
+
+/* Initial opt-in is a real accessible dialog. The microphone remains off until Yes. */
+.ary-voice-consent{width:min(450px,calc(100vw - 32px));max-height:calc(100dvh - 32px);box-sizing:border-box;padding:0;border:1px solid #e5cfdd;border-radius:24px;background:#fffafc;color:#321128;box-shadow:0 20px 70px #220b2345;overflow:auto;overscroll-behavior:contain}
+.ary-voice-consent:not([open]){display:none!important}
+.ary-voice-consent::backdrop{background:#210d2c88;backdrop-filter:blur(4px)}
+.ary-voice-consent-card{padding:26px;text-align:center;line-height:1.6;font-family:inherit}
+.ary-voice-consent-image{display:block;width:96px;height:96px;object-fit:contain;margin:0 auto 14px}
+.ary-voice-consent-eyebrow{color:#951361;font-size:10px;font-weight:800;letter-spacing:.13em;margin:0 0 8px}
+.ary-voice-consent h2{font-size:24px;line-height:1.15;letter-spacing:-.025em;margin:0 0 16px;color:#321128}
+.ary-voice-consent p{font-size:14px;margin:0 0 14px}
+.ary-voice-consent .ary-voice-consent-note{font-size:11px;color:#695a65;margin-bottom:20px}
+.ary-voice-consent-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ary-voice-consent-actions button{min-height:48px;padding:12px 14px;border:1px solid #c89ab9;border-radius:12px;font:inherit;font-size:14px;font-weight:750;cursor:pointer;background:#fff;color:#681444}
+.ary-voice-consent-actions #ary-voice-consent-allow{background:#951361;color:white;border-color:#951361}
+.ary-voice-consent-actions button:focus-visible{outline:3px solid #681444;outline-offset:3px}
+.ary-voice-consent-actions button:disabled{opacity:.5;cursor:not-allowed}
+body.ary-voice-consent-open{overflow:hidden}
+.ary-voice-consent[data-fallback-open]{position:fixed;inset:0;margin:auto;z-index:10000;box-shadow:0 0 0 100vmax #210d2c88}
+@media(max-width:390px){.ary-voice-consent-card{padding:20px}.ary-voice-consent h2{font-size:22px}.ary-voice-consent-actions{grid-template-columns:1fr}}
+@media(max-height:550px){.ary-voice-consent-card{padding:16px}.ary-voice-consent-image{width:58px;height:58px;margin-bottom:8px}.ary-voice-consent h2{font-size:20px}}
+@media print{.ary-voice-consent{display:none!important}body.ary-voice-consent-open{overflow:visible}}

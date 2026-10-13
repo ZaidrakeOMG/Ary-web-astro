@@ -16,7 +16,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta name="theme-color" content="#951361"/>
-    <meta name="ary-release" content="ary-pro-20261013-dictado-voz-un-toque"/>
+    <meta name="ary-release" content="ary-pro-20261013-voz-consentimiento-v1"/>
     <meta name="description" content={description}/>
     {billing && <meta http-equiv="Content-Security-Policy" content={csp}/>}
     {billing && <meta name="robots" content="noindex,nofollow"/>}
@@ -24,7 +24,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     <meta property="og:title" content={title}/><meta property="og:description" content={description}/><meta property="og:type" content="website"/><meta property="og:locale" content="es_MX"/>
     <meta property="og:image" content="https://www.grupoary.com.mx/media/ary-3.webp"/>
     <link rel="canonical" href={canonical}/><link rel="icon" type="image/webp" href="/media/ary-symbol.webp"/>
-    <link rel="stylesheet" href="/styles/ary-chat.css?v=3-un-toque"/>
+    <link rel="stylesheet" href="/styles/ary-chat.css?v=4-consentimiento"/>
     <title>{title}</title>
   </head>
   <body class:list={[{ 'is-billing': billing }]}>
@@ -36,7 +36,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
       {nav.map(([href,icon,label,key]) => <a href={href} class:list={[{ selected: key === active }]} aria-current={key === active ? 'page' : undefined}><Icon name={icon} size={21}/><span>{label}</span></a>)}
     </nav>
     <AryAssistant/>
-    <script is:inline defer src="/scripts/ary-chat.js?v=3-un-toque"></script>
+    <script is:inline defer src="/scripts/ary-chat.js?v=4-consentimiento"></script>
     <slot name="scripts"/>
     <script src="../scripts/ui.ts"></script>
   </body>

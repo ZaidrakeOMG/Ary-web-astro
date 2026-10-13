@@ -12,7 +12,7 @@
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const synthesis = window.speechSynthesis;
   const canSpeak = Boolean(synthesis && window.SpeechSynthesisUtterance);
-  const canListen = Boolean(Recognition && window.isSecureContext);
+  const canListen = Boolean(Recognition && window.isSecureContext && navigator.mediaDevices?.getUserMedia);
   const modal = document.getElementById('reviewDialog');
   const body = root.querySelector('.ary-assistant-body');
   const make = (tag, className, text) => {
@@ -26,7 +26,7 @@
     node.type = 'button'; node.id = id;
     return node;
   };
-  root.querySelectorAll('img').forEach(image => { image.src = '/media/ary-mascota-pemex.webp'; });
+  root.querySelectorAll('img').forEach(image => { image.src = '/media/ary-mascota-pensando-v1.webp'; });
   byId('title').textContent = 'Guía de voz ARY';
   const footer = root.querySelector('.ary-assistant-footer');
   if (footer) footer.textContent = 'El dictado elige y recorre la guía. Tú capturas, revisas y envías tus datos en el formulario.';
@@ -42,7 +42,7 @@
   const toggle = button('ary-voice-toggle', 'Activar voz');
   toggle.setAttribute('aria-pressed', 'false');
   actions.append(toggle);
-  const status = make('p', 'ary-voice-status', 'Toca el monito ARY para comenzar a dictar.');
+  const status = make('p', 'ary-voice-status', 'Pulsa Activar voz para permitir el micrófono del bot.');
   status.id = 'ary-voice-status'; status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
   toggle.setAttribute('aria-describedby', status.id);
@@ -50,10 +50,22 @@
   voice.append(title, hint, actions, status, privacy);
   body.prepend(voice);
 
+  // Remember only this tab's choice, never a permission grant or audio/transcripts.
+  const CHOICE_KEY = 'ary-voice-choice-v1';
+  let choice = '';
+  try { choice = sessionStorage.getItem(CHOICE_KEY) || ''; } catch { /* optional storage */ }
+  if (!['allow', 'skip'].includes(choice)) choice = '';
+  function rememberChoice(value) {
+    choice = value;
+    try { sessionStorage.setItem(CHOICE_KEY, value); } catch { /* optional storage */ }
+  }
   let voiceMode = false, recognition = null, speaking = false, utterance = null;
+  let permissionPending = false, permissionSerial = 0, permissionTimer = 0;
+  let consentShown = Boolean(choice);
   let listenTimer = 0, speakTimer = 0, restartTimer = 0, serial = 0;
   let lastStep = '', resizeFrame = 0, rapidEnds = 0;
-  const available = () => !root.hidden && !panel.hidden && !modal?.open && document.visibilityState !== 'hidden';
+  const consent = make('dialog', 'ary-voice-consent');
+  const available = () => !root.hidden && !panel.hidden && !modal?.open && !consent.open && !consent.hasAttribute('data-fallback-open') && document.visibilityState !== 'hidden';
   function resizePanel() {
     if (!resizeFrame) resizeFrame = requestAnimationFrame(() => {
       resizeFrame = 0; window.dispatchEvent(new Event('resize'));
@@ -75,10 +87,12 @@
     try { synthesis?.cancel(); } catch { /* Speech is optional. */ }
   }
   function updateToggle() {
-    toggle.textContent = voiceMode ? 'Desactivar voz' : (canListen ? 'Activar voz' : 'Voz no disponible');
+    toggle.textContent = permissionPending ? 'Cancelar activación' : (voiceMode ? 'Desactivar voz' : (canListen ? 'Activar voz' : 'Voz no disponible'));
+    toggle.setAttribute('aria-busy', String(permissionPending));
     toggle.setAttribute('aria-pressed', String(voiceMode));
   }
   function deactivate(reason = 'Voz desactivada. Puedes usar los botones de la guía.') {
+    permissionSerial++; permissionPending = false; clearTimeout(permissionTimer);
     voiceMode = false; clearRestart(); stopListening(); stopSpeaking(); updateToggle();
     message(reason);
   }
@@ -132,7 +146,7 @@
   function readCurrent() { lastStep = currentInstruction(); speak(lastStep); }
   function sync() {
     if (!available()) {
-      if (voiceMode) deactivate('El dictado se detuvo al cerrar la guía o cambiar de pantalla.');
+      if (voiceMode || permissionPending) deactivate('El dictado se detuvo al cerrar la guía o cambiar de pantalla.');
       lastStep = '';
       return;
     }
@@ -173,7 +187,7 @@
       return;
     }
     if (action === 'mute' || action === 'close') {
-      deactivate();
+      rememberChoice('skip'); deactivate();
       if (action === 'close') byId('close').click();
       return;
     }
@@ -232,6 +246,7 @@
         message('No escuché una instrucción. Continúo escuchando…');
         scheduleListen(400);
       } else {
+        rememberChoice('skip');
         deactivate(fatal[event.error] || 'El navegador detuvo el micrófono. Puedes volver a activar la voz.');
       }
     };
@@ -261,51 +276,156 @@
     try { current.start(); }
     catch { deactivate('El navegador no permitió iniciar el micrófono. Usa los botones o vuelve a activar la voz.'); }
   }
+  function releaseStream(stream) {
+    try { for (const track of stream.getTracks()) track.stop(); } catch { /* best effort */ }
+  }
   function activate() {
-    if (!available()) return;
+    if (!available() || voiceMode || permissionPending) return;
     if (!canListen) {
-      message('Este navegador no permite dictado seguro. Puedes seguir los pasos con los botones.');
+      message('Este navegador no ofrece dictado seguro. Puedes usar la guía escrita.');
       return;
     }
-    voiceMode = true; rapidEnds = 0; updateToggle();
-    // Start synchronously in the click gesture: microphone permission is browser-controlled.
-    listen();
+    // Do not bypass a policy configured by the site, an iframe, or the browser.
+    try {
+      const policy = document.permissionsPolicy || document.featurePolicy;
+      if (policy?.allowsFeature && !policy.allowsFeature('microphone')) {
+        message('La configuración de esta página bloquea el micrófono. Revisa Permissions-Policy en IIS. La guía escrita sigue disponible.');
+        return;
+      }
+    } catch { /* Browser permission check below is authoritative. */ }
+    permissionPending = true; updateToggle();
+    const token = ++permissionSerial;
+    lastStep = currentInstruction();
+    message('Permite el micrófono en el aviso del navegador. Es solo para las instrucciones del bot ARY.');
+    permissionTimer = setTimeout(() => {
+      if (token !== permissionSerial || !permissionPending) return;
+      rememberChoice('skip');
+      deactivate('El permiso quedó sin responder. Puedes pulsar Activar voz más tarde.');
+    }, 45000);
+    let request;
+    try {
+      // Called only by Sí, permitir / Activar voz or an explicit accepted mascot tap.
+      // Audio only: never request the camera or record/upload the permission stream.
+      request = navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch (error) {
+      permissionFailed(error, token); return;
+    }
+    Promise.resolve(request).then(stream => {
+      // Always stop this probe, even if permission was answered after cancel/close.
+      releaseStream(stream);
+      if (token !== permissionSerial || !permissionPending || !available()) return;
+      clearTimeout(permissionTimer); permissionPending = false;
+      rememberChoice('allow'); voiceMode = true; rapidEnds = 0;
+      lastStep = currentInstruction(); updateToggle();
+      listen();
+    }).catch(error => permissionFailed(error, token));
   }
-  toggle.disabled = !canListen;
-  updateToggle();
-  if (!canListen) message('El navegador no admite dictado aquí. La guía escrita funciona con sus botones.');
-  else if (!canSpeak) message('Puedes dictar órdenes, pero este navegador no permite hablar las indicaciones.');
-  toggle.addEventListener('click', () => {
-    if (voiceMode) deactivate();
+  function permissionFailed(error, token) {
+    if (token !== permissionSerial || !permissionPending) return;
+    const errors = {
+      NotAllowedError: 'El micrófono está bloqueado en el navegador, Windows o la página. Abre la configuración del sitio, permite Micrófono y pulsa Activar voz otra vez.',
+      SecurityError: 'La seguridad del navegador bloqueó el micrófono. Revisa los permisos del sitio.',
+      NotFoundError: 'No se encontró un micrófono. Conéctalo y pulsa Activar voz para reintentar.',
+      NotReadableError: 'No pude usar el micrófono. Revisa si otra aplicación lo está ocupando.',
+      AbortError: 'La activación del micrófono se interrumpió. Puedes volver a intentarlo.'
+    };
+    rememberChoice('skip');
+    deactivate(errors[error?.name] || 'No se pudo activar el micrófono. Puedes continuar sin voz o reintentarlo desde el bot.');
+  }
+
+  // The initial question is ARY's own dialog. Loading the page requests NO media.
+  consent.id = 'ary-voice-consent';
+  consent.setAttribute('aria-labelledby', 'ary-voice-consent-title');
+  consent.setAttribute('aria-describedby', 'ary-voice-consent-text');
+  consent.setAttribute('aria-modal', 'true');
+  const card = make('div', 'ary-voice-consent-card');
+  const image = make('img', 'ary-voice-consent-image');
+  image.src = '/media/ary-mascota-pensando-v1.webp'; image.alt = '';
+  image.width = 96; image.height = 96;
+  const eyebrow = make('p', 'ary-voice-consent-eyebrow', 'TU BOT ARY, PASO A PASO');
+  const question = make('h2', '', '¿Activamos el micrófono para el bot ARY?');
+  question.id = 'ary-voice-consent-title';
+  const info = make('p', '', 'Podrás decir “quiero facturar” o “quiero darme de alta” y escuchar las indicaciones paso a paso. También puedes continuar sin voz.');
+  info.id = 'ary-voice-consent-text';
+  const details = make('p', 'ary-voice-consent-note', 'Tú decides. Si aceptas, el navegador te pedirá permiso. No dictes datos personales; el servicio de voz del navegador puede procesar el audio. ARY no guarda grabaciones.');
+  const choices = make('div', 'ary-voice-consent-actions');
+  const allow = button('ary-voice-consent-allow', 'Sí, permitir');
+  const skip = button('ary-voice-consent-skip', 'No por ahora');
+  skip.setAttribute('autofocus', '');
+  choices.append(allow, skip);
+  card.append(image, eyebrow, question, info, details, choices);
+  consent.append(card); document.body.append(consent);
+  if (!canListen) {
+    allow.disabled = true;
+    info.textContent = 'Este navegador no ofrece dictado por voz aquí. Puedes usar el bot con los botones y seguir todas las indicaciones escritas.';
+  }
+  function hideConsent() {
+    if (consent.open && typeof consent.close === 'function') consent.close();
+    consent.removeAttribute('data-fallback-open');
+    consent.removeAttribute('open');
+    document.body.classList.remove('ary-voice-consent-open');
+  }
+  function decline() {
+    rememberChoice('skip'); hideConsent();
+    deactivate('Sin micrófono por ahora. Puedes activarlo después desde este bot con Activar voz.');
+    byId('launcher').focus({ preventScroll: true });
+  }
+  function showConsent() {
+    if (consentShown || modal?.open || document.visibilityState === 'hidden') return;
+    consentShown = true;
+    document.body.classList.add('ary-voice-consent-open');
+    if (typeof consent.showModal === 'function') consent.showModal();
+    else { consent.setAttribute('open', ''); consent.setAttribute('data-fallback-open', ''); }
+    skip.focus({ preventScroll: true });
+    sync();
+  }
+  allow.addEventListener('click', event => {
+    if (!event.isTrusted) return;
+    rememberChoice('skip'); hideConsent(); // A click is intent, not a granted permission.
+    if (panel.hidden) byId('launcher').click(); // Opens UI only; synthetic clicks never request media.
+    activate();
+  });
+  skip.addEventListener('click', decline);
+  consent.addEventListener('cancel', event => { event.preventDefault(); decline(); });
+  consent.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    const first = allow.disabled ? skip : allow;
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); skip.focus(); }
+    else if (!event.shiftKey && document.activeElement === skip) { event.preventDefault(); first.focus(); }
+  });
+  toggle.disabled = !canListen; updateToggle();
+  if (!canListen) message('El navegador no admite dictado aquí. Usa los botones de la guía.');
+  else if (choice === 'skip') message('Puedes activar el micrófono después con Activar voz.');
+  toggle.addEventListener('click', event => {
+    if (!event.isTrusted) return;
+    if (voiceMode || permissionPending) { rememberChoice('skip'); deactivate(); }
     else activate();
   });
   const launcher = byId('launcher');
-  // On normal opening, the existing guide listener runs before this one and opens the panel.
-  launcher.addEventListener('click', () => {
+  launcher.addEventListener('click', event => {
+    if (!event.isTrusted) return;
     if (!available()) {
-      if (voiceMode) deactivate();
+      if (voiceMode || permissionPending) deactivate();
       return;
     }
-    if (!voiceMode) activate();
+    // Opting out is respected: opening the bot after No por ahora only shows Activar voz.
+    if (choice === 'allow' && !voiceMode && !permissionPending) activate();
   });
-  // When a voice command navigates from the home page to billing, the guide is
-  // already open. A fresh click on the mascot resumes voice without closing it.
   let resumeFromNavigation = new URL(window.location.href).searchParams.get('voz') === '1';
   launcher.addEventListener('click', event => {
-    if (!resumeFromNavigation || voiceMode || !available()) return;
+    if (!event.isTrusted || !resumeFromNavigation || choice !== 'allow' || voiceMode || permissionPending || !available()) return;
     resumeFromNavigation = false;
-    event.preventDefault(); event.stopImmediatePropagation();
-    activate();
+    event.preventDefault(); event.stopImmediatePropagation(); activate();
   }, true);
-  if (resumeFromNavigation) message('Guía lista. Toca el monito o Activar voz para continuar dictando.');
-  const observer = new MutationObserver(sync);
-  for (const element of [panel, home, tour]) observer.observe(element, { attributes: true, attributeFilter: ['hidden'] });
+  if (resumeFromNavigation) message('Guía lista. Pulsa Activar voz para continuar. El micrófono no se enciende al cambiar de página.');
+  const observer = new MutationObserver(() => { sync(); showConsent(); });
+  for (const element of [root, panel, home, tour]) observer.observe(element, { attributes: true, attributeFilter: ['hidden'] });
   if (modal) observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
   for (const element of [byId('step'), byId('description'), byId('count')]) observer.observe(element, { childList: true, characterData: true, subtree: true });
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden' && voiceMode) deactivate('Dictado detenido al ocultar la página.');
-    else sync();
+    if (document.visibilityState === 'hidden' && (voiceMode || permissionPending)) deactivate('Dictado detenido al ocultar la página.');
+    else { sync(); showConsent(); }
   });
-  window.addEventListener('pagehide', () => { clearRestart(); stopListening(); stopSpeaking(); voiceMode = false; });
-  resizePanel(); sync();
+  window.addEventListener('pagehide', () => { deactivate('Dictado detenido al salir de la página.'); });
+  resizePanel(); sync(); showConsent();
 })();
