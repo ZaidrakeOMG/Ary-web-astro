@@ -1,4 +1,6 @@
-"""Assistant chat regression: mock ALL APIs, never contact live billing or OpenAI."""
+"""Voice replaces the chat. All speech and billing are simulated; no real mic/API.
+The historical test filename is kept so the existing CI runs this regression.
+"""
 import json
 import os
 import re
@@ -11,77 +13,179 @@ BASE = os.getenv('ARY_TEST_URL', 'http://127.0.0.1:4173').rstrip('/')
 OUT = ROOT / 'test-results'; OUT.mkdir(exist_ok=True)
 CATALOG = json.loads(re.search(r'const INITIAL = (\{.*?\});', (DIST / 'facturacion/index.html').read_text(encoding='utf-8'))[1])
 RESULTS = []
+MOCK_SPEECH = r"""
+window.__voice = { listens:0, aborts:0, spoken:[], cancels:0, active:null };
+class FakeRecognition {
+ start() { __voice.active=this; __voice.listens++; this.onstart?.({}); }
+ abort() { __voice.aborts++; this.onend?.({}); }
+}
+window.SpeechRecognition = FakeRecognition;
+window.webkitSpeechRecognition = undefined;
+window.SpeechSynthesisUtterance = class { constructor(text) { this.text=text; } };
+Object.defineProperty(window, 'speechSynthesis', {configurable:true, value:{
+ getVoices:()=>[{lang:'es-MX',name:'Voz de prueba'}],
+ cancel:()=>{__voice.cancels++;},
+ speak:u=>{__voice.spoken.push(u.text); setTimeout(()=>{u.onstart?.({});u.onend?.({});},0);}
+}});
+window.__emitVoice = text => {
+ const result=[{transcript:text,confidence:0.99}]; result.isFinal=true;
+ __voice.active?.onresult?.({resultIndex:0,results:[result]});
+};
+"""
+
+
+def launch(browser, route='/facturacion/', width=390, height=844, recognition=True, speech=True):
+    context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion='reduce')
+    init = MOCK_SPEECH
+    if not recognition: init += '\nwindow.SpeechRecognition=undefined;'
+    if not speech: init += '\nwindow.SpeechSynthesisUtterance=undefined;'
+    context.add_init_script(init)
+    page = context.new_page(); errors, forbidden, posts = [], [], []
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    page.on('console', lambda msg: errors.append(msg.text) if msg.type == 'error' and ('Content Security Policy' in msg.text or 'Refused to execute' in msg.text) else None)
+
+    def intercept(r):
+        req = r.request
+        path = urlparse(req.url).path
+        if not req.url.startswith(BASE + '/') or path.startswith('/api/asistente/'):
+            forbidden.append(req.url); r.abort(); return
+        if path.startswith('/api/facturacion/'):
+            if req.method != 'GET': posts.append(path)
+            r.fulfill(status=200, content_type='application/json', body=json.dumps(dict(CATALOG, csrf='MOCK-VOICE', modo_seguro=True, aceptando=True)))
+        else: r.continue_()
+    context.route('**/*', intercept)
+    page.goto(BASE + route, wait_until='networkidle')
+    expect(page.locator('#ary-voice')).to_have_count(1)
+    page._test = context, errors, forbidden, posts
+    return page
+
+
+def finish(page, name):
+    context, errors, forbidden, posts = page._test
+    assert not errors, (name, errors)
+    assert not forbidden, (name, forbidden)
+    assert not posts, (name, 'Voice/guide must never send requests', posts)
+    assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1'), name
+    RESULTS.append({'name':name, 'result':'passed'})
+    print('PASS', name, flush=True); context.close()
+
+
+def say(page, text):
+    page.locator('#ary-voice-mic').click()
+    expect(page.locator('#ary-voice-mic')).to_have_attribute('aria-pressed', 'true')
+    page.evaluate('(text)=>__emitVoice(text)', text)
+
+
+def spoken(page, text):
+    page.wait_for_function('(text)=>__voice.spoken.some(s=>s.includes(text))', arg=text)
+
+
+def open_help(page):
+    if page.locator('#ary-assistant-panel').is_hidden(): page.locator('#ary-assistant-launcher').click()
+
 
 def run():
     with sync_playwright() as p:
         options = {'headless': True}
         if os.getenv('CHROMIUM_PATH'): options['executable_path'] = os.environ['CHROMIUM_PATH']
         browser = p.chromium.launch(**options)
-        for width, height in [(320, 740), (390, 844), (768, 1024), (1280, 900)]:
-            context = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion='reduce')
-            page = context.new_page(); errors = []; requests = []; posts = []; replies = {'fail': False}
-            page.on('pageerror', lambda error: errors.append(str(error)))
-            page.on('console', lambda message: errors.append(message.text) if message.type == 'error' and ('Content Security Policy' in message.text or 'Refused to execute' in message.text) else None)
-            def route(r):
-                req = r.request
-                assert req.url.startswith(BASE + '/'), req.url
-                path = urlparse(req.url).path
-                if path.startswith('/api/facturacion/'):
-                    assert req.method == 'GET', 'Chat must never send billing requests'
-                    r.fulfill(status=200, content_type='application/json', body=json.dumps(dict(CATALOG, csrf='MOCK-CHAT', modo_seguro=True, aceptando=True)))
-                elif path.startswith('/api/asistente/'):
-                    requests.append(path)
-                    if path.endswith('/salud'):
-                        r.fulfill(status=200, content_type='application/json', body=json.dumps({'ready': True}))
-                    else:
-                        posts.append(req.post_data_json)
-                        assert req.headers['x-ary-chat'] == '1'
-                        r.fulfill(status=503 if replies['fail'] else 200, content_type='application/json', body=json.dumps({'error':'MOCK-ERROR'} if replies['fail'] else {'mode':'ia', 'reply':'Respuesta simulada <img src=x onerror=alert(1)> usa el botón Flotillas.'}))
-                else: r.continue_()
-            context.route('**/*', route)
-            page.goto(BASE + '/', wait_until='networkidle')
-            expect(page.locator('#ary-greeting')).to_be_visible(timeout=5000)
-            assert not requests
-            b = page.locator('#ary-greeting').bounding_box()
-            assert b['x'] >= 0 and b['x'] + b['width'] <= width + 1
+        for width, height in [(320,740), (390,844), (768,1024), (1280,900)]:
+            page=launch(browser, width=width, height=height)
+            open_help(page)
+            expect(page.locator('#ary-chat')).to_have_count(0)
+            expect(page.get_by_text('Conversar con el asistente', exact=True)).to_have_count(0)
+            assert page.evaluate('__voice.listens') == 0
+            assert page.evaluate('__voice.spoken.length') == 0
             assert page.locator('#ary-assistant-launcher img').get_attribute('src') == '/media/ary-mascota-pemex.webp'
-            assert page.locator('#ary-assistant-launcher img').evaluate('(img) => img.complete && img.naturalWidth > 0')
-            if width in (390, 1280): page.screenshot(path=str(OUT / f'chat-greeting-{width}.png'))
-            page.locator('.ary-greeting-open').click()
-            expect(page.locator('#ary-greeting')).to_be_hidden()
-            page.locator('#ary-chat > summary').click()
-            page.locator('#ary-chat-message').fill('¿Cómo entro a Flotillas?'); page.locator('#ary-chat-send').click()
-            expect(page.locator('#ary-chat-log')).to_contain_text('puerto 4443')
-            assert not requests
-            page.locator('#ary-chat-consent').check()
-            expect(page.locator('#ary-chat-status')).to_contain_text('IA habilitada')
-            page.locator('#ary-chat-message').fill('AAA010101AAA'); page.locator('#ary-chat-send').click()
-            expect(page.locator('#ary-chat-status')).to_contain_text('No se envió')
-            assert not posts
-            page.locator('#ary-chat-message').fill('Ayúdame a entrar a flotillas'); page.locator('#ary-chat-send').click()
-            expect(page.locator('#ary-chat-log')).to_contain_text('Respuesta simulada')
-            assert len(posts) == 1 and posts[0]['history'] == []
-            assert page.locator('#ary-chat-log img').count() == 0
-            expect(page.locator('#ary-chat-status')).to_contain_text('Respuesta de IA')
-            if width in (390, 1280): page.screenshot(path=str(OUT / f'chat-open-{width}.png'))
-            replies['fail'] = True
-            page.locator('#ary-chat-message').fill('Quiero darme de alta'); page.locator('#ary-chat-send').click()
-            expect(page.locator('#ary-chat-status')).to_contain_text('no respondió')
-            expect(page.locator('#ary-chat-consent')).not_to_be_checked()
-            page.locator('.ary-chat-clear').click()
-            assert page.locator('#ary-chat-log .ary-chat-message').count() == 1
-            page.keyboard.press('Escape')
-            page.goto(BASE + '/facturacion/?guia=factura', wait_until='networkidle')
+            say(page, 'Quiero facturar.')
+            expect(page.locator('#tab-factura')).to_have_attribute('aria-selected','true')
             expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 11')
-            expect(page.locator('#ary-greeting')).to_be_hidden()
-            page.locator('#ary-assistant-next').click()
+            spoken(page, 'Elige tu estación')
+            say(page, 'siguiente')
             expect(page.locator('#ary-assistant-count')).to_have_text('Paso 2 de 11')
-            assert not page.locator('#form-factura input[name=confirmado]').is_checked()
-            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
-            assert not errors, errors
-            RESULTS.append({'viewport': [width,height], 'result':'passed', 'api':'mock-only'})
-            print('PASS chat', width, height, flush=True)
-            context.close()
+            spoken(page, 'Escribe tu RFC registrado')
+            say(page, 'anterior')
+            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 11')
+            before=page.evaluate('__voice.spoken.length')
+            say(page, 'repetir')
+            page.wait_for_function('(n)=>__voice.spoken.length>n', arg=before)
+            say(page, 'quiero darme de alta')
+            expect(page.locator('#tab-alta')).to_have_attribute('aria-selected','true')
+            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 9')
+            for index in range(2,10):
+                say(page, 'siguiente')
+                expect(page.locator('#ary-assistant-count')).to_have_text(f'Paso {index} de 9')
+                spoken(page, f'Paso {index} de 9')
+            expect(page.locator('#form-alta input[name="confirmado"]')).not_to_be_checked()
+            expect(page.locator('#alta-rfc')).to_have_value('')
+            if width in (390,1280): page.screenshot(path=str(OUT/f'voice-alta-{width}.png'))
+            say(page, 'siguiente')
+            expect(page.locator('#ary-assistant-panel')).to_be_hidden()
+            finish(page, f'voice:commands-and-alta:{width}')
+
+        page=launch(browser); open_help(page)
+        page.locator('[data-ary-guide="factura"]').click()
+        spoken(page, 'Elige tu estación')
+        page.locator('#ary-assistant-next').click()
+        spoken(page, 'Escribe tu RFC registrado')
+        page.locator('#ary-voice-audio').click()
+        before=page.evaluate('__voice.spoken.length')
+        page.locator('#ary-assistant-next').click();page.wait_for_timeout(200)
+        assert page.evaluate('__voice.spoken.length')==before
+        page.locator('#ary-voice-repeat').click();spoken(page,'Captura el folio del ticket')
+        finish(page,'voice:manual-steps-mute-repeat')
+
+        page=launch(browser);open_help(page)
+        for text in ['No quiero facturar', 'Quiero facturar y darme de alta', 'AAA010101AAA', 'prueba@example.com', 'enviar solicitud', 'confirmar']:
+            say(page,text)
+            expect(page.locator('#ary-assistant-home')).to_be_visible()
+        assert 'AAA010101AAA' not in page.evaluate('JSON.stringify(__voice.spoken)')
+        assert 'prueba@example.com' not in page.locator('#ary-voice').inner_text()
+        finish(page,'voice:ambiguous-negated-sensitive-never-send')
+
+        page=launch(browser);open_help(page)
+        page.locator('#ary-voice-mic').click()
+        page.evaluate("__voice.active.onerror({error:'not-allowed'})")
+        expect(page.locator('#ary-voice-status')).to_contain_text('no tiene permiso')
+        expect(page.locator('#ary-voice-mic')).to_have_attribute('aria-pressed','false')
+        assert page.evaluate('__voice.listens')==1
+        finish(page,'voice:permission-denied-no-retry')
+
+        page=launch(browser);open_help(page)
+        page.locator('#ary-voice-mic').click()
+        page.evaluate('window.__stale=__voice.active.onresult')
+        page.locator('#ary-assistant-close').click()
+        page.evaluate("const r=[{transcript:'quiero facturar'}];r.isFinal=true;__stale({results:[r],resultIndex:0})")
+        expect(page.locator('#ary-assistant-panel')).to_be_hidden()
+        assert page.evaluate('__voice.active.onresult') is None
+        finish(page,'voice:late-result-after-close-ignored')
+
+        page=launch(browser);open_help(page)
+        page.locator('#ary-voice-mic').click()
+        page.evaluate('document.getElementById("reviewDialog").showModal()')
+        expect(page.locator('#ary-assistant-panel')).to_be_hidden()
+        page.wait_for_function('__voice.active.onresult===null')
+        assert page.evaluate('__voice.aborts')>=1
+        finish(page,'voice:review-stops-listening')
+
+        for recognition, speech in [(False,True),(False,False)]:
+            page=launch(browser,recognition=recognition,speech=speech);open_help(page)
+            expect(page.locator('#ary-voice-mic')).to_be_disabled()
+            page.locator('[data-ary-guide="alta"]').click()
+            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 9')
+            assert page.evaluate('__voice.listens')==0
+            if not speech: expect(page.locator('#ary-voice-repeat')).to_be_disabled()
+            finish(page,f'voice:unsupported-fallback:{speech}')
+
+        page=launch(browser,route='/');open_help(page)
+        say(page,'quiero facturar')
+        expect(page).to_have_url(re.compile('/facturacion/\\?guia=factura&voz=1'))
+        expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 11')
+        assert page.evaluate('__voice.spoken.length')==0
+        page.locator('#ary-voice-audio').click();spoken(page,'Elige tu estación')
+        finish(page,'voice:home-navigation-no-autoplay-after-navigation')
         browser.close()
-    (OUT / 'chat-report.json').write_text(json.dumps(RESULTS, indent=2), encoding='utf-8')
-if __name__ == '__main__': run()
+    (OUT/'voice-report.json').write_text(json.dumps(RESULTS,ensure_ascii=False,indent=2),encoding='utf-8')
+    print(f'{len(RESULTS)} voice/browser checks passed. No live speech or billing.')
+
+if __name__=='__main__':run()
