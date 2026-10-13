@@ -33,28 +33,26 @@
   const welcome = home.querySelector('.ary-assistant-welcome');
   if (welcome) welcome.textContent = 'Dime qué necesitas o elige una opción. Al iniciar una guía puedes escuchar cada indicación.';
 
-  // Outside home/tour: microphone and audio controls remain available on every step.
+  // A single button is all the visitor needs after tapping the ARY mascot.
   const voice = make('section', 'ary-voice'); voice.id = 'ary-voice';
   voice.setAttribute('aria-labelledby', 'ary-voice-title');
-  const title = make('h3', '', 'Dictado por voz'); title.id = 'ary-voice-title';
+  const title = make('h3', '', 'Guía hablada ARY'); title.id = 'ary-voice-title';
   const hint = make('p', 'ary-voice-hint', 'Di “quiero facturar”, “quiero darme de alta”, “siguiente”, “anterior” o “repetir”.');
   const actions = make('div', 'ary-voice-actions');
-  const mic = button('ary-voice-mic', '🎙 Dictar una instrucción');
-  mic.setAttribute('aria-pressed', 'false');
-  const audio = button('ary-voice-audio', 'Escuchar indicaciones');
-  audio.setAttribute('aria-pressed', 'false');
-  const repeat = button('ary-voice-repeat', 'Repetir indicación');
-  actions.append(mic, audio, repeat);
-  const status = make('p', 'ary-voice-status', 'El micrófono se activa solo cuando lo pulsas.');
+  const toggle = button('ary-voice-toggle', 'Activar voz');
+  toggle.setAttribute('aria-pressed', 'false');
+  actions.append(toggle);
+  const status = make('p', 'ary-voice-status', 'Toca el monito ARY para comenzar a dictar.');
   status.id = 'ary-voice-status'; status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite'); status.setAttribute('aria-atomic', 'true');
-  mic.setAttribute('aria-describedby', status.id);
-  const privacy = make('p', 'ary-voice-privacy', 'No dictes RFC, correos ni otros datos personales aquí. El navegador puede usar su servicio de voz para procesar el audio. ARY no guarda grabaciones ni transcripciones.');
+  toggle.setAttribute('aria-describedby', status.id);
+  const privacy = make('p', 'ary-voice-privacy', 'Solo instrucciones de la guía; no dictes RFC, correos o datos personales. El navegador puede procesar el audio en su propio servicio. No guardamos grabaciones ni transcripciones.');
   voice.append(title, hint, actions, status, privacy);
   body.prepend(voice);
 
-  let enabled = false, preferenceSet = false, recognition = null;
-  let listenTimer = 0, speakTimer = 0, serial = 0, lastStep = '', resizeFrame = 0;
+  let voiceMode = false, recognition = null, speaking = false, utterance = null;
+  let listenTimer = 0, speakTimer = 0, restartTimer = 0, serial = 0;
+  let lastStep = '', resizeFrame = 0, rapidEnds = 0;
   const available = () => !root.hidden && !panel.hidden && !modal?.open && document.visibilityState !== 'hidden';
   function resizePanel() {
     if (!resizeFrame) resizeFrame = requestAnimationFrame(() => {
@@ -62,63 +60,91 @@
     });
   }
   function message(text) { status.textContent = text; resizePanel(); }
+  function clearRestart() { clearTimeout(restartTimer); restartTimer = 0; }
   function stopListening() {
-    clearTimeout(listenTimer);
+    clearTimeout(listenTimer); listenTimer = 0;
     const previous = recognition; recognition = null;
     if (previous) {
       previous.onresult = previous.onerror = previous.onend = previous.onstart = null;
-      try { previous.abort(); } catch { /* Already ended. */ }
+      try { previous.abort(); } catch { /* Recognition already ended. */ }
     }
-    mic.textContent = '🎙 Dictar una instrucción';
-    mic.setAttribute('aria-pressed', 'false');
   }
   function stopSpeaking() {
-    clearTimeout(speakTimer); serial++;
+    clearTimeout(speakTimer); speakTimer = 0; serial++;
+    speaking = false; utterance = null;
     try { synthesis?.cancel(); } catch { /* Speech is optional. */ }
   }
-  function setAudio(value) {
-    enabled = Boolean(value && canSpeak); preferenceSet = true;
-    audio.textContent = enabled ? 'Silenciar indicaciones' : 'Escuchar indicaciones';
-    audio.setAttribute('aria-pressed', String(enabled));
-    if (!enabled) stopSpeaking();
+  function updateToggle() {
+    toggle.textContent = voiceMode ? 'Desactivar voz' : (canListen ? 'Activar voz' : 'Voz no disponible');
+    toggle.setAttribute('aria-pressed', String(voiceMode));
+  }
+  function deactivate(reason = 'Voz desactivada. Puedes usar los botones de la guía.') {
+    voiceMode = false; clearRestart(); stopListening(); stopSpeaking(); updateToggle();
+    message(reason);
+  }
+  function scheduleListen(delay = 180) {
+    clearRestart();
+    if (!voiceMode || !available() || recognition || speaking) return;
+    restartTimer = setTimeout(() => { restartTimer = 0; listen(); }, delay);
   }
   function speak(text) {
-    if (!enabled || !canSpeak || !available() || !text) return;
-    stopListening(); stopSpeaking();
+    if (!voiceMode || !available() || !text) return;
+    if (!canSpeak) { scheduleListen(); return; }
+    clearRestart(); stopListening(); stopSpeaking();
     const token = serial;
+    speaking = true;
     try {
-      const utterance = new window.SpeechSynthesisUtterance(text);
-      utterance.lang = 'es-MX'; utterance.rate = 0.95;
+      const voiceLine = new window.SpeechSynthesisUtterance(text);
+      utterance = voiceLine; // Keep a reference until the utterance completes.
+      voiceLine.lang = 'es-MX'; voiceLine.rate = 0.95;
       const voices = synthesis.getVoices();
       const selected = voices.find(v => /^es[-_]MX$/i.test(v.lang)) || voices.find(v => /^es(?:[-_]|$)/i.test(v.lang));
-      if (selected) utterance.voice = selected;
-      utterance.onstart = () => { if (token === serial) message('Leyendo la indicación…'); };
-      utterance.onend = () => { if (token === serial) message('Toca el micrófono para dictar otra instrucción o usa los botones.'); };
-      utterance.onerror = () => {
-        if (token === serial) message('No se pudo reproducir la voz. Puedes leer el paso o pulsar Repetir indicación.');
+      if (selected) voiceLine.voice = selected;
+      voiceLine.onstart = () => { if (token === serial) message('ARY te está explicando el paso…'); };
+      const finished = (failed = false) => {
+        if (token !== serial) return;
+        clearTimeout(speakTimer); speakTimer = 0;
+        speaking = false; utterance = null;
+        if (voiceMode) {
+          message(failed ? 'No pude hablar. Sigo escuchando tus instrucciones.' : 'Escuchando tu siguiente instrucción…');
+          scheduleListen();
+        }
       };
-      synthesis.speak(utterance);
-    } catch { message('La voz no está disponible. La guía escrita sigue funcionando.'); }
+      voiceLine.onend = () => finished();
+      voiceLine.onerror = () => finished(true);
+      speakTimer = setTimeout(() => {
+        if (token !== serial) return;
+        stopSpeaking();
+        if (voiceMode) { message('La voz tardó demasiado. Vuelvo a escuchar.'); scheduleListen(); }
+      }, Math.max(8000, Math.min(45000, text.length * 90 + 5000)));
+      synthesis.speak(voiceLine);
+    } catch {
+      speaking = false; utterance = null;
+      message('La voz hablada no está disponible. Sigo escuchando tus instrucciones.');
+      scheduleListen();
+    }
   }
   function currentInstruction() {
     if (tour.hidden) return '¿Qué necesitas hacer? Puedes decir: quiero facturar, o quiero darme de alta.';
-    // Only predefined guide copy, never input values, receipt details or billing data.
+    // Never read form fields, receipt values or personal data aloud.
     return [byId('count').textContent, byId('step').textContent.replace(/^\d+\.\s*/, ''), byId('description').textContent].join('. ');
   }
   function readCurrent() { lastStep = currentInstruction(); speak(lastStep); }
   function sync() {
     if (!available()) {
-      const wasListening = Boolean(recognition);
-      stopListening(); stopSpeaking(); lastStep = '';
-      if (wasListening) message('Dictado detenido. No se ejecutó ninguna instrucción pendiente.');
+      if (voiceMode) deactivate('El dictado se detuvo al cerrar la guía o cambiar de pantalla.');
+      lastStep = '';
       return;
     }
     const instruction = currentInstruction();
     if (instruction === lastStep) return;
     lastStep = instruction;
-    stopListening(); stopSpeaking();
-    if (enabled) speakTimer = setTimeout(() => speak(currentInstruction()), 80);
+    if (!voiceMode) return;
+    clearRestart(); stopListening(); stopSpeaking();
+    if (canSpeak) speakTimer = setTimeout(() => speak(currentInstruction()), 80);
+    else scheduleListen();
   }
+
   function normalise(text) {
     return String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
       .toLowerCase().replace(/[^a-z0-9ñ ]/g, ' ').replace(/\s+/g, ' ').trim()
@@ -138,102 +164,148 @@
     if (/^(?:cerrar ayuda|cerrar guia|terminar guia)$/.test(q)) return 'close';
     return null;
   }
-  function explain(text) { message(text); if (enabled) speak(text); }
+  function explain(text) { message(text); if (voiceMode) speak(text); }
   function execute(text) {
-    if (!available()) return;
+    if (!voiceMode || !available()) return;
     const action = command(text);
     if (!action) {
-      explain('No reconocí una instrucción. Di quiero facturar, quiero darme de alta, siguiente, anterior o repetir. Los datos y el envío se confirman en el formulario.');
+      explain('No reconocí la instrucción. Di quiero facturar, quiero darme de alta, siguiente, anterior o repetir. Nunca se envían datos desde la guía.');
       return;
     }
-    if (action === 'mute') { setAudio(false); message('Indicaciones silenciadas. El dictado sigue disponible al pulsar el micrófono.'); return; }
-    if (action === 'audio' || action === 'repeat') { setAudio(true); readCurrent(); return; }
+    if (action === 'mute' || action === 'close') {
+      deactivate();
+      if (action === 'close') byId('close').click();
+      return;
+    }
+    if (action === 'audio' || action === 'repeat') { readCurrent(); return; }
     if (action === 'factura' || action === 'alta') {
       message(action === 'factura' ? 'Abriendo la guía para facturar.' : 'Abriendo la guía para darte de alta.');
       if (document.getElementById('form-factura') && document.getElementById('form-alta')) {
         home.querySelector('[data-ary-guide="' + action + '"]').click();
       } else {
         stopListening(); stopSpeaking();
-        // Two fixed same-origin destinations, never a URL dictated by the visitor.
+        // Only fixed same-origin destinations, never arbitrary dictated URLs.
         window.location.assign('/facturacion/?guia=' + action + '&voz=1');
       }
       return;
     }
-    if (action === 'close') { byId('close').click(); return; }
     if (action === 'menu') { byId('menu').click(); return; }
-    if (tour.hidden) { explain('Primero elige quiero facturar o quiero darme de alta.'); return; }
-    const target = byId(action); // Only next or prev; NEVER form submit/checkbox.
+    if (tour.hidden) { explain('Primero dime: quiero facturar o quiero darme de alta.'); return; }
+    const target = byId(action); // Only next/prev: never submit or tick confirmations.
     if (target.disabled) { explain('Ya estás en el primer paso.'); return; }
     target.click();
   }
+
   function listen() {
-    if (!available()) return;
-    if (recognition) { stopListening(); message('Dictado detenido.'); return; }
-    if (!canListen) { message('El dictado no está disponible en este navegador. Usa los botones de la guía.'); return; }
-    stopSpeaking();
-    if (!preferenceSet) setAudio(true);
+    if (!voiceMode || !available() || recognition || speaking) return;
+    if (!canListen) { deactivate('El dictado no está disponible en este navegador. Usa los botones.'); return; }
     let current;
-    try { current = new Recognition(); } catch { message('No se pudo iniciar el dictado en este navegador. Usa los botones.'); return; }
+    try { current = new Recognition(); }
+    catch { deactivate('No se pudo iniciar el micrófono. Usa los botones de la guía.'); return; }
     recognition = current;
+    const startedAt = Date.now();
     current.lang = 'es-MX'; current.continuous = false; current.interimResults = false; current.maxAlternatives = 1;
     current.onstart = () => {
-      if (recognition !== current) return;
-      mic.textContent = '■ Detener dictado'; mic.setAttribute('aria-pressed', 'true');
-      message('Escuchando una instrucción…');
+      if (recognition !== current || !voiceMode) return;
+      message('Escuchando… di quiero facturar, quiero darme de alta o siguiente.');
     };
     current.onresult = event => {
-      if (recognition !== current || !available()) return;
+      if (recognition !== current || !voiceMode || !available()) return;
       const result = event.results?.[event.resultIndex ?? 0];
       if (!result?.isFinal) return;
-      const text = result[0]?.transcript || '';
-      stopListening(); execute(text); // Transcript is not rendered, logged or stored.
+      const spokenText = result[0]?.transcript || '';
+      rapidEnds = 0; stopListening();
+      execute(spokenText); // Never show, store or transmit the transcript.
+      // The guide's DOM changes may also trigger a spoken step.
+      if (voiceMode && !recognition && !speaking) scheduleListen(350);
     };
     current.onerror = event => {
       if (recognition !== current) return;
       stopListening();
-      const messages = {
-        'not-allowed': 'El micrófono no tiene permiso. Puedes permitirlo desde el navegador o seguir con los botones.',
-        'service-not-allowed': 'El servicio de dictado no está disponible. Usa los botones de la guía.',
-        'audio-capture': 'No se detectó un micrófono disponible. Usa los botones de la guía.',
-        'no-speech': 'No escuché una instrucción. Pulsa el micrófono e inténtalo otra vez.',
-        network: 'El servicio de voz no respondió. Puedes seguir con los botones de la guía.'
+      const fatal = {
+        'not-allowed': 'El micrófono no tiene permiso. Actívalo desde el navegador y vuelve a pulsar Activar voz.',
+        'service-not-allowed': 'El servicio de dictado no está disponible aquí. Usa los botones de la guía.',
+        'audio-capture': 'No se encontró un micrófono disponible. Usa los botones.',
+        network: 'El servicio de reconocimiento no respondió. Vuelve a activar la voz si lo deseas.'
       };
-      message(messages[event.error] || 'Se detuvo el dictado. Puedes intentarlo de nuevo o usar los botones.');
+      if (event.error === 'no-speech') {
+        message('No escuché una instrucción. Continúo escuchando…');
+        scheduleListen(400);
+      } else {
+        deactivate(fatal[event.error] || 'El navegador detuvo el micrófono. Puedes volver a activar la voz.');
+      }
     };
     current.onend = () => {
       if (recognition !== current) return;
-      stopListening(); message('El dictado terminó. Pulsa el micrófono para intentarlo otra vez.');
+      current.onresult = current.onerror = current.onend = current.onstart = null;
+      recognition = null;
+      clearTimeout(listenTimer); listenTimer = 0;
+      if (!voiceMode || !available()) return;
+      // Don't loop forever if the browser rejects starts immediately.
+      rapidEnds = Date.now() - startedAt < 650 ? rapidEnds + 1 : 0;
+      if (rapidEnds >= 3) {
+        deactivate('El navegador está cortando el dictado. Pulsa Activar voz para intentarlo de nuevo.');
+        return;
+      }
+      message('El navegador terminó de escuchar; reanudando el dictado…');
+      scheduleListen(rapidEnds ? 900 : 250);
     };
     listenTimer = setTimeout(() => {
       if (recognition !== current) return;
-      stopListening(); message('No llegó una instrucción a tiempo. Usa los botones o vuelve a pulsar el micrófono.');
+      stopListening();
+      if (voiceMode) {
+        message('Sigo aquí. Vuelvo a escuchar una instrucción…');
+        scheduleListen(350);
+      }
     }, 15000);
-    try { current.start(); } catch { stopListening(); message('No se pudo activar el micrófono. Usa los botones de la guía.'); }
+    try { current.start(); }
+    catch { deactivate('El navegador no permitió iniciar el micrófono. Usa los botones o vuelve a activar la voz.'); }
   }
-  mic.disabled = !canListen;
-  audio.disabled = repeat.disabled = !canSpeak;
-  if (!canListen) message('Dictado no disponible aquí. Usa los botones; la voz de las indicaciones depende de tu navegador.');
-  if (!canSpeak) message('Este navegador no ofrece lectura en voz alta. Puedes seguir la guía escrita.');
-  if (new URL(window.location.href).searchParams.get('voz') === '1' && canSpeak) {
-    message('Guía lista. Toca Escuchar indicaciones para activar el audio en esta página.');
+  function activate() {
+    if (!available()) return;
+    if (!canListen) {
+      message('Este navegador no permite dictado seguro. Puedes seguir los pasos con los botones.');
+      return;
+    }
+    voiceMode = true; rapidEnds = 0; updateToggle();
+    // Start synchronously in the click gesture: microphone permission is browser-controlled.
+    listen();
   }
-  mic.addEventListener('click', listen);
-  audio.addEventListener('click', () => {
-    stopListening(); setAudio(!enabled);
-    if (enabled) readCurrent(); else message('Indicaciones silenciadas.');
+  toggle.disabled = !canListen;
+  updateToggle();
+  if (!canListen) message('El navegador no admite dictado aquí. La guía escrita funciona con sus botones.');
+  else if (!canSpeak) message('Puedes dictar órdenes, pero este navegador no permite hablar las indicaciones.');
+  toggle.addEventListener('click', () => {
+    if (voiceMode) deactivate();
+    else activate();
   });
-  repeat.addEventListener('click', () => { stopListening(); setAudio(true); readCurrent(); });
-  // Manual guide selection also speaks, unless the visitor deliberately muted it.
-  root.addEventListener('click', event => {
-    if (!event.target.closest?.('[data-ary-guide]')) return;
-    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
-    if (event.isTrusted && !preferenceSet) setAudio(true);
+  const launcher = byId('launcher');
+  // On normal opening, the existing guide listener runs before this one and opens the panel.
+  launcher.addEventListener('click', () => {
+    if (!available()) {
+      if (voiceMode) deactivate();
+      return;
+    }
+    if (!voiceMode) activate();
+  });
+  // When a voice command navigates from the home page to billing, the guide is
+  // already open. A fresh click on the mascot resumes voice without closing it.
+  let resumeFromNavigation = new URL(window.location.href).searchParams.get('voz') === '1';
+  launcher.addEventListener('click', event => {
+    if (!resumeFromNavigation || voiceMode || !available()) return;
+    resumeFromNavigation = false;
+    event.preventDefault(); event.stopImmediatePropagation();
+    activate();
   }, true);
+  if (resumeFromNavigation) message('Guía lista. Toca el monito o Activar voz para continuar dictando.');
   const observer = new MutationObserver(sync);
   for (const element of [panel, home, tour]) observer.observe(element, { attributes: true, attributeFilter: ['hidden'] });
   if (modal) observer.observe(modal, { attributes: true, attributeFilter: ['open'] });
   for (const element of [byId('step'), byId('description'), byId('count')]) observer.observe(element, { childList: true, characterData: true, subtree: true });
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sync(); });
-  window.addEventListener('pagehide', () => { stopListening(); stopSpeaking(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && voiceMode) deactivate('Dictado detenido al ocultar la página.');
+    else sync();
+  });
+  window.addEventListener('pagehide', () => { clearRestart(); stopListening(); stopSpeaking(); voiceMode = false; });
   resizePanel(); sync();
 })();
