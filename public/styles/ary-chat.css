@@ -15,3 +15,6 @@
 @media print{.ary-voice{display:none!important}}
 /* Keep the existing desktop billing dock clear of the form actions. */
 @media(min-width:1100px){.is-billing #ary-assistant-panel:has(#ary-assistant-tour:not([hidden])){left:max(12px,calc((100vw - 1180px)/2))!important;width:310px}}
+/* Keep the mobile guide non-modal: tabs and form remain accessible.
+   The existing scrolling body retains all voice controls and step text. */
+@media(max-width:1099px){.is-billing #ary-assistant-panel:has(#ary-assistant-tour:not([hidden])){max-height:min(42dvh,350px)!important}}
