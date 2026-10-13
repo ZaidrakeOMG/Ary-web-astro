@@ -153,7 +153,7 @@ def run():
 
         page=launch(browser);open_help(page)
         page.locator('#ary-voice-mic').click()
-        page.evaluate('window.__stale=__voice.active.onresult')
+        page.evaluate('() => { window.__stale = __voice.active.onresult; }')
         page.locator('#ary-assistant-close').click()
         page.evaluate("const r=[{transcript:'quiero facturar'}];r.isFinal=true;__stale({results:[r],resultIndex:0})")
         expect(page.locator('#ary-assistant-panel')).to_be_hidden()
