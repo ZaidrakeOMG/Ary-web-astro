@@ -3242,17 +3242,11 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
           <label for="alta-telefono">
 
-           Teléfono
-
-           <span class="required">
-
-            *
-
-           </span>
+           Teléfono (opcional)
 
           </label>
 
-          <input autocomplete="tel" class="control" id="alta-telefono" maxlength="24" name="telefono" placeholder="Tu número de contacto" required="" type="tel"/>
+          <input autocomplete="tel" class="control" id="alta-telefono" maxlength="24" name="telefono" placeholder="Tu número de contacto" type="tel"/>
 
          </div>
 
@@ -3296,7 +3290,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
         <p class="inline-note">
 
-         El bot consulta los datos fiscales desde Polaris. El personal revisa el registro antes de guardarlo; este trámite
+         El bot consulta los datos fiscales desde Polaris. En modo real, el bot valida los datos y solicita guardar el registro; este trámite
 
          <strong>
 
@@ -3326,7 +3320,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
          <span>
 
-          Revisé mi RFC, idCIF, teléfono y correo, y solicito que se atienda mi alta de cliente en la estación seleccionada.
+          Revisé mi RFC, idCIF y correo (teléfono opcional), y autorizo registrar mi alta de cliente en la estación seleccionada.
 
          </span>
 
@@ -3342,7 +3336,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
 
         <p>
 
-         El registro queda pendiente hasta que el personal confirme el alta en el sistema.
+         El registro estará completo cuando Polaris confirme el número de cliente. En modo de prueba no se guarda.
 
         </p>
 
@@ -4352,11 +4346,18 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
   ]);
 
   function updateProgress(data) {
-    const state = PROGRESS[data.estado] || {
+    const state = {...(PROGRESS[data.estado] || {
       pct:45,
       title:data.tipo==='FACTURA' ? 'Generando tu factura…' : 'Procesando solicitud…',
       msg:data.mensaje || 'Estamos atendiendo tu solicitud.'
-    };
+    })};
+    const clienteError = data.tipo === 'FACTURA'
+      && ['CLIENTE_NO_REGISTRADO','CLIENTE_SIN_REGIMEN'].includes(data.codigo_cliente);
+    if(clienteError && ['REVISION_REQUERIDA','REVISION_CERRADA'].includes(data.estado)){
+      state.title = data.codigo_cliente === 'CLIENTE_NO_REGISTRADO' ? 'Cliente no registrado' : 'Registro fiscal incompleto';
+      state.msg = data.mensaje;
+      state.error = true;
+    }
 
     const card=$('progressCard');
     const bar=$('progressBar');
@@ -4388,7 +4389,7 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
       result.classList.add('error');
       result.hidden=false;
       const strong=document.createElement('strong');
-      strong.textContent='Error al facturar.';
+      strong.textContent = clienteError && state.msg ? state.msg : 'Error al facturar.';
       const text=document.createTextNode(' Comuníquese con ARY al ');
       const link=document.createElement('a');
       link.href=PHONE_LINK;
@@ -4418,7 +4419,8 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
     $('receiptSafe').hidden = !data.modo_seguro;
 
     const state = PROGRESS[data.estado];
-    $('receiptMessage').textContent = state ? state.msg : data.mensaje;
+    $('receiptMessage').textContent = data.codigo_cliente || data.tipo === 'ALTA'
+      ? data.mensaje : state ? state.msg : data.mensaje;
 
     updateProgress(data);
 
