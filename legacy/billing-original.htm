@@ -4298,9 +4298,11 @@ body {background:radial-gradient(ellipse at 8% 0%,rgba(207,31,143,.18),transpare
       msg:data.mensaje || 'Estamos atendiendo tu solicitud.'
     })};
     const clienteError = data.tipo === 'FACTURA'
-      && ['CLIENTE_NO_REGISTRADO','CLIENTE_SIN_REGIMEN'].includes(data.codigo_cliente);
+      && ['CLIENTE_NO_REGISTRADO','CLIENTE_SIN_REGIMEN','VERIFICACION_FISCAL_PENDIENTE'].includes(data.codigo_cliente);
     if(clienteError && ['REVISION_REQUERIDA','REVISION_CERRADA'].includes(data.estado)){
-      state.title = data.codigo_cliente === 'CLIENTE_NO_REGISTRADO' ? 'Cliente no registrado' : 'Registro fiscal incompleto';
+      state.title = data.codigo_cliente === 'CLIENTE_NO_REGISTRADO'
+        ? 'Cliente no registrado'
+        : data.codigo_cliente === 'VERIFICACION_FISCAL_PENDIENTE' ? 'Verificación fiscal pendiente' : 'Registro fiscal incompleto';
       state.msg = data.mensaje;
       state.error = true;
     }
