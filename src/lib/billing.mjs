@@ -1,7 +1,7 @@
-import original from '../../legacy/billing-original.htm?raw';
+import core from './billing-runtime.js?raw';
 import { createHash } from 'node:crypto';
-// Build-time only: preserve the original transport/validation script byte for byte.
-const matches=[...original.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)];
-if(matches.length!==1) throw new Error('Unexpected number of billing scripts');
-export const core=matches[0][1];
-export const scriptHash=createHash('sha256').update(core).digest('base64');
+// Canonical operational source. legacy/billing-original.htm remains the
+// immutable baseline for form fields and migration history, not executed code.
+if (!core.includes("const API = '/api/facturacion'")) throw new Error('Missing billing runtime');
+export { core };
+export const scriptHash = createHash('sha256').update(core).digest('base64');
