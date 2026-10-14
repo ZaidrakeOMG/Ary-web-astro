@@ -25,6 +25,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     <meta property="og:image" content="https://www.grupoary.com.mx/media/ary-3.webp"/>
     <link rel="canonical" href={canonical}/><link rel="icon" type="image/webp" href="/media/ary-symbol.webp"/>
     <link rel="stylesheet" href="/styles/ary-chat.css?v=1"/>
+    <link rel="stylesheet" href="/ary-assistance.css?v=1"/>
     <title>{title}</title>
   </head>
   <body class:list={[{ 'is-billing': billing }]}>
@@ -37,6 +38,7 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     </nav>
     <AryAssistant/>
     <script is:inline defer src="/scripts/ary-chat.js?v=1"></script>
+    <script is:inline defer src="/scripts/ary-voice.js?v=1"></script>
     <slot name="scripts"/>
     <script src="../scripts/ui.ts"></script>
   </body>

@@ -27,7 +27,7 @@
   const guides = {
     factura: [
       step('#factura-estacion', '1. Elige tu estación', 'Selecciona la estación donde cargaste combustible. Revisa su nombre y número en el ticket para no enviar tu solicitud a otra estación.'),
-      step('#factura-constancia', '2. Adjunta tu constancia fiscal', 'Selecciona el PDF digital original de la Constancia de Situación Fiscal del SAT (máximo 2 MB). El bot verificará RFC, razón social y calle para encontrar una única coincidencia en Polaris. No necesitas escribir el RFC.'),
+      step('#factura-constancia', '2. Adjunta tu constancia fiscal', 'Selecciona el PDF digital original de la Constancia de Situación Fiscal del SAT (máximo 2 MB). El bot verificará únicamente RFC y razón social para encontrar una única coincidencia en Polaris. La calle no interviene en la selección. No necesitas escribir el RFC.'),
       step('#factura-ticket', '3. Captura el folio del ticket', 'Escribe únicamente el folio numérico de tu ticket. Revisa cada dígito: no se trata del importe ni del número de estación.'),
       step('#factura-fecha', '4. Indica la fecha del ticket', 'Elige la fecha que aparece en el ticket. Consulta el rango permitido junto al campo y en el calendario del portal; no cambies la fecha de tu compra para intentar continuar.'),
       step('#factura-pago', '5. Selecciona cómo pagaste', 'Elige la forma de pago con la que realizaste esta compra. Debe coincidir con tu ticket; no selecciones otra solo para avanzar.'),

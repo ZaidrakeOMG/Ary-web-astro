@@ -2,6 +2,16 @@
 
 Sitio corporativo y portal de facturación con una sola identidad visual. La portada, estaciones, servicios, contacto y facturación están construidos con componentes Astro. No se incrusta ni se publica el diseño anterior.
 
+## Actualización del 14 de octubre de 2026
+
+La factura identifica al cliente únicamente por **RFC y razón social**, sin usar la calle para seleccionar el registro. Requiere el bot actualizado: `ZaidrakeOMG/Facturacion-bot-`, PR #8, commit `5f416fde966138d7203d110feb12b57c71ab91e6`. El alta de clientes conserva sus propias validaciones de domicilio e idCIF. Dos registros con el mismo RFC y razón social requieren revisión, no se elige el primero.
+
+En errores de facturación aparece **Continuar por WhatsApp**, dirigido al contacto existente de ARY, 871 165 1404. El mensaje contiene referencia, estado, RFC, razón social, estación, ticket, fecha, forma de pago, uso de CFDI, correo y motivo público. Hay una vista previa de los datos que se compartirán. WhatsApp abre el texto preparado; el usuario lo revisa y pulsa Enviar en esa aplicación. No se adjuntan automáticamente documentos, PDF, idCIF, domicilio, tokens ni errores internos.
+
+Los campos capturados se conservan en memoria para el error actual; al recuperar el seguimiento, el bot devuelve su copia autorizada. Si la constancia no llegó a procesarse, RFC y razón social se indican como no disponibles: no se inventan ni se extraen enviando el PDF a terceros. Un resultado incierto conserva su identificador de solicitud; el botón de ayuda no vuelve a timbrar.
+
+El asistente incluye **Escuchar ayuda** y **Dictar pregunta**. La lectura usa la voz disponible del navegador, preferentemente español de México. El dictado requiere HTTPS, consentimiento y permiso del micrófono, y puede usar el servicio de voz del proveedor del navegador. Solo rellena la pregunta: no la envía ni modifica datos fiscales. No se deben dictar datos fiscales, contraseñas ni información de pago. Cerrar u ocultar el asistente detiene su voz y micrófono. Cuando el navegador no admite dictado, sigue disponible la escritura.
+
 ## Qué cambia
 
 - Diseño claro, magenta y vino; tipografía legible, navegación compartida y fotografías nuevas de cada estación.
@@ -12,11 +22,11 @@ Sitio corporativo y portal de facturación con una sola identidad visual. La por
 - Solo se distribuyen los nuevos recursos de `public/media`. Las imágenes viejas se eliminan del código actual y del contenido publicado. Git conserva el historial; el servidor conserva versiones anteriores para recuperación.
 - Sin fuentes externas, paquetes visuales pesados, rastreadores ni service worker que almacene trámites fiscales.
 
-## Facturación: mismo funcionamiento, nueva presentación
+## Facturación: fuente operativa y contrato
 
-El archivo `legacy/billing-original.htm` es una referencia privada de compilación: **no se publica**. `src/lib/billing.mjs` extrae exactamente su JavaScript. Las páginas de Astro utilizan una estructura nueva manteniendo los identificadores, nombres de campo, restricciones y eventos esperados por ese código.
+El archivo `legacy/billing-original.htm` conserva el contrato original de formularios y el historial de migración: **no se publica**. Desde esta actualización, la fuente operativa editable es `src/lib/billing-runtime.js`. `src/lib/billing.mjs` la carga como texto y calcula el hash CSP correspondiente. No edites la referencia legacy para cambiar el comportamiento actual.
 
-La verificación compara el script completo byte por byte, no solo sus nombres. También verifica el hash CSP que autoriza el script y los contratos de ambos formularios. Los métodos de pago, catálogos, rango de fechas, CSRF, modo seguro, identificadores, reintentos y seguimiento no se reescribieron.
+La verificación compara el script compilado byte por byte con esa fuente canónica, no solo sus nombres. También verifica todos los hashes CSP, los contratos de ambos formularios, los catálogos contra la referencia legacy y la conservación del proxy IIS. Se mantienen rango de fechas, CSRF, modo seguro, identificadores, reintentos con la misma solicitud y recuperación del seguimiento.
 
 El servicio sigue utilizando:
 
@@ -25,11 +35,11 @@ El servicio sigue utilizando:
 - `POST /api/facturacion/estado`
 - `POST /api/facturacion/recepcion`
 
-El bot y Polaris no están incluidos ni se modifican. El alta fiscal sigue siendo procesada por el bot. Una recepción no significa timbrado concluido. No se guardan datos fiscales en una base de datos nueva del navegador.
+El bot y Polaris no están incluidos en este repositorio. El cambio coordinado del bot se encuentra en su propio repositorio, indicado arriba. El alta fiscal sigue siendo procesada por el bot. Una recepción no significa timbrado concluido. No se guardan datos fiscales en una base de datos nueva del navegador.
 
 ## Publicar en el IIS existente
 
-Antes de actualizar, conserva un respaldo del sitio y verifica que no tengas cambios locales pendientes. No uses `git reset --hard` ni `git clean` para resolver diferencias de producción.
+Antes de actualizar, conserva un respaldo del sitio y verifica que no tengas cambios locales pendientes. No uses `git reset --hard` ni `git clean` para resolver diferencias de producción. Actualiza y reinicia también el bot desde su carpeta, sin borrar `config.json`, `credentials.json`, `token.json` ni `data`.
 
 ### Opción A: desde GitHub
 
@@ -89,16 +99,23 @@ Las pruebas de navegador utilizan Python y Playwright:
 
 En otra terminal:
 
+    python tests/whatsapp_voice_test.py
+    python tests/chat_browser_test.py
     python tests/browser_test.py
+    python tests/assistant_test.py
 
-Se comprueban 13 rutas a ocho tamaños, navegación, imágenes, campos, confirmación de factura, altas, errores, pausas, reintentos con mismo identificador y recuperación de seguimiento. El API está interceptado con respuestas simuladas; no se llama al backend real. El recorrido HTTP de CI conserva la CSP original. `test-results/browser-report.json` identifica qué comprobaciones se ejecutaron y si se usó el modo aislado de renderizado.
+Se comprueban 13 rutas a ocho tamaños, navegación, imágenes, campos, confirmación de factura, altas, errores, pausas, reintentos con mismo identificador y recuperación de seguimiento. El API está interceptado con respuestas simuladas; no se llama al backend real. Las nuevas pruebas comprueban datos de WhatsApp, recuperación, privacidad, duplicados, permisos de voz, cierre del micrófono y alternativa escrita. No usan un micrófono real ni envían mensajes de WhatsApp.
 
-**La emulación de Android no sustituye probar un teléfono físico. Compilar y probar respuestas simuladas tampoco valida una emisión real en Polaris ni tu configuración particular de IIS.** Antes de atender clientes, revisa desde tu Android los dos formularios y realiza las pruebas controladas correspondientes al modo seguro del bot.
+El recorrido HTTP de CI conserva la CSP original. `test-results/browser-report.json` y `test-results/whatsapp-voice.json` identifican las comprobaciones realizadas.
+
+**La emulación de Android y de las APIs de voz no sustituye probar un teléfono y micrófono físicos. Compilar y probar respuestas simuladas tampoco valida una emisión real en Polaris ni tu configuración particular de IIS.** Antes de atender clientes, revisa desde tu Android los dos formularios y realiza las pruebas controladas correspondientes al modo seguro del bot. Un commit en GitHub no publica ni reinicia automáticamente tu servidor.
 
 ## Estructura
 
 - `src/pages/`: 13 páginas de Astro.
 - `src/components/`, `src/styles/`, `src/scripts/`: interfaz compartida.
+- `src/lib/billing-runtime.js`: programa operativo de facturación y asistencia WhatsApp.
+- `public/scripts/ary-voice.js`: voz opcional del asistente.
 - `src/data/site.ts`: ubicaciones, correos y contactos del sitio.
 - `public/media/`: fotografías y marca nuevas.
 - `legacy/`: referencia operativa privada, excluida del sitio compilado.
