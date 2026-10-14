@@ -262,7 +262,8 @@ def main():
         api=API('review');page=launch_page(b,api=api);fill(page,'factura')
         page.locator('#form-factura .submit').click();page.locator('#reviewConfirm').click()
         expect(page.locator('#finalResult')).to_be_visible()
-        assert page.locator('#finalResult a').get_attribute('href')=='tel:+528711651404'
+        assert page.locator('#finalResult a[href^="tel:"]').get_attribute('href')=='tel:+528711651404'
+        expect(page.locator('#finalResult a[data-whatsapp]')).to_be_visible()
         finish(page,'result:review-required-and-contact')
         # Dos errores reales distintos: la API entrega el codigo y la web lo muestra.
         # No se reenvia la factura durante seguimiento; todos los datos son simulados.
