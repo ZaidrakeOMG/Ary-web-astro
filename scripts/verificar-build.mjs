@@ -66,12 +66,18 @@ assert.ok(!config.includes('ARY_CSP_PLACEHOLDER'),'CSP placeholder leaked into b
 assert.ok(config.includes('<requestFiltering removeServerHeader="true">'),'IIS must remove Server header');
 assert.ok(config.includes('maxAllowedContentLength="5242880" maxUrl="2048" maxQueryString="1024"'),'Missing IIS request limits');
 assert.ok(fs.existsSync(path.join(out,'seguridad/index.html')),'Missing public cybersecurity page');
-for(const verb of ['TRACE','TRACK','CONNECT','PUT','DELETE','PATCH','PROPFIND','PROPPATCH','MKCOL','COPY','MOVE','LOCK','UNLOCK'])
+for(const verb of ['TRACE','TRACK','CONNECT','PUT','DELETE','PATCH','PROPFIND','PROPPATCH','MKCOL','COPY','MOVE','LOCK','UNLOCK']){
+ assert.ok(config.includes(`<remove verb="${verb}" />`),`Inherited verb rule not removed first: ${verb}`);
  assert.ok(config.includes(`<add verb="${verb}" allowed="false" />`),`Dangerous verb not blocked: ${verb}`);
-for(const segment of ['.git','.github','.ary-releases','.ary-staging','node_modules','server','scripts','tests','legacy','docs','paquete-publicacion'])
+}
+for(const segment of ['.git','.github','.ary-releases','.ary-staging','node_modules','server','scripts','tests','legacy','docs','paquete-publicacion']){
+ assert.ok(config.includes(`<remove segment="${segment}" />`),`Inherited hidden segment not removed first: ${segment}`);
  assert.ok(config.includes(`<add segment="${segment}" />`),`Sensitive segment not hidden: ${segment}`);
-for(const ext of ['.env','.config','.ps1','.bat','.py','.mjs','.ts','.map','.sql','.sqlite','.sqlite3','.db','.log','.bak','.old','.zip','.rar','.7z','.key','.pem','.pfx','.p12','.json'])
+}
+for(const ext of ['.env','.config','.ps1','.bat','.py','.mjs','.ts','.map','.sql','.sqlite','.sqlite3','.db','.log','.bak','.old','.zip','.rar','.7z','.key','.pem','.pfx','.p12','.json']){
+ assert.ok(config.includes(`<remove fileExtension="${ext}" />`),`Inherited extension rule not removed first: ${ext}`);
  assert.ok(config.includes(`<add fileExtension="${ext}" allowed="false" />`),`Sensitive extension not blocked: ${ext}`);
+}
 assert.ok(config.includes('url="https://www.grupoary.com.mx/{R:1}"'),'HTTP redirect must use canonical host, not untrusted Host header');
 assert.ok(!fs.existsSync(path.join(out,'Images')),'Obsolete images must not be deployed');assert.ok(!fs.existsSync(path.join(out,'legacy')),'Legacy source must remain private');
 const release=JSON.parse(read(path.join(out,'release.json')));
