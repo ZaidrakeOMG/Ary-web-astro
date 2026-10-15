@@ -11,8 +11,11 @@ import PageIntro from '../components/PageIntro.astro';
         <h2>Controles técnicos del sitio</h2>
         <ul>
           <li><strong>HTTPS obligatorio:</strong> las visitas por HTTP se redirigen a HTTPS y el navegador recibe una política HSTS para recordar el uso de conexión cifrada.</li>
-          <li><strong>Content Security Policy:</strong> se restringen orígenes de scripts, conexiones, imágenes, formularios y contenido embebido. La pantalla de facturación mantiene además una política más estricta para su código operativo.</li>
+          <li><strong>Content Security Policy con hashes:</strong> el build calcula SHA-256 de cada script inline autorizado. El portal ya no necesita permitir JavaScript inline arbitrario; una inyección que no tenga un hash aprobado queda bloqueada por el navegador. La pantalla de facturación mantiene además su propia política estricta.</li>
           <li><strong>Protección contra clickjacking:</strong> el portal no permite ser incrustado dentro de marcos de otros sitios.</li>
+          <li><strong>Métodos HTTP peligrosos bloqueados:</strong> IIS rechaza TRACE, TRACK, CONNECT, PUT, DELETE, PATCH y métodos WebDAV que el portal no utiliza.</li>
+          <li><strong>Archivos y rutas sensibles bloqueados:</strong> carpetas de código, pruebas, dependencias y releases internos se ocultan; extensiones como .env, .ps1, .sql, bases de datos, respaldos, llaves y archivos comprimidos se rechazan aunque aparezcan accidentalmente en la ruta pública.</li>
+          <li><strong>Redirección HTTPS con host fijo:</strong> el salto desde HTTP ya no reutiliza un encabezado Host recibido del cliente; siempre dirige al dominio oficial de Grupo ARY.</li>
           <li><strong>Tipos de contenido:</strong> el navegador recibe la instrucción de no adivinar tipos MIME, reduciendo ataques de interpretación incorrecta de archivos.</li>
           <li><strong>Referrer limitado:</strong> se reduce la información de navegación que puede salir hacia otros sitios; facturación aplica una política todavía más restrictiva.</li>
           <li><strong>Permisos del navegador:</strong> cámara, geolocalización, pagos, USB y captura de pantalla permanecen deshabilitados para este portal. El micrófono se permite solo al propio sitio y requiere autorización del usuario.</li>
