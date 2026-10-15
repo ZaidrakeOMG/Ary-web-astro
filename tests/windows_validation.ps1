@@ -31,7 +31,7 @@ foreach($name in @('ARY Security Reject Unexpected Host','ARY Security Redirect 
 }
 if($doc.SelectSingleNode('/configuration/system.webServer/rewrite/rules/rule[@name="Redirect HTTP to HTTPS"]')){throw 'Legacy Host-header redirect still present'}
 $src=Get-Content scripts/publicar-astro-iis.ps1 -Raw
-foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Release','Content-Security-Policy','removeServerHeader','allowDoubleEscaping','ARY Security Reject Unexpected Host','previousPath','api/facturacion/opciones')) {
+foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Release','Content-Security-Policy','removeServerHeader','allowDoubleEscaping','starts-with(@name,"ARY Security")','previousPath','api/facturacion/opciones')) {
  if(-not $src.Contains($required)){throw "Deployment guard missing: $required"}
 }
 Write-Host 'PASS XML and publication guard checks. Real IIS/Polaris was NOT started.'
