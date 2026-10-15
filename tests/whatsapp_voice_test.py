@@ -20,9 +20,12 @@ CAPTURE={'rfc':'AAA010101AAA','razon_social':'EMPRESA DE PRUEBA SA DE CV','estac
          'uso_cfdi':'GASTOS EN GENERAL.','correo_destino':'prueba@example.com'}
 VOICE_MOCK=r"""
 window.voiceCalls={spoken:[],starts:0,aborts:0,cancels:0};
-const synth={getVoices:()=>[{lang:'es-MX',name:'Voz de prueba'}],resume(){},
+const synth={getVoices:()=>[
+ {lang:'es-MX',name:'Voz de prueba'},
+ {lang:'es-MX',name:'Microsoft Dalia Online (Natural) - Spanish (Mexico)'}
+],resume(){},
  cancel(){window.voiceCalls.cancels++},
- speak(u){window.voiceCalls.spoken.push({text:u.text,lang:u.lang,voice:u.voice?.lang});window.lastUtterance=u},
+ speak(u){window.voiceCalls.spoken.push({text:u.text,lang:u.lang,voice:u.voice?.lang,voiceName:u.voice?.name,rate:u.rate});window.lastUtterance=u},
  addEventListener(){}};
 Object.defineProperty(window,'speechSynthesis',{configurable:true,value:synth});
 window.SpeechSynthesisUtterance=class{constructor(text){this.text=text}};
@@ -159,10 +162,32 @@ def test_speech_is_explicit_and_stops_when_closed(browser):
         open_chat(page); page.locator('#ary-voice-speak').click()
         assert page.evaluate('voiceCalls.spoken.length')==1
         assert page.evaluate('voiceCalls.spoken[0].voice')=='es-MX'
+        assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
+        assert page.evaluate('voiceCalls.spoken[0].rate') < 1
         assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='true'
         page.locator('#ary-assistant-close').click()
         assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='false'
         assert page.evaluate('voiceCalls.cancels')>0
+    finally: ctx.close()
+
+
+def test_billing_help_greeting_starts_voice_dictation(browser):
+    ctx,page,calls,_=setup(browser)
+    try:
+        page.locator('#ary-greeting').wait_for(state='visible',timeout=5000)
+        assert '¿Quieres ayuda para facturar?' in page.locator('#ary-greeting').inner_text()
+        assert page.evaluate('voiceCalls.starts')==0 and page.evaluate('voiceCalls.spoken.length')==0
+        page.locator('#ary-greeting-open').click()
+        assert page.locator('#ary-chat').evaluate('(el)=>el.open') is True
+        assert page.locator('#ary-voice-consent').is_checked()
+        assert page.evaluate('voiceCalls.starts')==1
+        assert page.evaluate('voiceCalls.spoken.length')==0
+        page.evaluate("const result=[{transcript:'cómo facturo'}]; result.isFinal=true; lastRecognition.onresult({results:[result]}); lastRecognition.onend();")
+        assert page.locator('#ary-chat-message').input_value()=='cómo facturo'
+        page.locator('#ary-chat-send').click()
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
+        assert not any(x['path'].endswith('/solicitudes') for x in calls)
     finally: ctx.close()
 
 
