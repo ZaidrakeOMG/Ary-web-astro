@@ -55,10 +55,27 @@ assert.ok(rule(config),'Missing original API proxy');assert.equal(rule(config),r
 const defaultFiles=config.match(/<defaultDocument\b[^>]*>[\s\S]*?<files>([\s\S]*?)<\/files>/)?.[1];assert.ok(defaultFiles);
 const names=[...defaultFiles.matchAll(/<add\b[^>]*value="([^"]+)"/g)].map(x=>x[1].toLowerCase());assert.equal(names[0],'index.html');assert.equal(names.length,new Set(names).size,'IIS duplicate defaultDocument entries');
 assert.ok(config.includes('mimeType="image/webp"'),'IIS must serve the new WebP photographs');
-for(const name of ['X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','X-Permitted-Cross-Domain-Policies','Content-Security-Policy']){
+for(const name of ['X-Content-Type-Options','X-Frame-Options','X-XSS-Protection','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','Cross-Origin-Resource-Policy','Origin-Agent-Cluster','X-DNS-Prefetch-Control','X-Permitted-Cross-Domain-Policies','Content-Security-Policy']){
  assert.ok(config.includes(`<add name="${name}" value="`),`Missing IIS security header: ${name}`);
 }
-assert.ok(config.includes('<requestLimits maxAllowedContentLength="5242880" />'),'Missing 5 MB IIS request limit');
+const globalCsp=(config.match(/<add name="Content-Security-Policy" value="([^"]+)"/)||[])[1]||'';
+assert.ok(globalCsp.includes("script-src 'self'") && !globalCsp.includes("script-src 'self' 'unsafe-inline'"),'Global CSP must not allow inline JavaScript');
+assert.ok(globalCsp.includes("script-src-attr 'none'"),'Global CSP must block inline event handlers');
+assert.ok(globalCsp.includes("require-trusted-types-for 'script'") && globalCsp.includes("trusted-types 'none'"),'Global CSP must enforce Trusted Types');
+assert.ok(config.includes('<requestFiltering removeServerHeader="true" allowDoubleEscaping="false">'),'IIS must hide its Server header and reject double escaping');
+assert.ok(config.includes('maxAllowedContentLength="5242880" maxUrl="2048" maxQueryString="1024"'),'Missing hardened IIS request limits');
+for(const verb of ['GET','HEAD','POST','OPTIONS']) assert.ok(config.includes(`<add verb="${verb}" allowed="true" />`),`Missing allowed HTTP verb: ${verb}`);
+for(const segment of ['.git','.github','.ary-releases','.ary-staging','node_modules','src','server','tests','legacy','data','logs']){
+ assert.ok(config.includes(`<add segment="${segment}" />`),`Missing hidden IIS segment: ${segment}`);
+}
+for(const ext of ['.json','.log','.sql','.bak','.ps1','.bat','.py','.sqlite3','.zip','.pem','.key','.pfx']){
+ assert.ok(config.includes(`<add fileExtension="${ext}" allowed="false" />`),`Missing blocked IIS extension: ${ext}`);
+}
+for(const ruleName of ['ARY Security Reject Unexpected Host','ARY Security Redirect HTTP to canonical HTTPS','ARY Security Redirect apex to WWW','ARY Security Block Scanner Paths']){
+ assert.ok(config.includes(`name="${ruleName}"`),`Missing security rewrite rule: ${ruleName}`);
+}
+assert.ok(!config.includes('name="Redirect HTTP to HTTPS"'),'Legacy Host-header redirect must not remain');
+assert.ok(fs.existsSync(path.join(out,'.well-known/security.txt')),'Missing RFC 9116 security.txt');
 assert.ok(fs.existsSync(path.join(out,'seguridad/index.html')),'Missing public cybersecurity page');
 assert.ok(!fs.existsSync(path.join(out,'Images')),'Obsolete images must not be deployed');assert.ok(!fs.existsSync(path.join(out,'legacy')),'Legacy source must remain private');
 const release=JSON.parse(read(path.join(out,'release.json')));
