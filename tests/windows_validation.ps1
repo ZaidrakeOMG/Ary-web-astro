@@ -16,6 +16,8 @@ foreach($name in $requiredHeaders){
  $h=$doc.SelectSingleNode("/configuration/system.webServer/httpProtocol/customHeaders/add[@name='$name']")
  if(-not $h -or -not $h.value){throw "Missing security header: $name"}
 }
+$csp=$doc.SelectSingleNode('/configuration/system.webServer/httpProtocol/customHeaders/add[@name="Content-Security-Policy"]').value
+if($csp -notmatch "script-src 'self'" -or $csp -match "script-src 'self' 'unsafe-inline'" -or $csp -notmatch "script-src-attr 'none'" -or $csp -notmatch "require-trusted-types-for 'script'"){throw 'CSP is not hardened'}
 $filter=$doc.SelectSingleNode('/configuration/system.webServer/security/requestFiltering')
 if(-not $filter -or $filter.removeServerHeader -ne 'true' -or $filter.allowDoubleEscaping -ne 'false'){throw 'Missing hardened requestFiltering attributes'}
 $limit=$filter.SelectSingleNode('requestLimits')
@@ -29,7 +31,7 @@ foreach($name in @('ARY Security Reject Unexpected Host','ARY Security Redirect 
 }
 if($doc.SelectSingleNode('/configuration/system.webServer/rewrite/rules/rule[@name="Redirect HTTP to HTTPS"]')){throw 'Legacy Host-header redirect still present'}
 $src=Get-Content scripts/publicar-astro-iis.ps1 -Raw
-foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Release','Content-Security-Policy','Trusted Types','removeServerHeader','allowDoubleEscaping','ARY Security Reject Unexpected Host','previousPath','api/facturacion/opciones')) {
+foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Release','Content-Security-Policy','removeServerHeader','allowDoubleEscaping','ARY Security Reject Unexpected Host','previousPath','api/facturacion/opciones')) {
  if(-not $src.Contains($required)){throw "Deployment guard missing: $required"}
 }
 Write-Host 'PASS XML and publication guard checks. Real IIS/Polaris was NOT started.'
