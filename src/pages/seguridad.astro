@@ -1,0 +1,56 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import PageIntro from '../components/PageIntro.astro';
+---
+<SiteLayout title="Ciberseguridad del portal | Grupo ARY" description="Medidas de ciberseguridad aplicadas al portal web de Grupo ARY.">
+  <PageIntro eyebrow="SEGURIDAD DIGITAL" title="Cuidamos el portal." accent="Y tus decisiones." description="Estas son las medidas visibles que usamos para reducir riesgos en navegación, facturación y ayuda por voz."/>
+  <section class="section">
+    <div class="wrap policy-grid">
+      <article class="policy-card">
+        <span class="overline">DEFENSA EN CAPAS</span>
+        <h2>Controles técnicos del sitio</h2>
+        <ul>
+          <li><strong>HTTPS obligatorio:</strong> las visitas por HTTP se redirigen a HTTPS y el navegador recibe una política HSTS para recordar el uso de conexión cifrada.</li>
+          <li><strong>Content Security Policy:</strong> se restringen orígenes de scripts, conexiones, imágenes, formularios y contenido embebido. La pantalla de facturación mantiene además una política más estricta para su código operativo.</li>
+          <li><strong>Protección contra clickjacking:</strong> el portal no permite ser incrustado dentro de marcos de otros sitios.</li>
+          <li><strong>Tipos de contenido:</strong> el navegador recibe la instrucción de no adivinar tipos MIME, reduciendo ataques de interpretación incorrecta de archivos.</li>
+          <li><strong>Referrer limitado:</strong> se reduce la información de navegación que puede salir hacia otros sitios; facturación aplica una política todavía más restrictiva.</li>
+          <li><strong>Permisos del navegador:</strong> cámara, geolocalización, pagos, USB y captura de pantalla permanecen deshabilitados para este portal. El micrófono se permite solo al propio sitio y requiere autorización del usuario.</li>
+          <li><strong>Límite de solicitudes:</strong> IIS limita el tamaño máximo aceptado para reducir cargas excesivas sin impedir la constancia fiscal permitida.</li>
+          <li><strong>Exploración de carpetas deshabilitada:</strong> IIS no publica listados del sistema de archivos.</li>
+        </ul>
+      </article>
+
+      <article class="policy-card">
+        <span class="overline">FACTURACIÓN</span>
+        <h2>Separación entre interfaz y operación</h2>
+        <p>La página web no timbra por sí sola. Las solicitudes pasan por el servicio de facturación autorizado y usan controles de seguimiento para evitar reenvíos accidentales cuando el estado de una operación es incierto.</p>
+        <ul>
+          <li>La interfaz de facturación conserva una CSP específica con hashes para su script operativo.</li>
+          <li>La API se consume desde el mismo origen público del portal; la dirección interna del servicio no se publica en la interfaz.</li>
+          <li>La guía por voz no marca confirmaciones ni pulsa el botón final de envío.</li>
+          <li>Los mensajes de ayuda por WhatsApp se preparan con campos limitados y no adjuntan automáticamente la constancia fiscal completa.</li>
+        </ul>
+      </article>
+
+      <article class="policy-card">
+        <span class="overline">VOZ Y PRIVACIDAD</span>
+        <h2>Micrófono bajo control del usuario</h2>
+        <p>La ayuda de voz necesita HTTPS y permiso del navegador. ARY no intenta saltarse esos controles. Si un navegador exige una interacción para volver a activar audio o micrófono, el portal muestra una opción de reanudación en lugar de forzarla.</p>
+        <p><a href="/privacidad/#voz">Consulta cómo tratamos la ayuda por voz y sus límites.</a></p>
+      </article>
+
+      <article class="policy-card">
+        <span class="overline">PUBLICACIÓN SEGURA</span>
+        <h2>Antes de cambiar la versión activa</h2>
+        <p>El proceso de publicación compila en una carpeta separada, valida enlaces, formularios, políticas del navegador y configuración de IIS, genera un manifiesto de integridad y conserva la configuración crítica del servicio de facturación. La versión activa se cambia solo después de esas comprobaciones.</p>
+      </article>
+
+      <article class="policy-card">
+        <span class="overline">IMPORTANTE</span>
+        <h2>La seguridad es un proceso continuo</h2>
+        <p>Estas medidas reducen riesgos comunes, pero no equivalen a una certificación ni garantizan invulnerabilidad. Si detectas una conducta extraña, un enlace inesperado o una solicitud de contraseñas, no continúes y repórtalo por los canales oficiales de <a href="/contacto/">Contacto ARY</a>.</p>
+      </article>
+    </div>
+  </section>
+</SiteLayout>
