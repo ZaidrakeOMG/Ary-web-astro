@@ -60,8 +60,9 @@ try {
   } else {
     $node=Get-Command node.exe -ErrorAction Stop; $npm=Get-Command npm.cmd -ErrorAction Stop
     $nodeVersion=(& $node.Source -p 'process.versions.node').Trim()
-    $major=[int]$nodeVersion.Split('.')[0]
-    if ($major -lt 22) { throw 'Se requiere Node.js 22 actualizado o 24. La pagina actual no se cambio.' }
+    $parts=$nodeVersion.Split('.');$major=[int]$parts[0];$minor=[int]$parts[1]
+    $supported=(($major -eq 22 -and $minor -ge 22) -or $major -eq 24)
+    if (-not $supported) { throw "Node.js $nodeVersion no es compatible. Instala Node.js 22.22.0 o superior dentro de la rama 22, o Node.js 24 LTS. La pagina actual no se cambio." }
     if (-not (Test-Path 'package-lock.json')) { throw 'Falta package-lock.json. Actualiza el proyecto completo antes de compilar.' }
     $lockHash=(Get-FileHash 'package-lock.json' -Algorithm SHA256).Hash
     $cache=Join-Path $root '.ary-install-cache.txt'
