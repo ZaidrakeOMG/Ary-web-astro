@@ -36,10 +36,10 @@ const nav=[['/','home','Inicio','inicio'],['/estaciones/','pin','Estaciones','es
     <nav class="bottom-nav" aria-label="Accesos rápidos">
       {nav.map(([href,icon,label,key]) => <a href={href} class:list={[{ selected: key === active }]} aria-current={key === active ? 'page' : undefined}><Icon name={icon} size={21}/><span>{label}</span></a>)}
     </nav>
+    <slot name="scripts"/>
     <AryAssistant/>
     <script is:inline defer src="/scripts/ary-chat.js?v=3"></script>
     <script is:inline defer src="/scripts/ary-voice.js?v=4"></script>
-    <slot name="scripts"/>
     <script src="../scripts/ui.ts"></script>
   </body>
 </html>
