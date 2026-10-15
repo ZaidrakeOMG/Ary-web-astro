@@ -7,6 +7,7 @@
   const home = document.getElementById('ary-assistant-home');
   const launcher = document.getElementById('ary-assistant-launcher');
   const panel = document.getElementById('ary-assistant-panel');
+  const isBillingPage = Boolean(document.getElementById('form-factura'));
   if (!root || !home || !launcher || !panel || root.dataset.chatReady) return;
   root.dataset.chatReady = 'true';
   const make = (tag, className, text) => {
@@ -24,11 +25,15 @@
   const greeting = make('aside', 'ary-greeting');
   greeting.id = 'ary-greeting'; greeting.hidden = true;
   const greetOpen = make('button', 'ary-greeting-open'); greetOpen.type = 'button';
-  greetOpen.append(make('strong', '', '¡Hola! ¿Te puedo ayudar en algo?'), make('span', '', 'Soy tu asistente ARY. Toca aquí.'));
+  greetOpen.append(
+    make('strong', '', isBillingPage ? '¿Quieres ayuda para facturar?' : '¡Hola! ¿Te puedo ayudar en algo?'),
+    make('span', '', isBillingPage ? 'Ayudar · háblame y te escucho' : 'Soy tu asistente ARY. Toca aquí.')
+  );
+  greetOpen.setAttribute('aria-label', isBillingPage ? 'Ayudar con facturación usando voz' : 'Abrir el asistente ARY');
   const greetClose = make('button', 'ary-greeting-close', '×'); greetClose.type = 'button';
   greetClose.setAttribute('aria-label', 'Cerrar mensaje de bienvenida');
   greeting.append(greetOpen, greetClose); root.append(greeting);
-  const greetingKey = 'ary-greeting-dismissed-v1';
+  const greetingKey = 'ary-greeting-dismissed-v2';
   let dismissed = false, greetingDue = false, positionFrame = 0;
   try { dismissed = sessionStorage.getItem(greetingKey) === '1'; } catch { /* optional UI storage */ }
   function dismissGreeting() {
@@ -55,7 +60,11 @@
   }
   function schedulePosition() { if (!positionFrame) positionFrame = requestAnimationFrame(positionGreeting); }
   greetClose.addEventListener('click', dismissGreeting);
-  greetOpen.addEventListener('click', () => { dismissGreeting(); if (launcher.getAttribute('aria-expanded') !== 'true') launcher.click(); });
+  greetOpen.addEventListener('click', () => {
+    dismissGreeting();
+    if (launcher.getAttribute('aria-expanded') !== 'true') launcher.click();
+    if (isBillingPage) window.dispatchEvent(new CustomEvent('ary:voice-help-requested'));
+  });
   const uiObserver = new MutationObserver(schedulePosition);
   uiObserver.observe(root, { attributes: true, attributeFilter: ['hidden', 'style', 'class'] });
   uiObserver.observe(launcher, { attributes: true, attributeFilter: ['aria-expanded', 'disabled'] });
@@ -96,6 +105,7 @@
     item.append(make('strong', '', who), make('p', '', text)); log.append(item);
     while (log.children.length > 16) log.firstElementChild.remove();
     log.scrollTop = log.scrollHeight;
+    if (who !== 'Tú') window.dispatchEvent(new CustomEvent('ary:assistant-message', { detail: { text } }));
   }
   addMessage('Asistente ARY · guía local', welcome);
   function repositionPanel() { window.dispatchEvent(new Event('resize')); }
