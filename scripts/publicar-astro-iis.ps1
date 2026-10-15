@@ -114,7 +114,7 @@ try {
   $remove=$merged.CreateElement('remove');$remove.SetAttribute('name','X-ARY-Release');[void]$headers.AppendChild($remove)
   $h=$merged.CreateElement('add');$h.SetAttribute('name','X-ARY-Release');$h.SetAttribute('value',$stamp);[void]$headers.AppendChild($h)
   # Apply only ARY's reviewed security headers; preserve all unrelated local IIS settings.
-  $securityHeaderNames=@('X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','X-Permitted-Cross-Domain-Policies','Content-Security-Policy')
+  $securityHeaderNames=@('X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','Cross-Origin-Resource-Policy','Origin-Agent-Cluster','X-Download-Options','X-Permitted-Cross-Domain-Policies','Content-Security-Policy')
   foreach ($name in $securityHeaderNames) {
     $templateHeader=$template.SelectSingleNode("/configuration/system.webServer/httpProtocol/customHeaders/add[@name='$name']")
     if (-not $templateHeader) { throw "Falta cabecera de seguridad en el paquete: $name" }
@@ -125,12 +125,34 @@ try {
   foreach ($n in @($headers.SelectNodes('*[@name="X-Powered-By"]'))) { [void]$headers.RemoveChild($n) }
   $removePowered=$merged.CreateElement('remove');$removePowered.SetAttribute('name','X-Powered-By');[void]$headers.AppendChild($removePowered)
 
-  $templateLimit=$template.SelectSingleNode('/configuration/system.webServer/security/requestFiltering/requestLimits')
-  if (-not $templateLimit -or -not $templateLimit.GetAttribute('maxAllowedContentLength')) { throw 'Falta el limite de solicitudes del paquete.' }
+  $templateFiltering=$template.SelectSingleNode('/configuration/system.webServer/security/requestFiltering')
+  $templateLimit=$templateFiltering.SelectSingleNode('requestLimits')
+  if (-not $templateFiltering -or -not $templateLimit -or -not $templateLimit.GetAttribute('maxAllowedContentLength')) { throw 'Falta el filtro de seguridad IIS del paquete.' }
   $security=Ensure-Child $merged $server 'security'
   $requestFiltering=Ensure-Child $merged $security 'requestFiltering'
+  $requestFiltering.SetAttribute('removeServerHeader',$templateFiltering.GetAttribute('removeServerHeader'))
   $requestLimits=Ensure-Child $merged $requestFiltering 'requestLimits'
-  $requestLimits.SetAttribute('maxAllowedContentLength',$templateLimit.GetAttribute('maxAllowedContentLength'))
+  foreach($attr in @('maxAllowedContentLength','maxUrl','maxQueryString')) {
+    $value=$templateLimit.GetAttribute($attr)
+    if($value){$requestLimits.SetAttribute($attr,$value)}
+  }
+  foreach($collectionName in @('verbs','hiddenSegments','fileExtensions')) {
+    $sourceCollection=$templateFiltering.SelectSingleNode($collectionName)
+    if(-not $sourceCollection){throw "Falta filtro IIS: $collectionName"}
+    $targetCollection=Ensure-Child $merged $requestFiltering $collectionName
+    foreach($attr in @($sourceCollection.Attributes)){ $targetCollection.SetAttribute($attr.Name,$attr.Value) }
+    $keyName=$(if($collectionName -eq 'verbs'){'verb'}elseif($collectionName -eq 'hiddenSegments'){'segment'}else{'fileExtension'})
+    foreach($sourceItem in @($sourceCollection.SelectNodes('add'))) {
+      $key=$sourceItem.GetAttribute($keyName)
+      foreach($oldItem in @($targetCollection.SelectNodes("add[@$keyName='$key']"))){[void]$targetCollection.RemoveChild($oldItem)}
+      [void]$targetCollection.AppendChild($merged.ImportNode($sourceItem,$true))
+    }
+  }
+  $templateErrors=$template.SelectSingleNode('/configuration/system.webServer/httpErrors')
+  if($templateErrors){
+    $targetErrors=Ensure-Child $merged $server 'httpErrors'
+    foreach($attr in @($templateErrors.Attributes)){ $targetErrors.SetAttribute($attr.Name,$attr.Value) }
+  }
 
   Assert-NoDuplicateDefaults $merged
   if ($merged.SelectSingleNode('/configuration/system.webServer/rewrite/rules/rule[@name="ARY Portal Facturacion API"]').OuterXml -ne $apiBefore) { throw 'La regla original de facturacion cambio. Publicacion cancelada.' }
