@@ -1,0 +1,5 @@
+Contact: https://www.grupoary.com.mx/contacto/
+Expires: 2027-10-15T23:59:59Z
+Preferred-Languages: es, en
+Canonical: https://www.grupoary.com.mx/.well-known/security.txt
+Policy: https://www.grupoary.com.mx/seguridad/

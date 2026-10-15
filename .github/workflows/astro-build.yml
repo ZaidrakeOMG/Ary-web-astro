@@ -18,6 +18,10 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - name: Dependency audit - production high/critical
+        run: npm audit --omit=dev --audit-level=high
+      - name: Dependency audit - all critical
+        run: npm audit --audit-level=critical
       - run: node --check public/scripts/ary-chat.js && node --check public/scripts/ary-voice.js && node --check src/lib/billing-runtime.js
       - run: node --test tests/assistant-ai.test.mjs
       - run: npm run check

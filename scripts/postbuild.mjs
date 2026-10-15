@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 const out = path.resolve(process.env.ARY_OUT_DIR || 'dist');
 const aliases = {
  'default.htm':'/', 'default.html':'/', 'default_01.htm':'/', 'defaultori.htm':'/', 'indext.htm':'/', 'indext.html':'/', 'index.htm':'/',
@@ -23,6 +24,47 @@ config=config.replace(/\s*<rule\b[^>]*name="ARY Astro[^"\n]*"[\s\S]*?<\/rule>/g,
 const escapeRE=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const rules=Object.entries(aliases).map(([name,target],i)=>`    <rule name="ARY Astro alias ${i+1}" stopProcessing="true"><match url="^${escapeRE(name)}$" ignoreCase="true"/><action type="Redirect" url="${target}" redirectType="Found" appendQueryString="true"/></rule>`).join('\n');
 config=config.replace('</rules>',rules+'\n  </rules>');
+
+// Build one strict CSP for the whole static site. Every executable inline script
+// must be explicitly hashed; arbitrary inline JavaScript is not permitted.
+function walkFiles(folder){
+ return fs.readdirSync(folder,{withFileTypes:true}).flatMap(entry=>
+   entry.isDirectory()?walkFiles(path.join(folder,entry.name)):[path.join(folder,entry.name)]);
+}
+const htmlFiles=walkFiles(out).filter(file=>file.endsWith('.html'));
+const inlineHashes=new Set();
+for(const file of htmlFiles){
+ const html=fs.readFileSync(file,'utf8');
+ for(const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)){
+   const attrs=match[1], body=match[2];
+   if(/\bsrc\s*=/i.test(attrs) || !body.trim()) continue;
+   const type=attrs.match(/\btype\s*=\s*["']([^"']+)["']/i)?.[1]?.toLowerCase();
+   if(type && !['module','text/javascript','application/javascript'].includes(type)) continue;
+   inlineHashes.add("'sha256-"+createHash('sha256').update(body).digest('base64')+"'");
+ }
+}
+const scriptHashes=[...inlineHashes].sort().join(' ');
+const csp=[
+ "default-src 'self'",
+ "base-uri 'self'",
+ "object-src 'none'",
+ "frame-ancestors 'none'",
+ "script-src 'self' "+scriptHashes,
+ "script-src-attr 'none'",
+ "style-src 'self' 'unsafe-inline'",
+ "img-src 'self' data:",
+ "font-src 'self'",
+ "connect-src 'self'",
+ "form-action 'self'",
+ "frame-src 'none'",
+ "child-src 'none'",
+ "worker-src 'none'",
+ "manifest-src 'self'",
+ "media-src 'self'",
+ "upgrade-insecure-requests"
+].join('; ');
+if(!config.includes('ARY_CSP_PLACEHOLDER')) throw new Error('Missing CSP placeholder in web.config');
+config=config.replaceAll('ARY_CSP_PLACEHOLDER',csp);
 fs.writeFileSync(path.join(out,'web.config'),config);
 // Read the built page marker so the manifest and IIS verification cannot drift.
 const home=fs.readFileSync(path.join(out,'index.html'),'utf8');
