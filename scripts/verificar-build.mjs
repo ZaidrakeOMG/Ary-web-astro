@@ -55,6 +55,11 @@ assert.ok(rule(config),'Missing original API proxy');assert.equal(rule(config),r
 const defaultFiles=config.match(/<defaultDocument\b[^>]*>[\s\S]*?<files>([\s\S]*?)<\/files>/)?.[1];assert.ok(defaultFiles);
 const names=[...defaultFiles.matchAll(/<add\b[^>]*value="([^"]+)"/g)].map(x=>x[1].toLowerCase());assert.equal(names[0],'index.html');assert.equal(names.length,new Set(names).size,'IIS duplicate defaultDocument entries');
 assert.ok(config.includes('mimeType="image/webp"'),'IIS must serve the new WebP photographs');
+for(const name of ['X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','X-Permitted-Cross-Domain-Policies','Content-Security-Policy']){
+ assert.ok(config.includes(`<add name="${name}" value="`),`Missing IIS security header: ${name}`);
+}
+assert.ok(config.includes('<requestLimits maxAllowedContentLength="5242880" />'),'Missing 5 MB IIS request limit');
+assert.ok(fs.existsSync(path.join(out,'seguridad/index.html')),'Missing public cybersecurity page');
 assert.ok(!fs.existsSync(path.join(out,'Images')),'Obsolete images must not be deployed');assert.ok(!fs.existsSync(path.join(out,'legacy')),'Legacy source must remain private');
 const release=JSON.parse(read(path.join(out,'release.json')));
 for(const [file,target] of Object.entries(release.aliases)){const html=read(path.join(out,file));assert.ok(html.includes(`content="${target}"`));assert.ok(html.length<1600,'An old design was copied instead of an alias');}

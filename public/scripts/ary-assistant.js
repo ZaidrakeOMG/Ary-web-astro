@@ -279,6 +279,14 @@
     reserveSpace();
     positionPanel();
     rememberView();
+    window.dispatchEvent(new CustomEvent('ary:guide-step', { detail: {
+      kind,
+      index,
+      total: items.length,
+      title: current.title,
+      text: current.text,
+      notice: notice.hidden ? '' : notice.textContent
+    } }));
     if (focus) heading.focus({ preventScroll: true });
     if (scroll) requestAnimationFrame(revealTarget);
   }
@@ -331,6 +339,10 @@
     positionPanel();
   }
 
+  window.addEventListener('ary:guide-start', (event) => {
+    const requested = event.detail?.kind;
+    if (isBilling && Object.hasOwn(guides, requested)) begin(requested);
+  });
   launcher.addEventListener('click', (event) => {
     if (ignoreClick) { event.preventDefault(); event.stopImmediatePropagation(); ignoreClick = false; return; }
     if (!blocked()) setOpen(!opened);

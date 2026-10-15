@@ -19,7 +19,7 @@ CAPTURE={'rfc':'AAA010101AAA','razon_social':'EMPRESA DE PRUEBA SA DE CV','estac
          'ticket':'123456','fecha_ticket':'2026-10-14','forma_pago':'TARJETA DE DEBITO',
          'uso_cfdi':'GASTOS EN GENERAL.','correo_destino':'prueba@example.com'}
 VOICE_MOCK=r"""
-window.voiceCalls={spoken:[],starts:0,aborts:0,cancels:0};
+window.voiceCalls={spoken:[],starts:0,aborts:0,cancels:0,permissionRequests:0};
 const synth={getVoices:()=>[
  {lang:'es-MX',name:'Voz de prueba'},
  {lang:'es-MX',name:'Microsoft Dalia Online (Natural) - Spanish (Mexico)'}
@@ -35,6 +35,12 @@ window.SpeechRecognition=class{
  abort(){window.voiceCalls.aborts++}
 };
 window.webkitSpeechRecognition=undefined;
+Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{
+ getUserMedia:async()=>{window.voiceCalls.permissionRequests++;return{getTracks:()=>[{stop(){}}]}}
+}});
+Object.defineProperty(navigator,'permissions',{configurable:true,value:{
+ query:async()=>({state:'granted'})
+}});
 """
 
 
@@ -149,21 +155,77 @@ def test_support_uses_text_not_html(browser):
     finally: ctx.close()
 
 
+def dismiss_voice_prompt(page):
+    prompt=page.locator('#ary-voice-prompt')
+    if prompt.count() and prompt.is_visible():
+        page.locator('#ary-voice-prompt-close').click()
+
+
 def open_chat(page):
+    dismiss_voice_prompt(page)
     page.locator('#ary-assistant-launcher').click()
-    page.locator('#ary-chat > summary').click()
+    if not page.locator('#ary-chat').evaluate('(el)=>el.open'):
+        page.locator('#ary-chat > summary').click()
     page.locator('#ary-voice-dictate').wait_for(state='visible')
 
 
-def test_speech_is_explicit_and_stops_when_closed(browser):
+def test_voice_waits_for_user_permission(browser):
     ctx,page,_,_=setup(browser)
     try:
-        assert page.evaluate('voiceCalls.starts')==0 and page.evaluate('voiceCalls.spoken.length')==0
-        open_chat(page); page.locator('#ary-voice-speak').click()
+        page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
+        assert '¿Quieres ayuda por voz para facturar?' in page.locator('#ary-voice-prompt').inner_text()
+        assert page.evaluate('voiceCalls.permissionRequests')==0
+        assert page.evaluate('voiceCalls.starts')==0
+        assert page.evaluate('voiceCalls.spoken.length')==0
+    finally: ctx.close()
+
+
+def test_enable_voice_narrates_guide_and_listens_for_next(browser):
+    ctx,page,calls,_=setup(browser)
+    try:
+        page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
+        page.locator('#ary-voice-enable').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
+        page.locator('#ary-assistant-tour').wait_for(state='visible')
+        assert 'Facturar ticket' in page.locator('#ary-assistant-kind').inner_text()
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
+        assert page.evaluate('voiceCalls.spoken[0].rate') < 1
+        assert page.evaluate('voiceCalls.starts')==0
+        page.evaluate('lastUtterance.onend()')
+        assert page.evaluate('voiceCalls.starts')==1
+        page.evaluate("const result=[{transcript:'siguiente'}]; result.isFinal=true; lastRecognition.onresult({results:[result]});")
+        assert 'Paso 2 de' in page.locator('#ary-assistant-count').inner_text()
+        assert page.evaluate('voiceCalls.spoken.length')==2
+        assert not any(x['path'].endswith('/solicitudes') for x in calls)
+        assert page.evaluate("localStorage.getItem('ary-voice-enabled-v2')")=='1'
+    finally: ctx.close()
+
+
+def test_granted_voice_preference_does_not_request_microphone_again(browser):
+    ctx,page,_,_=setup(browser)
+    try:
+        page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
+        page.locator('#ary-voice-enable').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
+        page.reload(wait_until='networkidle')
+        page.locator('#ary-assistant-tour').wait_for(state='visible',timeout=5000)
+        assert page.locator('#ary-voice-prompt').is_hidden()
+        assert page.evaluate('voiceCalls.permissionRequests')==0
+        assert page.evaluate('voiceCalls.spoken.length')>=1
+    finally: ctx.close()
+
+
+def test_manual_repeat_uses_natural_voice_and_stops_when_closed(browser):
+    ctx,page,_,_=setup(browser)
+    try:
+        assert page.evaluate('voiceCalls.spoken.length')==0
+        open_chat(page)
+        page.locator('#ary-voice-speak').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
         assert page.evaluate('voiceCalls.spoken.length')==1
         assert page.evaluate('voiceCalls.spoken[0].voice')=='es-MX'
         assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
-        assert page.evaluate('voiceCalls.spoken[0].rate') < 1
         assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='true'
         page.locator('#ary-assistant-close').click()
         assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='false'
@@ -171,38 +233,19 @@ def test_speech_is_explicit_and_stops_when_closed(browser):
     finally: ctx.close()
 
 
-def test_billing_help_greeting_starts_voice_dictation(browser):
+def test_manual_dictation_never_submits_billing(browser):
     ctx,page,calls,_=setup(browser)
     try:
-        page.locator('#ary-greeting').wait_for(state='visible',timeout=5000)
-        assert '¿Quieres ayuda para facturar?' in page.locator('#ary-greeting').inner_text()
-        assert page.evaluate('voiceCalls.starts')==0 and page.evaluate('voiceCalls.spoken.length')==0
-        page.locator('.ary-greeting-open').click()
-        assert page.locator('#ary-chat').evaluate('(el)=>el.open') is True
-        assert page.locator('#ary-voice-consent').is_checked()
+        open_chat(page)
+        page.locator('#ary-chat-message').fill('Hola')
+        page.locator('#ary-voice-dictate').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
         assert page.evaluate('voiceCalls.starts')==1
-        assert page.evaluate('voiceCalls.spoken.length')==0
-        page.evaluate("const result=[{transcript:'cómo facturo'}]; result.isFinal=true; lastRecognition.onresult({results:[result]}); lastRecognition.onend();")
-        assert page.locator('#ary-chat-message').input_value()=='cómo facturo'
-        page.locator('#ary-chat-send').click()
-        assert page.evaluate('voiceCalls.spoken.length')==1
-        assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
-        assert not any(x['path'].endswith('/solicitudes') for x in calls)
-    finally: ctx.close()
-
-
-def test_dictation_needs_consent_and_never_submits(browser):
-    ctx,page,calls,_=setup(browser)
-    try:
-        open_chat(page); page.locator('#ary-voice-dictate').click()
-        assert page.evaluate('voiceCalls.starts')==0
-        page.locator('#ary-voice-consent').check(); page.locator('#ary-chat-message').fill('Hola')
-        page.locator('#ary-voice-dictate').click(); assert page.evaluate('voiceCalls.starts')==1
         page.evaluate("const result=[{transcript:'cómo entro a flotillas'}]; result.isFinal=true; lastRecognition.onresult({results:[result]});")
         assert page.locator('#ary-chat-message').input_value()=='Hola cómo entro a flotillas'
         assert page.locator('#ary-chat-log .is-user').count()==0
         assert not any(x['path'].endswith('/solicitudes') for x in calls)
-        page.locator('#ary-assistant-close').click(); assert page.evaluate('voiceCalls.aborts')==1
+        page.locator('#ary-assistant-close').click()
         assert page.locator('#ary-chat-message').evaluate('(el)=>el.readOnly') is False
     finally: ctx.close()
 
@@ -210,7 +253,8 @@ def test_dictation_needs_consent_and_never_submits(browser):
 def test_mic_error_restores_typing(browser):
     ctx,page,_,_=setup(browser)
     try:
-        open_chat(page); page.locator('#ary-voice-consent').check(); page.locator('#ary-voice-dictate').click()
+        open_chat(page)
+        page.locator('#ary-voice-dictate').click()
         page.evaluate("lastRecognition.onerror({error:'not-allowed'});")
         assert 'denegado' in page.locator('#ary-voice-status').inner_text()
         assert page.locator('#ary-chat-message').evaluate('(el)=>el.readOnly') is False

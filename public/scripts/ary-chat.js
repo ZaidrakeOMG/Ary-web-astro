@@ -74,7 +74,7 @@
   }
   window.addEventListener('resize', schedulePosition, { passive: true });
   window.visualViewport?.addEventListener('resize', schedulePosition, { passive: true });
-  setTimeout(() => { greetingDue = true; schedulePosition(); }, 2400);
+  setTimeout(() => { if (!isBillingPage) { greetingDue = true; schedulePosition(); } }, 2400);
 
   const chat = make('details', 'ary-chat'); chat.id = 'ary-chat';
   const summary = make('summary', '', 'Conversar con el asistente');

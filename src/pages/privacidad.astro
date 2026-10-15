@@ -1,5 +1,58 @@
 ---
-import SiteLayout from '../layouts/SiteLayout.astro';import PageIntro from '../components/PageIntro.astro';import policy from '../data/privacy.json';
-const parts=policy.text.split(/(?= [1-6]\. )/);
+import SiteLayout from '../layouts/SiteLayout.astro';
+import PageIntro from '../components/PageIntro.astro';
+import policy from '../data/privacy.json';
+const parts=policy.text.split(/\s(?=[1-6]\.\s)/);
 ---
-<SiteLayout title="Aviso de privacidad | Grupo ARY" description="Política de privacidad publicada por Grupo ARY."><PageIntro eyebrow="GRUPO ARY" title="Aviso de" accent="privacidad." description="Consulta la política de privacidad del sitio."/><section class="section"><div class="wrap policy">{parts.map(p=><p>{p}</p>)}</div></section></SiteLayout>
+<SiteLayout title="Privacidad y uso de voz | Grupo ARY" description="Aviso de privacidad y explicación del uso de voz, facturación y datos del portal de Grupo ARY.">
+  <PageIntro eyebrow="GRUPO ARY" title="Privacidad," accent="con claridad." description="Conoce qué datos usa el portal, cómo funciona la ayuda por voz y qué controles tienes."/>
+  <section class="section">
+    <div class="wrap policy-grid">
+      <article class="policy-card">
+        <span class="overline">AVISO PUBLICADO</span>
+        <h2>Aviso de privacidad de Grupo ARY</h2>
+        <p>Se conserva a continuación el texto de privacidad publicado por Grupo ARY.</p>
+        {parts.map(p=><p>{p}</p>)}
+      </article>
+
+      <article class="policy-card" id="portal-digital">
+        <span class="overline">COMPLEMENTO DIGITAL · 15 OCT 2026</span>
+        <h2>Cómo funciona este portal</h2>
+        <p>Este complemento describe el funcionamiento técnico actual del portal web. No sustituye el aviso anterior ni constituye asesoría legal.</p>
+        <ul>
+          <li><strong>Facturación:</strong> los datos que capturas se usan para preparar, procesar y dar seguimiento a tu solicitud. El portal evita mostrar datos fiscales completos en el seguimiento público.</li>
+          <li><strong>Constancia fiscal:</strong> el archivo PDF se envía al servicio de facturación cuando tú confirmas el trámite. Para localizar al cliente al facturar se comparan RFC y razón social; la calle no se usa para elegir al cliente.</li>
+          <li><strong>Chat:</strong> la guía local responde sin enviar tus campos de facturación al asistente. Si activas voluntariamente la opción de IA, solo se envía el texto que escribes en el chat después de ese consentimiento.</li>
+          <li><strong>Almacenamiento del navegador:</strong> el portal puede guardar preferencias de interfaz, referencias de seguimiento y la preferencia de ayuda por voz. No se usa ese almacenamiento para guardar la constancia fiscal completa.</li>
+        </ul>
+      </article>
+
+      <article class="policy-card" id="voz">
+        <span class="overline">MICRÓFONO Y AYUDA POR VOZ</span>
+        <h2>Tu micrófono siempre requiere permiso</h2>
+        <p>La ayuda por voz se activa únicamente después de que aceptas usarla. La primera vez, el navegador solicita permiso para el micrófono. Si el permiso permanece concedido, el portal recuerda tu preferencia para no pedir la misma autorización del sitio en cada visita.</p>
+        <ul>
+          <li>ARY no guarda una grabación de audio del micrófono desde esta página.</li>
+          <li>El reconocimiento de voz depende del navegador. Algunos navegadores pueden enviar el audio a su propio proveedor de reconocimiento para convertirlo en texto.</li>
+          <li>La narración utiliza las voces disponibles en el navegador o sistema operativo. Cuando existe una voz natural en español de México, el portal la prioriza.</li>
+          <li>Los comandos de la guía solo navegan la ayuda: por ejemplo, “siguiente”, “anterior”, “repetir”, “ir al campo” o “cerrar ayuda”. La voz no confirma ni envía una factura por sí sola.</li>
+          <li>Puedes desactivar la ayuda por voz desde el asistente y también revocar el permiso del micrófono desde la configuración del navegador.</li>
+        </ul>
+      </article>
+
+      <article class="policy-card" id="seguridad">
+        <span class="overline">PROTECCIÓN DEL PORTAL</span>
+        <h2>Privacidad y ciberseguridad trabajan juntas</h2>
+        <p>Aplicamos controles técnicos para reducir exposición de datos, limitar funciones del navegador y dificultar ataques comunes. Ningún sistema puede prometer riesgo cero.</p>
+        <div class="security-badges"><span>HTTPS</span><span>Permisos mínimos</span><span>Anti-clickjacking</span><span>CSP</span><span>Sin exploración de carpetas</span></div>
+        <p class="ary-security-note">Consulta el detalle público de estas medidas en <a href="/seguridad/">Ciberseguridad del portal</a>.</p>
+      </article>
+
+      <article class="policy-card">
+        <span class="overline">CONTACTO Y CONTROL</span>
+        <h2>Si necesitas atención</h2>
+        <p>Para dudas sobre el portal, privacidad o una actividad que te parezca sospechosa, utiliza los medios oficiales de <a href="/contacto/">Contacto ARY</a>. Evita enviar contraseñas, datos bancarios o información fiscal completa por el chat de ayuda.</p>
+      </article>
+    </div>
+  </section>
+</SiteLayout>
