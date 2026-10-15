@@ -55,11 +55,24 @@ assert.ok(rule(config),'Missing original API proxy');assert.equal(rule(config),r
 const defaultFiles=config.match(/<defaultDocument\b[^>]*>[\s\S]*?<files>([\s\S]*?)<\/files>/)?.[1];assert.ok(defaultFiles);
 const names=[...defaultFiles.matchAll(/<add\b[^>]*value="([^"]+)"/g)].map(x=>x[1].toLowerCase());assert.equal(names[0],'index.html');assert.equal(names.length,new Set(names).size,'IIS duplicate defaultDocument entries');
 assert.ok(config.includes('mimeType="image/webp"'),'IIS must serve the new WebP photographs');
-for(const name of ['X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','X-Permitted-Cross-Domain-Policies','Content-Security-Policy']){
+for(const name of ['X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','Cross-Origin-Resource-Policy','Origin-Agent-Cluster','X-Download-Options','X-Permitted-Cross-Domain-Policies','Content-Security-Policy']){
  assert.ok(config.includes(`<add name="${name}" value="`),`Missing IIS security header: ${name}`);
 }
-assert.ok(config.includes('<requestLimits maxAllowedContentLength="5242880" />'),'Missing 5 MB IIS request limit');
+const headerCsp=config.match(/<add name="Content-Security-Policy" value="([^"]+)"\s*\/>/)?.[1]||'';
+assert.ok(headerCsp.includes("script-src 'self' 'sha256-"),'Global CSP must hash inline scripts');
+assert.ok(!/script-src[^;]*'unsafe-inline'/.test(headerCsp),'Global CSP must not allow arbitrary inline JavaScript');
+assert.ok(headerCsp.includes("script-src-attr 'none'"),'Inline event handlers must be blocked');
+assert.ok(!config.includes('ARY_CSP_PLACEHOLDER'),'CSP placeholder leaked into build');
+assert.ok(config.includes('<requestFiltering removeServerHeader="true">'),'IIS must remove Server header');
+assert.ok(config.includes('maxAllowedContentLength="5242880" maxUrl="2048" maxQueryString="1024"'),'Missing IIS request limits');
 assert.ok(fs.existsSync(path.join(out,'seguridad/index.html')),'Missing public cybersecurity page');
+for(const verb of ['TRACE','TRACK','CONNECT','PUT','DELETE','PATCH','PROPFIND','PROPPATCH','MKCOL','COPY','MOVE','LOCK','UNLOCK'])
+ assert.ok(config.includes(`<add verb="${verb}" allowed="false" />`),`Dangerous verb not blocked: ${verb}`);
+for(const segment of ['.git','.github','.ary-releases','.ary-staging','node_modules','server','scripts','tests','legacy','docs','paquete-publicacion'])
+ assert.ok(config.includes(`<add segment="${segment}" />`),`Sensitive segment not hidden: ${segment}`);
+for(const ext of ['.env','.config','.ps1','.bat','.py','.mjs','.ts','.map','.sql','.sqlite','.sqlite3','.db','.log','.bak','.old','.zip','.rar','.7z','.key','.pem','.pfx','.p12','.json'])
+ assert.ok(config.includes(`<add fileExtension="${ext}" allowed="false" />`),`Sensitive extension not blocked: ${ext}`);
+assert.ok(config.includes('url="https://www.grupoary.com.mx/{R:1}"'),'HTTP redirect must use canonical host, not untrusted Host header');
 assert.ok(!fs.existsSync(path.join(out,'Images')),'Obsolete images must not be deployed');assert.ok(!fs.existsSync(path.join(out,'legacy')),'Legacy source must remain private');
 const release=JSON.parse(read(path.join(out,'release.json')));
 for(const [file,target] of Object.entries(release.aliases)){const html=read(path.join(out,file));assert.ok(html.includes(`content="${target}"`));assert.ok(html.length<1600,'An old design was copied instead of an alias');}
@@ -69,6 +82,7 @@ for(const file of walk(out).filter(p=>p.endsWith('.html'))){
  const html=read(file);if(!html.includes('ary-release'))continue;count++;
  const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(x=>x[1]);assert.equal(ids.length,new Set(ids).size,`Duplicate element IDs: ${file}`);
  assert.ok(!/<iframe/i.test(html),`Embedded old site in ${file}`);
+ assert.ok(!/<[^>]+\son[a-z]+\s*=/i.test(html),`Inline event handler found in ${file}`);
  for(const m of html.matchAll(/\b(href|src)="([^"<>]+)"/g)){
   let ref=m[2];if(/^(?:https?:|mailto:|tel:|#|data:)/i.test(ref) || ref.startsWith('//'))continue;
   assert.ok(ref.startsWith('/'),`Relative link can escape the Astro route: ${ref}`);
