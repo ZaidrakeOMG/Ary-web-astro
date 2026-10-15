@@ -187,13 +187,20 @@
       correo_destino: safe.correo_destino
     }));
   }
+  function mergeSupport(...sources) {
+    const out = {};
+    for (const source of sources) {
+      for (const [key,value] of Object.entries(source || {})) if (value) out[key] = value;
+    }
+    return supportValues(out);
+  }
   function currentFormSupport() {
     const form = $('form-factura'), values = {};
     for (const key of ['estacion','ticket','fecha_ticket','forma_pago','uso_cfdi','correo']) {
       values[key] = form.elements.namedItem(key)?.value || '';
     }
     const local = supportValues(values);
-    return {...rememberedFiscalSupport(local.correo_destino), ...local};
+    return mergeSupport(rememberedFiscalSupport(local.correo_destino), local);
   }
   function showWhatsApp(box, data = {}, error = '', dynamic = false) {
     box.querySelectorAll('.ary-whatsapp').forEach(el => el.remove());
@@ -211,8 +218,7 @@
       const backend = supportValues(data.asistencia?.datos || {});
       if (backend.rfc && backend.razon_social) rememberFiscalSupport(backend);
       const remembered = rememberedFiscalSupport(local.correo_destino || backend.correo_destino);
-      const values = {...remembered, ...local};
-      for (const [key,value] of Object.entries(backend)) if (value) values[key] = value;
+      const values = mergeSupport(remembered, local, backend);
       const unavailable = 'No disponible: la constancia no fue procesada';
       const lines = [
         'Hola, necesito ayuda con mi solicitud de facturación ARY.',
@@ -351,6 +357,19 @@
   $('reviewConfirm').addEventListener('click', () => { reviewApproved=true; $('reviewDialog').close(); $('form-factura').requestSubmit(); });
   $('reviewDialog').addEventListener('cancel', () => { reviewApproved=false; });
 
+  $('clearRememberedBilling')?.addEventListener('click', () => {
+    if(!window.confirm('¿Borrar los datos de facturación recordados en este dispositivo?')) return;
+    localStore.remove(FACTURA_PROFILE_KEY);
+    localStore.remove(FACTURA_FISCAL_KEY);
+    for (const id of ['factura-estacion','factura-pago']) $(id).value = '';
+    $('factura-uso').value = 'G03';
+    $('factura-correo').value = '';
+    $('factura-confirmacion').value = '';
+    const button = $('clearRememberedBilling');
+    button.textContent = 'Datos recordados borrados';
+    setTimeout(() => { button.textContent = 'Borrar datos recordados en este dispositivo'; }, 2400);
+  });
+
   const MAX_CONSTANCIA=2*1024*1024;
   function leerConstancia(file) {
     if(!file || !/\.pdf$/i.test(file.name||'') || file.size<200 || file.size>MAX_CONSTANCIA)
@@ -392,7 +411,10 @@
     try {
       const sent = snapshots[kind];
       const data=await call('/solicitudes',sent,{'X-ARY-Request-Id':ids[kind], 'X-ARY-Mode':serverSafe?'seguro':'real'});
-      if(kind === 'factura') rememberFacturaProfile(sent);
+      if(kind === 'factura') {
+        rememberFacturaProfile(sent);
+        rememberFiscalSupport(data.perfil_local || {});
+      }
       storeReceipt(data);snapshots[kind]=null;renderReceipt(data);$('receipt').focus();
     } catch(error) {
       const certain=error.status && error.status < 500;
