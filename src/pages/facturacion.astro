@@ -2,9 +2,8 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 import Icon from '../components/Icon.astro';
 import '../styles/billing.css';
-import { core, scriptHash } from '../lib/billing.mjs';
 ---
-<SiteLayout title="Facturación y alta de clientes | ARY" description="Solicita tu factura o registra tus datos fiscales en el portal de Grupo ARY." active="facturacion" billing scriptHash={scriptHash}>
+<SiteLayout title="Facturación y alta de clientes | ARY" description="Solicita tu factura o registra tus datos fiscales en el portal de Grupo ARY." active="facturacion" billing>
 <div class="billing-page"><div class="wrap">
   <div class="billing-heading"><div><a class="breadcrumb" href="/">Inicio <span>/ Facturación</span></a><span class="overline">UN TRÁMITE MÁS SENCILLO</span><h1>Tu factura.<br class="billing-break"/> <em>Tu tiempo.</em></h1><p>Factura tu ticket o registra tus datos. Todo, en un mismo lugar.</p></div><span id="connection" class="connection" role="status" aria-live="polite" data-state="loading">Conectando al portal…</span></div>
   <noscript><p class="billing-alert">Activa JavaScript para utilizar el portal. No se enviarán solicitudes sin él.</p></noscript>
@@ -184,5 +183,5 @@ import { core, scriptHash } from '../lib/billing.mjs';
     </button>
 </div>
 </dialog>
-<script slot="scripts" is:inline set:html={core}></script>
+<script slot="scripts" is:inline defer src="/scripts/billing-runtime.js"></script>
 </SiteLayout>
