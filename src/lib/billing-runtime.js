@@ -128,6 +128,8 @@
   }
   setCatalogs(INITIAL);
   applyFacturaProfile();
+  // Purga inmediata de identidad fiscal expirada, incluso si ya no existe correo recordado.
+  rememberedFiscalSupport('');
   function selectTab(name, focus = false) {
     if (busy || snapshots.factura || snapshots.alta) return;
     active = name;
