@@ -15,6 +15,8 @@
   };
   const FACTURA_PROFILE_KEY = 'ary_factura_profile_v1';
   const FACTURA_FISCAL_KEY = 'ary_factura_fiscal_support_v1';
+  const FACTURA_PROFILE_TTL = 30 * 24 * 60 * 60 * 1000;
+  const FACTURA_FISCAL_TTL = 7 * 24 * 60 * 60 * 1000;
   let csrf = '', serverSafe = true, ready = false, active = 'alta', busy = false, poll = null, receipt = null;
   let snapshots = {factura: null, alta: null};
   let reviewApproved = false;
@@ -91,11 +93,17 @@
   function readFacturaProfile() {
     try {
       const value = JSON.parse(localStore.get(FACTURA_PROFILE_KEY) || 'null');
-      return value && typeof value === 'object' ? value : {};
-    } catch (_) { return {}; }
+      if (!value || typeof value !== 'object') return {};
+      if (!Number.isFinite(value.saved_at) || Date.now() - value.saved_at > FACTURA_PROFILE_TTL) {
+        localStore.remove(FACTURA_PROFILE_KEY);
+        return {};
+      }
+      return value;
+    } catch (_) { localStore.remove(FACTURA_PROFILE_KEY); return {}; }
   }
   function rememberFacturaProfile(values) {
     const profile = {
+      saved_at: Date.now(),
       estacion: clean(values?.estacion, 50),
       forma_pago: clean(values?.forma_pago, 50),
       uso_cfdi: clean(values?.uso_cfdi, 4),
@@ -120,6 +128,8 @@
   }
   setCatalogs(INITIAL);
   applyFacturaProfile();
+  // Purga inmediata de identidad fiscal expirada, incluso si ya no existe correo recordado.
+  rememberedFiscalSupport('');
   function selectTab(name, focus = false) {
     if (busy || snapshots.factura || snapshots.alta) return;
     active = name;
@@ -173,15 +183,20 @@
     try {
       const saved = JSON.parse(localStore.get(FACTURA_FISCAL_KEY) || 'null');
       if (!saved || typeof saved !== 'object') return {};
+      if (!Number.isFinite(saved.saved_at) || Date.now() - saved.saved_at > FACTURA_FISCAL_TTL) {
+        localStore.remove(FACTURA_FISCAL_KEY);
+        return {};
+      }
       const current = clean(email, 254).toLowerCase();
       if (!current || clean(saved.correo_destino, 254).toLowerCase() !== current) return {};
       return supportValues(saved);
-    } catch (_) { return {}; }
+    } catch (_) { localStore.remove(FACTURA_FISCAL_KEY); return {}; }
   }
   function rememberFiscalSupport(values) {
     const safe = supportValues(values);
     if (!safe.rfc || !safe.razon_social || !safe.correo_destino) return;
     localStore.set(FACTURA_FISCAL_KEY, JSON.stringify({
+      saved_at: Date.now(),
       rfc: safe.rfc,
       razon_social: safe.razon_social,
       correo_destino: safe.correo_destino

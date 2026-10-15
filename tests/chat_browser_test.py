@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = Path(os.getenv('ARY_TEST_DIST', ROOT / 'dist'))
 BASE = os.getenv('ARY_TEST_URL', 'http://127.0.0.1:4173').rstrip('/')
 OUT = ROOT / 'test-results'; OUT.mkdir(exist_ok=True)
-CATALOG = json.loads(re.search(r'const INITIAL = (\{.*?\});', (DIST / 'facturacion/index.html').read_text(encoding='utf-8'))[1])
+CATALOG = json.loads(re.search(r'const INITIAL = (\{.*?\});', (DIST / 'scripts/billing-runtime.js').read_text(encoding='utf-8'))[1])
 RESULTS = []
 
 def run():

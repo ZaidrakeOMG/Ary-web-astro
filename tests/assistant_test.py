@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'test-results'
 OUT.mkdir(exist_ok=True)
 BASE = os.getenv('ARY_TEST_URL', 'http://127.0.0.1:4173').rstrip('/')
-SOURCE = (ROOT / 'dist/facturacion/index.html').read_text(encoding='utf-8')
+SOURCE = (ROOT / 'dist/scripts/billing-runtime.js').read_text(encoding='utf-8')
 CATALOG = json.loads(re.search(r'const INITIAL = (\{.*?\});', SOURCE)[1])
 RESULTS = []
 

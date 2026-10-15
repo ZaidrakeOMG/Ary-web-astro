@@ -241,9 +241,12 @@ def test_success_remembers_reusable_invoice_fields_only(browser):
         fill(page); submit(page)
         page.locator('#receipt').wait_for(state='visible')
         profile=page.evaluate("JSON.parse(localStorage.getItem('ary_factura_profile_v1'))")
-        assert profile=={'estacion':'ARY V','forma_pago':'TARJETA DE DEBITO','uso_cfdi':'G03','correo':'prueba@example.com'}
+        assert profile['estacion']=='ARY V' and profile['forma_pago']=='TARJETA DE DEBITO'
+        assert profile['uso_cfdi']=='G03' and profile['correo']=='prueba@example.com'
+        assert isinstance(profile['saved_at'], (int,float)) and profile['saved_at'] > 0
         fiscal=page.evaluate("JSON.parse(localStorage.getItem('ary_factura_fiscal_support_v1'))")
         assert fiscal['rfc']==CAPTURE['rfc'] and fiscal['razon_social']==CAPTURE['razon_social']
+        assert isinstance(fiscal['saved_at'], (int,float)) and fiscal['saved_at'] > 0
         page.evaluate('sessionStorage.clear()')
         page.reload(wait_until='networkidle')
         page.locator('#tab-factura').click()
@@ -257,6 +260,19 @@ def test_success_remembers_reusable_invoice_fields_only(browser):
         assert page.locator('#factura-constancia').evaluate('(el)=>el.files.length')==0
         page.on('dialog', lambda dialog: dialog.accept())
         page.locator('#clearRememberedBilling').click()
+        assert page.evaluate("localStorage.getItem('ary_factura_profile_v1')") is None
+        assert page.evaluate("localStorage.getItem('ary_factura_fiscal_support_v1')") is None
+    finally: ctx.close()
+
+
+def test_expired_remembered_billing_data_is_removed(browser):
+    ctx,page,_,_=setup(browser)
+    try:
+        page.evaluate("""localStorage.setItem('ary_factura_profile_v1', JSON.stringify({saved_at:1,estacion:'ARY V',forma_pago:'EFECTIVO',uso_cfdi:'G03',correo:'viejo@example.com'}));
+localStorage.setItem('ary_factura_fiscal_support_v1', JSON.stringify({saved_at:1,rfc:'AAA010101AAA',razon_social:'VIEJO SA DE CV',correo_destino:'viejo@example.com'}));""")
+        page.reload(wait_until='networkidle')
+        page.locator('#tab-factura').click()
+        assert page.locator('#factura-correo').input_value()==''
         assert page.evaluate("localStorage.getItem('ary_factura_profile_v1')") is None
         assert page.evaluate("localStorage.getItem('ary_factura_fiscal_support_v1')") is None
     finally: ctx.close()
