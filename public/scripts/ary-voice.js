@@ -67,6 +67,7 @@
   let oldReadOnly = false, sequence = 0, voiceList = [];
   let voiceEnabled = readLocal(PREF_KEY) === '1';
   let voiceSession = voiceEnabled;
+  let microphoneAvailable = true;
   let currentGuide = null, lastGuideKey = '', silenceRetries = 0;
 
   function loadVoices() {
@@ -195,7 +196,7 @@
   const errors = {
     'not-allowed': 'El permiso del micrófono fue denegado o el navegador exige una interacción. Usa “Activar ayuda por voz” y permite el micrófono.',
     'service-not-allowed': 'El navegador no permite el servicio de dictado.',
-    'audio-capture': 'No se encontró un micrófono disponible.',
+    'audio-capture': 'No se detectó un micrófono. La guía seguirá hablando; conecta o habilita un micrófono para usar dictado.',
     'no-speech': 'No detecté voz.',
     'network': 'El servicio de dictado no tiene conexión.',
     'language-not-supported': 'El navegador no admite dictado en español.'
@@ -203,6 +204,10 @@
 
   function startRecognition(mode = 'chat') {
     if (!voiceEnabled || !voiceSession || recognition || utterance) return;
+    if (!microphoneAvailable) {
+      status.textContent = 'No se detectó un micrófono. La guía puede seguir hablando, pero el dictado está pausado.';
+      return;
+    }
     if (!Recognition) {
       status.textContent = 'Este navegador no admite dictado por voz. La narración sigue disponible.';
       return;
@@ -249,6 +254,7 @@
       if (recognition !== r || sequence !== current) return;
       failed = true;
       const code = event.error;
+      if (code === 'audio-capture') microphoneAvailable = false;
       stopListening();
       status.textContent = errors[code] || 'El dictado se detuvo.';
       if (mode === 'guide' && code === 'no-speech' && voiceEnabled && voiceSession && silenceRetries < 1) {
@@ -316,22 +322,37 @@
   function hidePrompt() { if (prompt) prompt.hidden = true; }
 
   async function enableVoice(startGuide = true) {
+    let micMessage = '';
     try {
       status.textContent = 'Solicitando permiso del micrófono…';
-      if (Recognition) await requestMicrophonePermission();
+      if (Recognition) {
+        try {
+          await requestMicrophonePermission();
+          microphoneAvailable = true;
+        } catch (error) {
+          const missing = error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError'
+            || /requested device not found|device not found|no device/i.test(String(error?.message || ''));
+          if (missing) {
+            microphoneAvailable = false;
+            micMessage = 'No se detectó un micrófono. La guía seguirá hablando; el dictado se activará cuando haya un micrófono disponible.';
+          } else {
+            throw error;
+          }
+        }
+      }
       voiceEnabled = true; voiceSession = true; consent.checked = true;
       writeLocal(PREF_KEY, '1'); hidePrompt(); disable.hidden = false;
-      status.textContent = 'Ayuda por voz activada. No necesitas volver a autorizarla mientras el navegador conserve el permiso.';
+      status.textContent = micMessage || 'Ayuda por voz activada. No necesitas volver a autorizarla mientras el navegador conserve el permiso.';
       if (startGuide && isBillingPage) {
         window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } }));
-      } else if (chat.open) {
+      } else if (chat.open && microphoneAvailable) {
         startRecognition('chat');
       }
       return true;
     } catch (error) {
       voiceEnabled = false; voiceSession = false; consent.checked = false; removeLocal(PREF_KEY);
       const denied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError';
-      status.textContent = denied ? 'El micrófono está bloqueado. Permítelo en los ajustes del sitio para usar dictado.' : (error?.message || 'No se pudo habilitar el micrófono.');
+      status.textContent = denied ? 'El micrófono está bloqueado. Permítelo en los ajustes del sitio para usar dictado.' : 'No se pudo habilitar el micrófono. La ayuda escrita sigue disponible.';
       showPrompt(denied ? 'El micrófono está bloqueado. Revisa el permiso del sitio y vuelve a tocar aquí.' : 'Toca aquí para volver a intentar activar la ayuda por voz.');
       return false;
     }
