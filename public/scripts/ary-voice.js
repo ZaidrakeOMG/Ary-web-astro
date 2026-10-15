@@ -30,9 +30,24 @@
   const synth = window.speechSynthesis;
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let utterance = null, recognition = null, base = '', oldReadOnly = false;
-  let sequence = 0, voiceList = [];
+  let sequence = 0, voiceList = [], voiceSession = false;
   function loadVoices() {
     try { voiceList = synth ? synth.getVoices() : []; } catch { voiceList = []; }
+  }
+  function bestSpanishVoice() {
+    const spanish = voiceList.filter(voice => /^es(?:[-_]|$)/i.test(String(voice.lang || '')));
+    if (!spanish.length) return null;
+    const score = voice => {
+      const lang = String(voice.lang || ''), name = String(voice.name || '');
+      let points = /^es[-_]MX$/i.test(lang) ? 120 : /^es[-_](?:US|419)$/i.test(lang) ? 90 : 60;
+      if (/dalia/i.test(name)) points += 100;
+      if (/natural|neural|online/i.test(name)) points += 75;
+      if (/microsoft|google/i.test(name)) points += 30;
+      if (/paulina|sabina|m[oó]nica|raul|jorge/i.test(name)) points += 20;
+      if (/compact|legacy|basic/i.test(name)) points -= 35;
+      return points;
+    };
+    return spanish.sort((a, b) => score(b) - score(a))[0];
   }
   loadVoices();
   synth?.addEventListener?.('voiceschanged', loadVoices);
@@ -69,8 +84,8 @@
     const text = String(helpText() || '').trim().slice(0, 3000);
     if (!text) { status.textContent = 'No hay ayuda para leer todavía.'; return; }
     const u = new SpeechSynthesisUtterance(text); utterance = u;
-    u.lang = 'es-MX'; u.rate = 1;
-    const voice = voiceList.find(v => /^es[-_]MX$/i.test(v.lang)) || voiceList.find(v => /^es\b/i.test(v.lang));
+    u.lang = 'es-MX'; u.rate = 0.94; u.pitch = 1.02; u.volume = 1;
+    const voice = bestSpanishVoice();
     if (voice) u.voice = voice;
     u.onend = () => { if (utterance === u) { stopSpeech(); status.textContent = 'Lectura terminada.'; } };
     u.onerror = () => { if (utterance === u) { stopSpeech(); status.textContent = 'No se pudo reproducir la voz. Revisa el audio y vuelve a pulsar Escuchar ayuda.'; } };
@@ -78,6 +93,33 @@
     status.textContent = 'Leyendo la ayuda. No se leen tus campos de facturación.';
     try { synth.resume(); synth.speak(u); } catch { stopSpeech(); status.textContent = 'La voz no está disponible. La ayuda escrita sigue funcionando.'; }
   });
+  function speakAssistantReply(text) {
+    if (!voiceSession || !synth || !window.SpeechSynthesisUtterance) return;
+    const clean = String(text || '').trim().slice(0, 1800);
+    if (!clean) return;
+    stopListening(); stopSpeech(); loadVoices();
+    const u = new SpeechSynthesisUtterance(clean); utterance = u;
+    u.lang = 'es-MX'; u.rate = 0.94; u.pitch = 1.02; u.volume = 1;
+    const voice = bestSpanishVoice();
+    if (voice) u.voice = voice;
+    u.onend = () => {
+      if (utterance === u) {
+        stopSpeech();
+        status.textContent = 'Respuesta terminada. Pulsa Dictar pregunta para hablar otra vez.';
+      }
+    };
+    u.onerror = () => {
+      if (utterance === u) {
+        stopSpeech();
+        status.textContent = 'No se pudo reproducir la respuesta. Puedes leerla en pantalla.';
+      }
+    };
+    speak.textContent = 'Detener voz'; speak.setAttribute('aria-pressed', 'true');
+    status.textContent = 'Respondiendo con voz.';
+    try { synth.resume(); synth.speak(u); } catch { stopSpeech(); }
+  }
+  window.addEventListener('ary:assistant-message', event => speakAssistantReply(event.detail?.text));
+
   const errors = {
     'not-allowed': 'El permiso del micrófono fue denegado. Permítelo en los ajustes de este sitio o escribe tu pregunta.',
     'service-not-allowed': 'El navegador no permite el servicio de dictado. Escribe tu pregunta.',
@@ -127,12 +169,28 @@
     status.textContent = 'Micrófono activo. Dicta únicamente tu pregunta de ayuda; no se enviará automáticamente.';
     try { r.start(); } catch { stopListening(); status.textContent = 'No se pudo iniciar el micrófono. Revisa los permisos o escribe tu pregunta.'; }
   });
-  consent.addEventListener('change', () => { if (!consent.checked) stopListening(); });
+  window.addEventListener('ary:voice-help-requested', () => {
+    voiceSession = true;
+    if (!chat.open) chat.open = true;
+    consent.checked = true;
+    if (!Recognition) {
+      status.textContent = 'Este navegador no admite dictado. Puedes escribir tu pregunta y escuchar las respuestas.';
+      input.focus();
+      return;
+    }
+    if (!window.isSecureContext) {
+      status.textContent = 'El dictado necesita abrir el sitio con HTTPS.';
+      input.focus();
+      return;
+    }
+    if (!recognition) dictate.click();
+  });
+  consent.addEventListener('change', () => { if (!consent.checked) { voiceSession = false; stopListening(); } });
   $('ary-chat-send')?.addEventListener('click', stopListening, { capture: true });
-  chat.querySelector('.ary-chat-clear')?.addEventListener('click', stopAll, { capture: true });
-  chat.addEventListener('toggle', () => { if (!chat.open) stopListening(); });
+  chat.querySelector('.ary-chat-clear')?.addEventListener('click', () => { voiceSession = false; stopAll(); }, { capture: true });
+  chat.addEventListener('toggle', () => { if (!chat.open) { voiceSession = false; stopListening(); } });
   const visibility = new MutationObserver(() => {
-    if (root.hidden || panel.hidden) stopAll();
+    if (root.hidden || panel.hidden) { voiceSession = false; stopAll(); }
     else if ($('ary-assistant-home')?.hidden) stopListening();
   });
   for (const el of [root, panel, $('ary-assistant-home')]) if (el) visibility.observe(el, { attributes: true, attributeFilter: ['hidden'] });
