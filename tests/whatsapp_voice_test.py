@@ -222,7 +222,7 @@ def test_missing_microphone_keeps_automatic_narration(browser):
     ctx,page,_,_=setup(browser)
     try:
         page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
-        page.evaluate("""navigator.mediaDevices.getUserMedia=async()=>{voiceCalls.permissionRequests++;throw new DOMException('Requested device not found','NotFoundError')}""")
+        page.evaluate("""Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{voiceCalls.permissionRequests++;throw new DOMException('Requested device not found','NotFoundError')}});0""")
         page.locator('#ary-voice-enable').click()
         page.locator('#ary-assistant-tour').wait_for(state='visible')
         assert page.evaluate('voiceCalls.permissionRequests')==1
