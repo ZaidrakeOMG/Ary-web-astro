@@ -11,13 +11,17 @@ import PageIntro from '../components/PageIntro.astro';
         <h2>Controles técnicos del sitio</h2>
         <ul>
           <li><strong>HTTPS obligatorio:</strong> las visitas por HTTP se redirigen a HTTPS y el navegador recibe una política HSTS para recordar el uso de conexión cifrada.</li>
-          <li><strong>Content Security Policy:</strong> se restringen orígenes de scripts, conexiones, imágenes, formularios y contenido embebido. La pantalla de facturación mantiene además una política más estricta para su código operativo.</li>
+          <li><strong>Content Security Policy estricta:</strong> el JavaScript solo puede cargarse desde el propio sitio; se bloquearon scripts inline, manejadores como <code>onclick</code>, iframes, workers y objetos no autorizados. Facturación usa un runtime externo verificado byte por byte.</li>
           <li><strong>Protección contra clickjacking:</strong> el portal no permite ser incrustado dentro de marcos de otros sitios.</li>
           <li><strong>Tipos de contenido:</strong> el navegador recibe la instrucción de no adivinar tipos MIME, reduciendo ataques de interpretación incorrecta de archivos.</li>
           <li><strong>Referrer limitado:</strong> se reduce la información de navegación que puede salir hacia otros sitios; facturación aplica una política todavía más restrictiva.</li>
           <li><strong>Permisos del navegador:</strong> cámara, geolocalización, pagos, USB y captura de pantalla permanecen deshabilitados para este portal. El micrófono se permite solo al propio sitio y requiere autorización del usuario.</li>
-          <li><strong>Límite de solicitudes:</strong> IIS limita el tamaño máximo aceptado para reducir cargas excesivas sin impedir la constancia fiscal permitida.</li>
+          <li><strong>Trusted Types:</strong> los navegadores compatibles rechazan cadenas directas en zonas peligrosas del DOM, reduciendo el riesgo de XSS basado en <code>innerHTML</code> y APIs similares.</li>
+          <li><strong>Host canónico:</strong> IIS rechaza nombres de host no autorizados y redirige HTTP al dominio HTTPS fijo, evitando que un encabezado Host manipulado controle redirecciones.</li>
+          <li><strong>Filtrado de solicitudes:</strong> se limitan tamaño de cuerpo, URL, query string y cabeceras; se bloquean doble-escape, rutas de traversal, extensiones sensibles, directorios internos y métodos HTTP no necesarios.</li>
+          <li><strong>Ocultamiento del servidor:</strong> se reduce información de versión/plataforma y los errores detallados solo pueden mostrarse localmente.</li>
           <li><strong>Exploración de carpetas deshabilitada:</strong> IIS no publica listados del sistema de archivos.</li>
+          <li><strong>Reporte responsable:</strong> el portal publica <code>/.well-known/security.txt</code> para canalizar reportes de seguridad por un medio oficial.</li>
         </ul>
       </article>
 
