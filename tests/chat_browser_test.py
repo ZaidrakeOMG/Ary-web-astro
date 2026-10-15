@@ -49,7 +49,8 @@ def run():
             if width in (390, 1280): page.screenshot(path=str(OUT / f'chat-greeting-{width}.png'))
             page.locator('.ary-greeting-open').click()
             expect(page.locator('#ary-greeting')).to_be_hidden()
-            page.locator('#ary-chat > summary').click()
+            if not page.locator('#ary-chat').evaluate('(el)=>el.open'):
+                page.locator('#ary-chat > summary').click()
             page.locator('#ary-chat-message').fill('¿Cómo entro a Flotillas?'); page.locator('#ary-chat-send').click()
             expect(page.locator('#ary-chat-log')).to_contain_text('puerto 4443')
             assert not requests
