@@ -75,6 +75,12 @@ try {
       if ($LASTEXITCODE -ne 0) { throw 'npm ci no termino correctamente. No se modifico IIS.' }
       [IO.File]::WriteAllText($cache,$installFingerprint)
     } else { Write-Host '[1/4] Las dependencias ya estan listas.' -ForegroundColor Green }
+    # Astro 7 usa un binding nativo (satteri). En Windows, error 126 suele indicar
+    # que falta el runtime MSVC x64 aunque npm haya descargado el paquete correcto.
+    & $node.Source -e "import('satteri').then(()=>process.exit(0)).catch(e=>{console.error(e?.cause?.cause||e?.cause||e);process.exit(86)})"
+    if ($LASTEXITCODE -ne 0) {
+      throw 'No se pudo cargar el componente nativo de Astro. En Windows instala Microsoft Visual C++ Redistributable 2015-2022 x64 y vuelve a ejecutar este publicador. No borres package-lock.json.'
+    }
     $stage=Join-Path $root ('.ary-staging\'+$stamp)
     $env:ARY_OUT_DIR=$stage
     Write-Host '[2/4] Compilando en una carpeta separada...' -ForegroundColor Cyan
