@@ -65,14 +65,15 @@ try {
     if (-not $supported) { throw "Node.js $nodeVersion no es compatible. Instala Node.js 22.22.0 o superior dentro de la rama 22, o Node.js 24 LTS. La pagina actual no se cambio." }
     if (-not (Test-Path 'package-lock.json')) { throw 'Falta package-lock.json. Actualiza el proyecto completo antes de compilar.' }
     $lockHash=(Get-FileHash 'package-lock.json' -Algorithm SHA256).Hash
+    $installFingerprint=$lockHash+'|node='+$nodeVersion
     $cache=Join-Path $root '.ary-install-cache.txt'
     $same=Test-Path -LiteralPath $cache
-    if ($same) { $same=((Get-Content -LiteralPath $cache -Raw).Trim() -eq $lockHash) }
+    if ($same) { $same=((Get-Content -LiteralPath $cache -Raw).Trim() -eq $installFingerprint) }
     if (-not $same -or -not (Test-Path 'node_modules\astro\astro.js')) {
       Write-Host '[1/4] Instalando dependencias fijadas...' -ForegroundColor Cyan
       & $npm.Source ci --no-audit --no-fund
       if ($LASTEXITCODE -ne 0) { throw 'npm ci no termino correctamente. No se modifico IIS.' }
-      [IO.File]::WriteAllText($cache,$lockHash)
+      [IO.File]::WriteAllText($cache,$installFingerprint)
     } else { Write-Host '[1/4] Las dependencias ya estan listas.' -ForegroundColor Green }
     $stage=Join-Path $root ('.ary-staging\'+$stamp)
     $env:ARY_OUT_DIR=$stage
