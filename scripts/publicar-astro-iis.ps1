@@ -100,7 +100,14 @@ try {
   if ($oldDefault) { [void]$server.ReplaceChild($newDefault,$oldDefault) } else { [void]$server.AppendChild($newDefault) }
   $rules=$server.SelectSingleNode('rewrite/rules')
   foreach ($item in @($rules.SelectNodes('rule[starts-with(@name,"ARY Astro")]'))) { [void]$rules.RemoveChild($item) }
-  $after=$rules.SelectSingleNode('rule[@name="ARY Portal Facturacion API"]')
+  foreach ($item in @($rules.SelectNodes('rule[starts-with(@name,"ARY Security")]'))) { [void]$rules.RemoveChild($item) }
+  foreach ($item in @($rules.SelectNodes('rule[@name="Redirect HTTP to HTTPS"]'))) { [void]$rules.RemoveChild($item) }
+  $apiNode=$rules.SelectSingleNode('rule[@name="ARY Portal Facturacion API"]')
+  if (-not $apiNode) { throw 'No se encontro la regla original de facturacion al aplicar seguridad.' }
+  foreach ($item in @($template.SelectNodes('/configuration/system.webServer/rewrite/rules/rule[starts-with(@name,"ARY Security")]'))) {
+    $added=$merged.ImportNode($item,$true); [void]$rules.InsertBefore($added,$apiNode)
+  }
+  $after=$apiNode
   foreach ($item in @($template.SelectNodes('/configuration/system.webServer/rewrite/rules/rule[starts-with(@name,"ARY Astro")]'))) {
     $added=$merged.ImportNode($item,$true); [void]$rules.InsertAfter($added,$after); $after=$added
   }
@@ -114,7 +121,7 @@ try {
   $remove=$merged.CreateElement('remove');$remove.SetAttribute('name','X-ARY-Release');[void]$headers.AppendChild($remove)
   $h=$merged.CreateElement('add');$h.SetAttribute('name','X-ARY-Release');$h.SetAttribute('value',$stamp);[void]$headers.AppendChild($h)
   # Apply only ARY's reviewed security headers; preserve all unrelated local IIS settings.
-  $securityHeaderNames=@('X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','X-Permitted-Cross-Domain-Policies','Content-Security-Policy')
+  $securityHeaderNames=@('X-Content-Type-Options','X-Frame-Options','X-XSS-Protection','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','Cross-Origin-Resource-Policy','Origin-Agent-Cluster','X-DNS-Prefetch-Control','X-Permitted-Cross-Domain-Policies','Content-Security-Policy')
   foreach ($name in $securityHeaderNames) {
     $templateHeader=$template.SelectSingleNode("/configuration/system.webServer/httpProtocol/customHeaders/add[@name='$name']")
     if (-not $templateHeader) { throw "Falta cabecera de seguridad en el paquete: $name" }
@@ -125,12 +132,26 @@ try {
   foreach ($n in @($headers.SelectNodes('*[@name="X-Powered-By"]'))) { [void]$headers.RemoveChild($n) }
   $removePowered=$merged.CreateElement('remove');$removePowered.SetAttribute('name','X-Powered-By');[void]$headers.AppendChild($removePowered)
 
-  $templateLimit=$template.SelectSingleNode('/configuration/system.webServer/security/requestFiltering/requestLimits')
-  if (-not $templateLimit -or -not $templateLimit.GetAttribute('maxAllowedContentLength')) { throw 'Falta el limite de solicitudes del paquete.' }
+  $templateFiltering=$template.SelectSingleNode('/configuration/system.webServer/security/requestFiltering')
+  if (-not $templateFiltering) { throw 'Falta requestFiltering endurecido en el paquete.' }
   $security=Ensure-Child $merged $server 'security'
   $requestFiltering=Ensure-Child $merged $security 'requestFiltering'
-  $requestLimits=Ensure-Child $merged $requestFiltering 'requestLimits'
-  $requestLimits.SetAttribute('maxAllowedContentLength',$templateLimit.GetAttribute('maxAllowedContentLength'))
+  foreach ($attrName in @('removeServerHeader','allowDoubleEscaping')) {
+    $value=$templateFiltering.GetAttribute($attrName)
+    if ($value) { $requestFiltering.SetAttribute($attrName,$value) }
+  }
+  foreach ($childName in @('requestLimits','verbs','hiddenSegments','fileExtensions','denyUrlSequences')) {
+    $templateChild=$templateFiltering.SelectSingleNode($childName)
+    if (-not $templateChild) { throw "Falta control de requestFiltering: $childName" }
+    $existing=$requestFiltering.SelectSingleNode($childName)
+    $imported=$merged.ImportNode($templateChild,$true)
+    if ($existing) { [void]$requestFiltering.ReplaceChild($imported,$existing) } else { [void]$requestFiltering.AppendChild($imported) }
+  }
+  $templateHttpErrors=$template.SelectSingleNode('/configuration/system.webServer/httpErrors')
+  if (-not $templateHttpErrors) { throw 'Falta configuracion de errores seguros en el paquete.' }
+  $existingHttpErrors=$server.SelectSingleNode('httpErrors')
+  $importedHttpErrors=$merged.ImportNode($templateHttpErrors,$true)
+  if ($existingHttpErrors) { [void]$server.ReplaceChild($importedHttpErrors,$existingHttpErrors) } else { [void]$server.AppendChild($importedHttpErrors) }
 
   Assert-NoDuplicateDefaults $merged
   if ($merged.SelectSingleNode('/configuration/system.webServer/rewrite/rules/rule[@name="ARY Portal Facturacion API"]').OuterXml -ne $apiBefore) { throw 'La regla original de facturacion cambio. Publicacion cancelada.' }
