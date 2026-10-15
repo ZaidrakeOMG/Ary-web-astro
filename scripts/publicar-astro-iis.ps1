@@ -60,19 +60,27 @@ try {
   } else {
     $node=Get-Command node.exe -ErrorAction Stop; $npm=Get-Command npm.cmd -ErrorAction Stop
     $nodeVersion=(& $node.Source -p 'process.versions.node').Trim()
-    $major=[int]$nodeVersion.Split('.')[0]
-    if ($major -lt 22) { throw 'Se requiere Node.js 22 actualizado o 24. La pagina actual no se cambio.' }
+    $parts=$nodeVersion.Split('.');$major=[int]$parts[0];$minor=[int]$parts[1]
+    $supported=(($major -eq 22 -and $minor -ge 22) -or $major -eq 24)
+    if (-not $supported) { throw "Node.js $nodeVersion no es compatible. Instala Node.js 22.22.0 o superior dentro de la rama 22, o Node.js 24 LTS. La pagina actual no se cambio." }
     if (-not (Test-Path 'package-lock.json')) { throw 'Falta package-lock.json. Actualiza el proyecto completo antes de compilar.' }
     $lockHash=(Get-FileHash 'package-lock.json' -Algorithm SHA256).Hash
+    $installFingerprint=$lockHash+'|node='+$nodeVersion
     $cache=Join-Path $root '.ary-install-cache.txt'
     $same=Test-Path -LiteralPath $cache
-    if ($same) { $same=((Get-Content -LiteralPath $cache -Raw).Trim() -eq $lockHash) }
+    if ($same) { $same=((Get-Content -LiteralPath $cache -Raw).Trim() -eq $installFingerprint) }
     if (-not $same -or -not (Test-Path 'node_modules\astro\astro.js')) {
       Write-Host '[1/4] Instalando dependencias fijadas...' -ForegroundColor Cyan
       & $npm.Source ci --no-audit --no-fund
       if ($LASTEXITCODE -ne 0) { throw 'npm ci no termino correctamente. No se modifico IIS.' }
-      [IO.File]::WriteAllText($cache,$lockHash)
+      [IO.File]::WriteAllText($cache,$installFingerprint)
     } else { Write-Host '[1/4] Las dependencias ya estan listas.' -ForegroundColor Green }
+    # Astro 7 usa un binding nativo (satteri). En Windows, error 126 suele indicar
+    # que falta el runtime MSVC x64 aunque npm haya descargado el paquete correcto.
+    & $node.Source -e "import('satteri').then(()=>process.exit(0)).catch(e=>{console.error(e?.cause?.cause||e?.cause||e);process.exit(86)})"
+    if ($LASTEXITCODE -ne 0) {
+      throw 'No se pudo cargar el componente nativo de Astro. En Windows instala Microsoft Visual C++ Redistributable 2015-2022 x64 y vuelve a ejecutar este publicador. No borres package-lock.json.'
+    }
     $stage=Join-Path $root ('.ary-staging\'+$stamp)
     $env:ARY_OUT_DIR=$stage
     Write-Host '[2/4] Compilando en una carpeta separada...' -ForegroundColor Cyan
