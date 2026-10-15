@@ -61,7 +61,9 @@ def setup(browser,state='REVISION_REQUERIDA',failure=None,voice=True,paused=Fals
                 route.fulfill(status=400,json={'error':'La constancia no pudo ser procesada.'}); return
             details['fecha_ticket']=body['fecha_ticket']
             data={'referencia':'ARY-TEST-1234','tipo':'FACTURA','estado':'EN_COLA','modo_seguro':True,
-                  'mensaje':'Solicitud recibida.','seguimiento':'TEST-TRACKING-NO-COMPARTIR'}
+                  'mensaje':'Solicitud recibida.','seguimiento':'TEST-TRACKING-NO-COMPARTIR',
+                  'perfil_local':{'rfc':details['rfc'],'razon_social':details['razon_social'],
+                                  'correo_destino':details['correo_destino']}}
         else:
             data={'referencia':'ARY-TEST-1234','tipo':'FACTURA','estado':state,'modo_seguro':True,
                   'mensaje':'Revisión de ejemplo. Comprobar el timbrado anterior antes de emitir otra.',
@@ -213,6 +215,50 @@ def test_granted_voice_preference_does_not_request_microphone_again(browser):
         assert page.locator('#ary-voice-prompt').is_hidden()
         assert page.evaluate('voiceCalls.permissionRequests')==0
         assert page.evaluate('voiceCalls.spoken.length')>=1
+    finally: ctx.close()
+
+
+def test_missing_microphone_keeps_automatic_narration(browser):
+    ctx,page,_,_=setup(browser)
+    try:
+        page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
+        page.evaluate("""navigator.mediaDevices.getUserMedia=async()=>{voiceCalls.permissionRequests++;throw new DOMException('Requested device not found','NotFoundError')}""")
+        page.locator('#ary-voice-enable').click()
+        page.locator('#ary-assistant-tour').wait_for(state='visible')
+        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
+        page.evaluate('lastUtterance.onend()')
+        assert page.evaluate('voiceCalls.starts')==0
+        assert 'No se detectó un micrófono' in page.locator('#ary-voice-status').inner_text()
+        assert 'Paso 1 de' in page.locator('#ary-assistant-count').inner_text()
+    finally: ctx.close()
+
+
+def test_success_remembers_reusable_invoice_fields_only(browser):
+    ctx,page,_,_=setup(browser)
+    try:
+        fill(page); submit(page)
+        page.locator('#receipt').wait_for(state='visible')
+        profile=page.evaluate("JSON.parse(localStorage.getItem('ary_factura_profile_v1'))")
+        assert profile=={'estacion':'ARY V','forma_pago':'TARJETA DE DEBITO','uso_cfdi':'G03','correo':'prueba@example.com'}
+        fiscal=page.evaluate("JSON.parse(localStorage.getItem('ary_factura_fiscal_support_v1'))")
+        assert fiscal['rfc']==CAPTURE['rfc'] and fiscal['razon_social']==CAPTURE['razon_social']
+        page.evaluate('sessionStorage.clear()')
+        page.reload(wait_until='networkidle')
+        page.locator('#tab-factura').click()
+        assert page.locator('#factura-estacion').input_value()=='ARY V'
+        assert page.locator('#factura-pago').input_value()=='TARJETA DE DEBITO'
+        assert page.locator('#factura-uso').input_value()=='G03'
+        assert page.locator('#factura-correo').input_value()=='prueba@example.com'
+        assert page.locator('#factura-confirmacion').input_value()=='prueba@example.com'
+        assert page.locator('#factura-ticket').input_value()==''
+        assert page.locator('#factura-fecha').input_value()==''
+        assert page.locator('#factura-constancia').evaluate('(el)=>el.files.length')==0
+        page.on('dialog', lambda dialog: dialog.accept())
+        page.locator('#clearRememberedBilling').click()
+        assert page.evaluate("localStorage.getItem('ary_factura_profile_v1')") is None
+        assert page.evaluate("localStorage.getItem('ary_factura_fiscal_support_v1')") is None
     finally: ctx.close()
 
 
