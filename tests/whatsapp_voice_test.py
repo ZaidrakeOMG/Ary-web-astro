@@ -177,7 +177,7 @@ def test_billing_help_greeting_starts_voice_dictation(browser):
         page.locator('#ary-greeting').wait_for(state='visible',timeout=5000)
         assert '¿Quieres ayuda para facturar?' in page.locator('#ary-greeting').inner_text()
         assert page.evaluate('voiceCalls.starts')==0 and page.evaluate('voiceCalls.spoken.length')==0
-        page.locator('#ary-greeting-open').click()
+        page.locator('.ary-greeting-open').click()
         assert page.locator('#ary-chat').evaluate('(el)=>el.open') is True
         assert page.locator('#ary-voice-consent').is_checked()
         assert page.evaluate('voiceCalls.starts')==1
