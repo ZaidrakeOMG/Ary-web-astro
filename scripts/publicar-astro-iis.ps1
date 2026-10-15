@@ -152,7 +152,8 @@ try {
     $keyName=$(if($collectionName -eq 'verbs'){'verb'}elseif($collectionName -eq 'hiddenSegments'){'segment'}else{'fileExtension'})
     foreach($sourceItem in @($sourceCollection.SelectNodes('add'))) {
       $key=$sourceItem.GetAttribute($keyName)
-      foreach($oldItem in @($targetCollection.SelectNodes("add[@$keyName='$key']"))){[void]$targetCollection.RemoveChild($oldItem)}
+      foreach($oldItem in @($targetCollection.SelectNodes("add[@$keyName='$key']|remove[@$keyName='$key']"))){[void]$targetCollection.RemoveChild($oldItem)}
+      $removeInherited=$merged.CreateElement('remove');$removeInherited.SetAttribute($keyName,$key);[void]$targetCollection.AppendChild($removeInherited)
       [void]$targetCollection.AppendChild($merged.ImportNode($sourceItem,$true))
     }
   }
@@ -174,6 +175,14 @@ try {
   Write-Host '[4/4] Activando la nueva version...' -ForegroundColor Cyan
   Set-ItemProperty -Path ('IIS:\Sites\'+$chosen) -Name physicalPath -Value $release
   $switched=$true
+  $configCheck=& $appcmd list config "$chosen/" /section:system.webServer/security/requestFiltering 2>&1
+  if($LASTEXITCODE -ne 0){
+    Write-Host 'IIS rechazo la configuracion nueva:' -ForegroundColor Red
+    $configCheck | ForEach-Object { Write-Host $_ -ForegroundColor Red }
+    throw 'La configuracion IIS de la release nueva no es valida. Se restaurara la ruta anterior.'
+  } else {
+    Write-Host 'IIS acepto la configuracion de filtros de la release nueva.' -ForegroundColor Green
+  }
   $pool=[string](Get-Item ('IIS:\Sites\'+$chosen)).applicationPool
   if ($pool -and (Get-WebAppPoolState -Name $pool).Value -ne 'Started') { Start-WebAppPool -Name $pool }
   if ((Get-Website -Name $chosen).State -ne 'Started') { Start-Website -Name $chosen }
@@ -188,7 +197,11 @@ try {
     try {
       $response=Invoke-WebRequest -Uri ($url+'?ary_check='+$stamp) -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
       if ($response.StatusCode -eq 200 -and $response.Headers['X-ARY-Release'] -eq $stamp -and $response.Content.Contains($expectedDesign)) { $verified=$true;break }
-    } catch { Write-Host 'Esperando respuesta del sitio HTTPS...' -ForegroundColor Yellow }
+    } catch {
+      $status=''
+      try { if($_.Exception.Response -and $_.Exception.Response.StatusCode){$status=' HTTP '+[int]$_.Exception.Response.StatusCode} } catch {}
+      Write-Host ('Esperando respuesta del sitio HTTPS...'+$status+' - '+$_.Exception.Message) -ForegroundColor Yellow
+    }
     Start-Sleep -Seconds 2
   }
   if (-not $verified) { throw 'La verificacion HTTPS no confirmo la version nueva. Se restaurara la ruta anterior.' }

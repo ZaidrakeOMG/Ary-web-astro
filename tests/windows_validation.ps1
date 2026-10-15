@@ -22,16 +22,17 @@ if(-not $filter -or $filter.removeServerHeader -ne 'true'){throw 'Server header 
 if(-not $limit -or $limit.maxAllowedContentLength -ne '5242880' -or $limit.maxUrl -ne '2048' -or $limit.maxQueryString -ne '1024'){throw 'IIS request limits missing'}
 foreach($verb in @('TRACE','TRACK','CONNECT','PUT','DELETE','PATCH','PROPFIND','PROPPATCH','MKCOL','COPY','MOVE','LOCK','UNLOCK')){
  $node=$filter.SelectSingleNode("verbs/add[@verb='$verb'][@allowed='false']")
- if(-not $node){throw "Dangerous HTTP verb not blocked: $verb"}
+ $remove=$filter.SelectSingleNode("verbs/remove[@verb='$verb']")
+ if(-not $node -or -not $remove){throw "Dangerous HTTP verb not safely overridden: $verb"}
 }
 foreach($segment in @('.git','.github','.ary-releases','.ary-staging','node_modules','server','scripts','tests','legacy','docs','paquete-publicacion')){
- if(-not $filter.SelectSingleNode("hiddenSegments/add[@segment='$segment']")){throw "Sensitive IIS segment not hidden: $segment"}
+ if(-not $filter.SelectSingleNode("hiddenSegments/add[@segment='$segment']") -or -not $filter.SelectSingleNode("hiddenSegments/remove[@segment='$segment']")){throw "Sensitive IIS segment not safely overridden: $segment"}
 }
 foreach($ext in @('.env','.config','.ps1','.bat','.py','.mjs','.ts','.map','.sql','.sqlite','.sqlite3','.db','.log','.bak','.old','.zip','.rar','.7z','.key','.pem','.pfx','.p12','.json')){
- if(-not $filter.SelectSingleNode("fileExtensions/add[@fileExtension='$ext'][@allowed='false']")){throw "Sensitive extension not blocked: $ext"}
+ if(-not $filter.SelectSingleNode("fileExtensions/add[@fileExtension='$ext'][@allowed='false']") -or -not $filter.SelectSingleNode("fileExtensions/remove[@fileExtension='$ext']")){throw "Sensitive extension not safely overridden: $ext"}
 }
 $src=Get-Content scripts/publicar-astro-iis.ps1 -Raw
-foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Release','Content-Security-Policy','Permissions-Policy','Cross-Origin-Resource-Policy','removeServerHeader','maxAllowedContentLength','maxQueryString','hiddenSegments','fileExtensions','previousPath','api/facturacion/opciones')) {
+foreach($required in @('CloneNode($true)','Assert-NoDuplicateDefaults','X-ARY-Release','Content-Security-Policy','Permissions-Policy','Cross-Origin-Resource-Policy','removeServerHeader','maxAllowedContentLength','maxQueryString','hiddenSegments','fileExtensions','removeInherited','IIS rechazo la configuracion nueva','previousPath','api/facturacion/opciones')) {
  if(-not $src.Contains($required)){throw "Deployment guard missing: $required"}
 }
 Write-Host 'PASS XML and publication guard checks. Real IIS/Polaris was NOT started.'
