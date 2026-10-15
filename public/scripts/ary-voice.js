@@ -320,7 +320,7 @@
       status.textContent = 'Solicitando permiso del micrófono…';
       if (Recognition) await requestMicrophonePermission();
       voiceEnabled = true; voiceSession = true; consent.checked = true;
-      writeLocal(PREF_KEY, '1'); hidePrompt();
+      writeLocal(PREF_KEY, '1'); hidePrompt(); disable.hidden = false;
       status.textContent = 'Ayuda por voz activada. No necesitas volver a autorizarla mientras el navegador conserve el permiso.';
       if (startGuide && isBillingPage) {
         window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } }));
@@ -338,7 +338,7 @@
   }
   function disableVoice(showStatus = true) {
     voiceEnabled = false; voiceSession = false; consent.checked = false;
-    removeLocal(PREF_KEY); lastGuideKey = ''; currentGuide = null; stopAll();
+    removeLocal(PREF_KEY); lastGuideKey = ''; currentGuide = null; disable.hidden = true; stopAll();
     if (showStatus) status.textContent = 'Ayuda por voz desactivada. Puedes volver a activarla cuando quieras.';
   }
 
@@ -408,7 +408,7 @@
   });
 
   const visibility = new MutationObserver(() => {
-    if (root.hidden || panel.hidden) stopAll();
+    if (root.hidden || panel.hidden) { lastGuideKey = ''; stopAll(); }
     else if ($('ary-assistant-home')?.hidden && recognitionMode === 'chat') stopListening();
   });
   for (const el of [root, panel, $('ary-assistant-home')]) if (el) visibility.observe(el, { attributes: true, attributeFilter: ['hidden'] });
@@ -424,9 +424,6 @@
   if (!synth || !window.SpeechSynthesisUtterance) speak.disabled = true;
   disable.hidden = !voiceEnabled;
 
-  const stateObserver = new MutationObserver(() => { disable.hidden = !voiceEnabled; });
-  stateObserver.observe(consent, { attributes: true, attributeFilter: ['checked'] });
-
   async function initBillingVoice() {
     if (!isBillingPage) return;
     if (!voiceEnabled) {
@@ -436,7 +433,7 @@
     consent.checked = true; voiceSession = true; disable.hidden = false;
     const state = await permissionState();
     if (state === 'denied' || state === 'prompt') {
-      voiceEnabled = false; voiceSession = false; consent.checked = false; removeLocal(PREF_KEY);
+      voiceEnabled = false; voiceSession = false; consent.checked = false; disable.hidden = true; removeLocal(PREF_KEY);
       setTimeout(() => showPrompt(state === 'denied'
         ? 'El navegador tiene el micrófono bloqueado. Permítelo en los ajustes del sitio y vuelve a tocar aquí.'
         : 'El navegador necesita confirmar el micrófono otra vez. Toca aquí para continuar.'), 500);
