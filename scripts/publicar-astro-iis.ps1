@@ -113,6 +113,25 @@ try {
   foreach ($n in @($headers.SelectNodes('*[@name="X-ARY-Release"]'))) { [void]$headers.RemoveChild($n) }
   $remove=$merged.CreateElement('remove');$remove.SetAttribute('name','X-ARY-Release');[void]$headers.AppendChild($remove)
   $h=$merged.CreateElement('add');$h.SetAttribute('name','X-ARY-Release');$h.SetAttribute('value',$stamp);[void]$headers.AppendChild($h)
+  # Apply only ARY's reviewed security headers; preserve all unrelated local IIS settings.
+  $securityHeaderNames=@('X-Content-Type-Options','X-Frame-Options','Referrer-Policy','Permissions-Policy','Strict-Transport-Security','Cross-Origin-Opener-Policy','X-Permitted-Cross-Domain-Policies','Content-Security-Policy')
+  foreach ($name in $securityHeaderNames) {
+    $templateHeader=$template.SelectSingleNode("/configuration/system.webServer/httpProtocol/customHeaders/add[@name='$name']")
+    if (-not $templateHeader) { throw "Falta cabecera de seguridad en el paquete: $name" }
+    foreach ($n in @($headers.SelectNodes("*[@name='$name']"))) { [void]$headers.RemoveChild($n) }
+    $removeSecurity=$merged.CreateElement('remove');$removeSecurity.SetAttribute('name',$name);[void]$headers.AppendChild($removeSecurity)
+    [void]$headers.AppendChild($merged.ImportNode($templateHeader,$true))
+  }
+  foreach ($n in @($headers.SelectNodes('*[@name="X-Powered-By"]'))) { [void]$headers.RemoveChild($n) }
+  $removePowered=$merged.CreateElement('remove');$removePowered.SetAttribute('name','X-Powered-By');[void]$headers.AppendChild($removePowered)
+
+  $templateLimit=$template.SelectSingleNode('/configuration/system.webServer/security/requestFiltering/requestLimits')
+  if (-not $templateLimit -or -not $templateLimit.GetAttribute('maxAllowedContentLength')) { throw 'Falta el limite de solicitudes del paquete.' }
+  $security=Ensure-Child $merged $server 'security'
+  $requestFiltering=Ensure-Child $merged $security 'requestFiltering'
+  $requestLimits=Ensure-Child $merged $requestFiltering 'requestLimits'
+  $requestLimits.SetAttribute('maxAllowedContentLength',$templateLimit.GetAttribute('maxAllowedContentLength'))
+
   Assert-NoDuplicateDefaults $merged
   if ($merged.SelectSingleNode('/configuration/system.webServer/rewrite/rules/rule[@name="ARY Portal Facturacion API"]').OuterXml -ne $apiBefore) { throw 'La regla original de facturacion cambio. Publicacion cancelada.' }
   $merged.Save((Join-Path $release 'web.config'))
