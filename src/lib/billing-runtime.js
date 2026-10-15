@@ -8,6 +8,13 @@
     set(key, value) { try { sessionStorage.setItem(key, value); } catch (_) {} },
     remove(key) { try { sessionStorage.removeItem(key); } catch (_) {} }
   };
+  const localStore = {
+    get(key) { try { return localStorage.getItem(key); } catch (_) { return null; } },
+    set(key, value) { try { localStorage.setItem(key, value); } catch (_) {} },
+    remove(key) { try { localStorage.removeItem(key); } catch (_) {} }
+  };
+  const FACTURA_PROFILE_KEY = 'ary_factura_profile_v1';
+  const FACTURA_FISCAL_KEY = 'ary_factura_fiscal_support_v1';
   let csrf = '', serverSafe = true, ready = false, active = 'alta', busy = false, poll = null, receipt = null;
   let snapshots = {factura: null, alta: null};
   let reviewApproved = false;
@@ -81,7 +88,38 @@
     options($('factura-pago'), data.formas_pago, 'Selecciona tu forma de pago', $('factura-pago').value);
     options($('factura-uso'), data.usos_cfdi, '', $('factura-uso').value || 'G03');
   }
+  function readFacturaProfile() {
+    try {
+      const value = JSON.parse(localStore.get(FACTURA_PROFILE_KEY) || 'null');
+      return value && typeof value === 'object' ? value : {};
+    } catch (_) { return {}; }
+  }
+  function rememberFacturaProfile(values) {
+    const profile = {
+      estacion: clean(values?.estacion, 50),
+      forma_pago: clean(values?.forma_pago, 50),
+      uso_cfdi: clean(values?.uso_cfdi, 4),
+      correo: clean(values?.correo, 254)
+    };
+    if (!profile.correo) return;
+    localStore.set(FACTURA_PROFILE_KEY, JSON.stringify(profile));
+  }
+  function applyFacturaProfile() {
+    const profile = readFacturaProfile();
+    const assignSelect = (id, value) => {
+      const el = $(id);
+      if (el && value && [...el.options].some(option => option.value === value)) el.value = value;
+    };
+    assignSelect('factura-estacion', profile.estacion);
+    assignSelect('factura-pago', profile.forma_pago);
+    assignSelect('factura-uso', profile.uso_cfdi || 'G03');
+    if (profile.correo) {
+      $('factura-correo').value = profile.correo;
+      $('factura-confirmacion').value = profile.correo;
+    }
+  }
   setCatalogs(INITIAL);
+  applyFacturaProfile();
   function selectTab(name, focus = false) {
     if (busy || snapshots.factura || snapshots.alta) return;
     active = name;
@@ -131,12 +169,31 @@
     out.correo_destino ||= clean(values?.correo, 254);
     return out;
   }
+  function rememberedFiscalSupport(email) {
+    try {
+      const saved = JSON.parse(localStore.get(FACTURA_FISCAL_KEY) || 'null');
+      if (!saved || typeof saved !== 'object') return {};
+      const current = clean(email, 254).toLowerCase();
+      if (!current || clean(saved.correo_destino, 254).toLowerCase() !== current) return {};
+      return supportValues(saved);
+    } catch (_) { return {}; }
+  }
+  function rememberFiscalSupport(values) {
+    const safe = supportValues(values);
+    if (!safe.rfc || !safe.razon_social || !safe.correo_destino) return;
+    localStore.set(FACTURA_FISCAL_KEY, JSON.stringify({
+      rfc: safe.rfc,
+      razon_social: safe.razon_social,
+      correo_destino: safe.correo_destino
+    }));
+  }
   function currentFormSupport() {
     const form = $('form-factura'), values = {};
     for (const key of ['estacion','ticket','fecha_ticket','forma_pago','uso_cfdi','correo']) {
       values[key] = form.elements.namedItem(key)?.value || '';
     }
-    return supportValues(values);
+    const local = supportValues(values);
+    return {...rememberedFiscalSupport(local.correo_destino), ...local};
   }
   function showWhatsApp(box, data = {}, error = '', dynamic = false) {
     box.querySelectorAll('.ary-whatsapp').forEach(el => el.remove());
@@ -152,7 +209,9 @@
     function prepare() {
       const local = dynamic ? currentFormSupport() : assistanceSnapshot || {};
       const backend = supportValues(data.asistencia?.datos || {});
-      const values = {...local};
+      if (backend.rfc && backend.razon_social) rememberFiscalSupport(backend);
+      const remembered = rememberedFiscalSupport(local.correo_destino || backend.correo_destino);
+      const values = {...remembered, ...local};
       for (const [key,value] of Object.entries(backend)) if (value) values[key] = value;
       const unavailable = 'No disponible: la constancia no fue procesada';
       const lines = [
@@ -286,7 +345,7 @@
     ['factura','alta'].forEach(kind => { const form=$('form-'+kind);form.reset();form.querySelector('fieldset').disabled=false;$('error-'+kind).hidden=true; });
     snapshots={factura:null,alta:null};assistanceSnapshot=null;lastReceipt=null;reviewApproved=false;ids={factura:id(),alta:id()};
     document.querySelectorAll('#error-factura .ary-whatsapp,#statusError .ary-whatsapp,#finalResult .ary-whatsapp').forEach(el=>el.remove());
-    setCatalogs(INITIAL);$('receipt').hidden=true;$('tabs').hidden=false;selectTab('alta',true);
+    setCatalogs(INITIAL);applyFacturaProfile();$('receipt').hidden=true;$('tabs').hidden=false;selectTab('alta',true);
   });
   $('reviewBack').addEventListener('click', () => { reviewApproved=false; $('reviewDialog').close(); });
   $('reviewConfirm').addEventListener('click', () => { reviewApproved=true; $('reviewDialog').close(); $('form-factura').requestSubmit(); });
@@ -331,7 +390,9 @@
     busy=true;button.disabled=true;button.textContent='Enviando…';form.querySelector('fieldset').disabled=true;$('error-'+kind).hidden=true;
     storage.set('ary_portal_pendiente',ids[kind]);
     try {
-      const data=await call('/solicitudes',snapshots[kind],{'X-ARY-Request-Id':ids[kind], 'X-ARY-Mode':serverSafe?'seguro':'real'});
+      const sent = snapshots[kind];
+      const data=await call('/solicitudes',sent,{'X-ARY-Request-Id':ids[kind], 'X-ARY-Mode':serverSafe?'seguro':'real'});
+      if(kind === 'factura') rememberFacturaProfile(sent);
       storeReceipt(data);snapshots[kind]=null;renderReceipt(data);$('receipt').focus();
     } catch(error) {
       const certain=error.status && error.status < 500;
@@ -351,7 +412,7 @@
     try {
       const data=await call('/opciones');
       if(!data.csrf || !Array.isArray(data.estaciones)) throw new Error('Respuesta del portal no válida.');
-      csrf=data.csrf;serverSafe=data.modo_seguro===true;setCatalogs(data);ready=data.aceptando===true;
+      csrf=data.csrf;serverSafe=data.modo_seguro===true;setCatalogs(data);applyFacturaProfile();ready=data.aceptando===true;
       $('modeBanner').hidden=!data.modo_seguro;
       $('connection').textContent=ready ? 'Conectado al portal' : 'Recepción pausada';$('connection').dataset.state=ready?'ok':'error';
       document.querySelectorAll('.submit').forEach(button => button.disabled=!ready);
