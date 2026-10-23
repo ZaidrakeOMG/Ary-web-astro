@@ -2,6 +2,12 @@
 
 Sitio corporativo y portal de facturación con una sola identidad visual. La portada, estaciones, servicios, contacto y facturación están construidos con componentes Astro. No se incrusta ni se publica el diseño anterior.
 
+## Actualización del 23 de octubre de 2026
+
+- **Facturación:** el bot busca exclusivamente por RFC leído de la constancia fiscal. El nombre/razón social y el domicilio no filtran la selección. Si hay cero o más de un cliente con ese RFC, o Polaris VCL no permite comprobar **todas** las filas, **NO** se pulsa Aceptar ni se timbra; se solicita revisión humana. Las altas siguen exigiendo nombre, calle e idCIF.
+- **Plazo ARY:** el formulario de facturación muestra un aviso destacado de **72 horas desde la compra** y un error cuando la fecha seleccionada está fuera del rango admitido. El API comprueba que la fecha del ticket sea hoy o alguno de los tres días anteriores. Como no se captura la hora de la compra, **esa comprobación no puede garantizar exactamente las 72 horas**; casos próximos al límite deben verificarse con el ticket y personal de ARY.
+- Los cambios del frontend requieren volver a publicar Astro en IIS. Los cambios del lector/selector y la validación del plazo requieren actualizar **y reiniciar el bot** en su VM. No desactives los controles contra RFC duplicados para forzar el timbrado.
+
 ## Actualización del 14 de octubre de 2026
 
 La factura identifica al cliente únicamente por **RFC y razón social**, sin usar la calle para seleccionar el registro. Requiere el bot actualizado: `ZaidrakeOMG/Facturacion-bot-`, PR #8, commit `5f416fde966138d7203d110feb12b57c71ab91e6`. El alta de clientes conserva sus propias validaciones de domicilio e idCIF. Dos registros con el mismo RFC y razón social requieren revisión, no se elige el primero.
