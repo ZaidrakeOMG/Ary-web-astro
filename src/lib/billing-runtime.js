@@ -26,7 +26,7 @@
   const showLogo = () => { if(brandLogo.complete && brandLogo.naturalWidth > 0) { brandLogo.hidden = false; $('brandFallback').hidden = true; } };
   brandLogo.addEventListener('load', showLogo);
   showLogo();
-  // Preserve the original date window: today and the three preceding days.
+  // Date-only form: allow today and three earlier calendar dates; exact 72h requires purchase time.
   const dateInput = $('factura-fecha');
   function localISO(d) {
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
@@ -63,7 +63,7 @@
   function openFacturaReview(values) {
     $('reviewGrid').replaceChildren(
       reviewItem('Estación',selectedText($('factura-estacion'))),
-      reviewItem('Constancia fiscal','PDF adjunto: se comprobarán RFC y razón social; la calle no interviene'),
+      reviewItem('Constancia fiscal','PDF adjunto: se utiliza solo el RFC; si hay clientes duplicados, se requiere revisión'),
       reviewItem('Folio del ticket',values.ticket),
       reviewItem('Fecha del ticket',displayDate(values.fecha_ticket)),
       reviewItem('Forma de pago',selectedText($('factura-pago'))),
@@ -400,7 +400,7 @@
       catch(error) { formError(kind,error.message); return; }
       delete values.constancia_archivo;
       if(kind==='factura' && !ticketDateIsAllowed(values.fecha_ticket)) {
-        formError(kind,'La fecha del ticket debe ser de hoy o de uno de los 3 días anteriores.'); return;
+        formError(kind,'Tienes 72 horas desde la compra para solicitar tu factura. Selecciona la fecha de hoy o de alguno de los tres días anteriores; si el plazo ya venció, contacta a ARY.'); return;
       }
       if(kind==='factura' && !reviewApproved) { openFacturaReview(values); return; }
       if(kind==='factura') reviewApproved=false;
