@@ -171,6 +171,39 @@ def open_chat(page):
     page.locator('#ary-voice-dictate').wait_for(state='visible')
 
 
+def test_invoice_guide_opens_on_entry_and_can_be_disabled(browser):
+    ctx,page,calls,_=setup(browser)
+    try:
+        assert page.locator('#ary-assistant-tour').is_hidden()
+        page.locator('#tab-factura').click()
+        page.locator('#ary-assistant-tour').wait_for(state='visible')
+        assert '72 horas' in page.locator('#ary-assistant-description').inner_text()
+        assert 'aceites' in page.locator('#ary-assistant-description').inner_text()
+        assert page.locator('#billing-guide-toggle').get_attribute('aria-checked') == 'true'
+        page.locator('#ary-assistant-next').click()
+        assert 'Elige tu estación' in page.locator('#ary-assistant-step').inner_text()
+        page.locator('#billing-guide-restart').click()
+        assert 'Paso 1 de' in page.locator('#ary-assistant-count').inner_text()
+        page.locator('#billing-guide-toggle').click()
+        assert page.locator('#billing-guide-toggle').get_attribute('aria-checked') == 'false'
+        assert page.locator('#ary-assistant-panel').is_hidden()
+        assert page.evaluate("localStorage.getItem('ary-invoice-auto-guide-v1')") == '0'
+        page.locator('#tab-alta').click()
+        page.locator('#tab-factura').click()
+        assert page.locator('#ary-assistant-panel').is_hidden()
+        page.reload(wait_until='networkidle')
+        page.locator('#tab-factura').click()
+        assert page.locator('#billing-guide-toggle').get_attribute('aria-checked') == 'false'
+        assert page.locator('#ary-assistant-panel').is_hidden()
+        page.locator('#billing-guide-toggle').click()
+        page.locator('#ary-assistant-tour').wait_for(state='visible')
+        assert page.locator('#billing-guide-toggle').get_attribute('aria-checked') == 'true'
+        assert '72 horas' in page.locator('#ary-assistant-description').inner_text()
+        assert page.evaluate("localStorage.getItem('ary-invoice-auto-guide-v1')") == '1'
+        assert not any(c['path'].endswith('/solicitudes') for c in calls)
+    finally: ctx.close()
+
+
 def test_voice_waits_for_user_permission(browser):
     ctx,page,_,_=setup(browser)
     try:
