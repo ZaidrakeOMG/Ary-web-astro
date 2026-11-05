@@ -398,13 +398,14 @@
     return 'Soy tu asistente ARY. Puedo guiarte para facturar, registrar un cliente o responder dudas.';
   }
 
-  speak.addEventListener('click', async () => {
+  speak.addEventListener('click', () => {
     if (utterance) { stopSpeech(); status.textContent = 'Lectura detenida.'; return; }
     if (!voiceEnabled) {
-      // Repeating the spoken step does not require microphone access.
-      const enabled = await enableVoice(false, false);
-      if (!enabled) return;
+      // Never await before speechSynthesis.speak(): iOS needs the same tap.
+      void enableVoice(false, false);
+      if (!voiceEnabled) return;
     }
+    voiceSession = true;
     const after = currentGuide && !$('ary-assistant-tour')?.hidden ? () => startRecognition('guide') : () => { if (chat.open) startRecognition('chat'); };
     speakText(helpText(), { status: 'Repitiendo la ayuda.', after });
   });
