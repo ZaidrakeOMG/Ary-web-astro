@@ -35,3 +35,22 @@
 .is-billing .footer-grid{display:none}.is-billing .footer{padding:15px 0 22px}.is-billing .footer-bottom{border:0;padding-top:8px}
 @media(max-width:620px){.billing-heading .breadcrumb{display:none}.billing-heading .overline{display:none}.billing-heading h1{font-size:36px;margin-bottom:12px}.billing-heading p{font-size:12px}.billing-heading{margin-bottom:19px}.connection{margin-top:12px}.content{padding:23px 19px}.form-title .overline{display:none}.form-title h2{font-size:28px;margin-bottom:10px}.form-title{margin-bottom:19px}.group-heading{padding-top:18px;margin-bottom:17px}.billing-page{padding-top:23px}}
 .billing-memory-clear{display:inline-block;margin-left:10px;padding:4px 0;border:0;background:transparent;color:var(--magenta);font:inherit;font-size:.78rem;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}.billing-memory-clear:focus-visible{outline:3px solid var(--magenta);outline-offset:3px;border-radius:4px}@media(max-width:700px){.billing-memory-clear{display:block;margin:7px 0 0}}
+
+
+/* Asistente guiado opcional: los controles viven dentro de la pestaña Facturar. */
+.billing-guide-control{display:flex;align-items:center;gap:15px;padding:16px 18px;margin:-11px 0 26px;border:1px solid #edd5e4;border-radius:16px;background:linear-gradient(110deg,#fff8fc,#fff);box-shadow:0 5px 18px #5c26400a}
+.billing-guide-mascot{flex:0 0 64px;width:64px;height:67px;object-fit:contain;border-radius:12px;background:#fae6f3}
+.billing-guide-info{min-width:0;flex:1}
+.billing-guide-eyebrow{display:block;margin-bottom:5px;font-size:9px;letter-spacing:.11em;color:var(--magenta);font-weight:850}
+.billing-guide-info h3{font-size:16px;line-height:1.3;margin:0 0 5px;color:var(--wine)}
+.billing-guide-info p{margin:0 0 6px;font-size:11px;line-height:1.65;color:#735b6b}
+.billing-guide-state{display:inline-flex;font-size:10px;font-weight:750;color:#6c4e62}
+.billing-guide-actions{display:flex;flex-direction:column;align-items:stretch;gap:7px;flex:0 0 auto}
+.billing-guide-control button{min-height:43px;padding:9px 12px;font-size:11px;font-weight:800;border-radius:10px;cursor:pointer}
+.billing-guide-toggle{background:var(--magenta);color:white;border:1px solid var(--magenta)}
+.billing-guide-toggle[aria-checked=false]{color:var(--magenta);background:white}
+.billing-guide-restart{color:#80576e;border:1px solid #e7d1df;background:white}
+.billing-guide-control button:hover{filter:brightness(.95)}
+.billing-guide-control button:focus-visible{outline:3px solid var(--wine);outline-offset:3px}
+@media(max-width:700px){.billing-guide-control{flex-wrap:wrap;gap:10px;padding:14px;margin:-7px 0 23px}.billing-guide-mascot{flex-basis:48px;width:48px;height:55px}.billing-guide-info{flex-basis:calc(100% - 65px)}.billing-guide-info h3{font-size:14px}.billing-guide-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.billing-guide-control button{font-size:11px;min-height:45px;padding:8px 9px}}
+@media(max-width:350px){.billing-guide-actions{grid-template-columns:1fr}}
