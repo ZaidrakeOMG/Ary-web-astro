@@ -73,10 +73,10 @@ def run():
             assert page.locator('#ary-chat-log .ary-chat-message').count() == 1
             page.keyboard.press('Escape')
             page.goto(BASE + '/facturacion/?guia=factura', wait_until='networkidle')
-            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 11')
+            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 12')
             expect(page.locator('#ary-greeting')).to_be_hidden()
             page.locator('#ary-assistant-next').click()
-            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 2 de 11')
+            expect(page.locator('#ary-assistant-count')).to_have_text('Paso 2 de 12')
             assert not page.locator('#form-factura input[name=confirmado]').is_checked()
             assert not page.evaluate('document.documentElement.scrollWidth > innerWidth + 1')
             assert not errors, errors
