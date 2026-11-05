@@ -249,6 +249,7 @@ def test_granted_voice_preference_does_not_request_microphone_again(browser):
         assert page.evaluate('voiceCalls.permissionRequests')==0
         # Mobile browsers must not autoplay or request permission on reload.
         assert page.evaluate('voiceCalls.spoken.length')==0
+        page.locator('#tab-factura').click()
         page.locator('#billing-guide-voice').click()
         assert page.evaluate('voiceCalls.spoken.length')==1
         assert page.evaluate('voiceCalls.permissionRequests')==1
