@@ -70,7 +70,7 @@
   function openFacturaReview(values) {
     $('reviewGrid').replaceChildren(
       reviewItem('Estación',selectedText($('factura-estacion'))),
-      reviewItem('Constancia fiscal','PDF adjunto: se utiliza solo el RFC; si hay clientes duplicados, se requiere revisión'),
+      reviewItem('Constancia fiscal','PDF adjunto: solo se utiliza el RFC para facturar; la calle no interviene. Si hay clientes duplicados, se requiere revisión'),
       reviewItem('Folio del ticket',values.ticket),
       reviewItem('Fecha del ticket',displayDate(values.fecha_ticket)),
       reviewItem('Forma de pago',selectedText($('factura-pago'))),
