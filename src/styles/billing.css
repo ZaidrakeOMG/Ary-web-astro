@@ -54,3 +54,6 @@
 .billing-guide-control button:focus-visible{outline:3px solid var(--wine);outline-offset:3px}
 @media(max-width:700px){.billing-guide-control{flex-wrap:wrap;gap:10px;padding:14px;margin:-7px 0 23px}.billing-guide-mascot{flex-basis:48px;width:48px;height:55px}.billing-guide-info{flex-basis:calc(100% - 65px)}.billing-guide-info h3{font-size:14px}.billing-guide-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}.billing-guide-control button{font-size:11px;min-height:45px;padding:8px 9px}}
 @media(max-width:350px){.billing-guide-actions{grid-template-columns:1fr}}
+
+/* La navegación móvil siempre tiene prioridad sobre la tarjeta flotante. */
+.is-billing .site-header{z-index:130}
