@@ -26,25 +26,32 @@
   const showLogo = () => { if(brandLogo.complete && brandLogo.naturalWidth > 0) { brandLogo.hidden = false; $('brandFallback').hidden = true; } };
   brandLogo.addEventListener('load', showLogo);
   showLogo();
-  // Date-only form: allow today and three earlier calendar dates; exact 72h requires purchase time.
+  // Preliminary date-only check: same calendar month AND a maximum of three
+  // prior calendar dates. The actual 72-hour cutoff must be verified against
+  // the original purchase timestamp in Polaris by the server.
   const dateInput = $('factura-fecha');
   function localISO(d) {
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
     return `${y}-${m}-${day}`;
   }
+  function ticketDateWindow() {
+    const today=new Date(); today.setHours(12,0,0,0);
+    const earliest=new Date(today); earliest.setDate(earliest.getDate()-3);
+    const firstOfMonth=new Date(today.getFullYear(),today.getMonth(),1,12);
+    if(earliest<firstOfMonth) earliest.setTime(firstOfMonth.getTime());
+    return {today,earliest};
+  }
   function configureTicketDate() {
     if(!dateInput) return;
-    const today=new Date(); today.setHours(12,0,0,0);
-    const minDate=new Date(today); minDate.setDate(minDate.getDate()-3);
-    dateInput.min=localISO(minDate); dateInput.max=localISO(today);
+    const {today,earliest}=ticketDateWindow();
+    dateInput.min=localISO(earliest); dateInput.max=localISO(today);
   }
   function ticketDateIsAllowed(value) {
-    if(!value) return false;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(value||'')) return false;
     const picked=new Date(value+'T12:00:00');
-    if(Number.isNaN(picked.getTime())) return false;
-    const today=new Date(); today.setHours(12,0,0,0);
-    const minDate=new Date(today); minDate.setDate(minDate.getDate()-3);
-    return picked>=minDate && picked<=today;
+    if(Number.isNaN(picked.getTime()) || localISO(picked)!==value) return false;
+    const {today,earliest}=ticketDateWindow();
+    return picked>=earliest && picked<=today;
   }
   function selectedText(select) {
     if(!select || select.selectedIndex<0) return '';
@@ -400,7 +407,7 @@
       catch(error) { formError(kind,error.message); return; }
       delete values.constancia_archivo;
       if(kind==='factura' && !ticketDateIsAllowed(values.fecha_ticket)) {
-        formError(kind,'Tienes 72 horas desde la compra para solicitar tu factura. Selecciona la fecha de hoy o de alguno de los tres días anteriores; si el plazo ya venció, contacta a ARY.'); return;
+        formError(kind,'Solo puedes solicitar tu factura dentro del mismo mes de la compra y durante las 72 horas posteriores al consumo. Revisa la fecha del ticket.'); return;
       }
       if(kind==='factura' && !reviewApproved) { openFacturaReview(values); return; }
       if(kind==='factura') reviewApproved=false;
