@@ -416,6 +416,12 @@
   document.getElementById('newRequest')?.addEventListener('click', () => {
     if (opened && kind) { index = 0; render(false, false); }
   });
+  // Let mobile customers edit normally: the tour minimizes as soon as a form
+  // control gains focus, preserving the current step for the floating launcher.
+  document.getElementById('form-factura')?.addEventListener('focusin', event => {
+    if (opened && kind === 'factura' && window.innerWidth < 1100
+        && event.target.matches('input, select, textarea, button')) setOpen(false);
+  });
   const observer = new MutationObserver(syncPortal);
   if (receipt) observer.observe(receipt, { attributes: true, attributeFilter: ['hidden'] });
   if (dialog) observer.observe(dialog, { attributes: true, attributeFilter: ['open'] });
