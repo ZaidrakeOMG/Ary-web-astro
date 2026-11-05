@@ -22,20 +22,27 @@
   const receipt = document.getElementById('receipt');
   const dialog = document.getElementById('reviewDialog');
   const isBilling = Boolean(document.getElementById('form-factura') && document.getElementById('form-alta'));
+  const guideToggle = document.getElementById('billing-guide-toggle');
+  const guideStatus = document.getElementById('billing-guide-state');
+  const guideRestart = document.getElementById('billing-guide-restart');
+  const AUTO_GUIDE_KEY = 'ary-invoice-auto-guide-v1';
+  let autoGuideEnabled = true;
+  try { autoGuideEnabled = localStorage.getItem(AUTO_GUIDE_KEY) !== '0'; } catch { /* optional preference */ }
   const step = (selector, title, text) => ({ selector, title, text });
   const followUp = step('#receipt', 'Conserva tu referencia', 'Después de enviar, el portal mostrará una referencia para consultar el avance con “Actualizar estado”. Recibir la solicitud no significa que la factura esté emitida ni que el alta esté confirmada. En modo de prueba no se completa el trámite real.');
   const guides = {
     factura: [
-      step('#factura-estacion', '1. Elige tu estación', 'Selecciona la estación donde cargaste combustible. Revisa su nombre y número en el ticket para no enviar tu solicitud a otra estación.'),
-      step('#factura-constancia', '2. Adjunta tu constancia fiscal', 'Selecciona el PDF digital original de la Constancia de Situación Fiscal del SAT (máximo 2 MB). El bot verificará únicamente RFC y razón social para encontrar una única coincidencia en Polaris. La calle no interviene en la selección. No necesitas escribir el RFC.'),
-      step('#factura-ticket', '3. Captura el folio del ticket', 'Escribe únicamente el folio numérico de tu ticket. Revisa cada dígito: no se trata del importe ni del número de estación.'),
-      step('#factura-fecha', '4. Indica la fecha del ticket', 'Elige la fecha que aparece en el ticket. Consulta el rango permitido junto al campo y en el calendario del portal; no cambies la fecha de tu compra para intentar continuar.'),
-      step('#factura-pago', '5. Selecciona cómo pagaste', 'Elige la forma de pago con la que realizaste esta compra. Debe coincidir con tu ticket; no selecciones otra solo para avanzar.'),
-      step('#factura-uso', '6. Elige el uso de CFDI', 'Selecciona el uso que corresponde a tu solicitud. Si tienes dudas sobre cuál necesitas, confírmalo con tu contador antes de enviar.'),
-      step('#factura-correo', '7. Escribe tu correo', 'Captura un correo al que tengas acceso. Revisa letras, puntos y dominio para que la información de tu trámite llegue al destinatario correcto.'),
-      step('#factura-confirmacion', '8. Confirma tu correo', 'Escribe nuevamente el mismo correo. Ambos campos deben coincidir; esta segunda captura ayuda a detectar errores.'),
-      step('#form-factura input[name="confirmado"]', '9. Revisa y confirma tus datos', 'Revisa estación, constancia PDF adjunta, folio, fecha, forma de pago, uso de CFDI y correo. Marca tú mismo la casilla únicamente cuando todo sea correcto.'),
-      step('#form-factura .submit', '10. Abre la revisión final', 'Presiona “Revisar y enviar” en el formulario. Se abrirá un resumen: puedes elegir “Volver a revisar” o, solo después de comprobarlo, “Sí, enviar solicitud”. Los botones de esta guía nunca envían tu factura.'),
+      step('#factura-plazo-aviso', '1. Antes de empezar: conoce los requisitos', '¡Hola! Te acompaño a solicitar tu factura. Tienes hasta 72 horas desde el consumo, pero siempre dentro del mismo mes de la compra: aplica el plazo que venza primero. Los aceites no se facturan aquí; para esos productos usa únicamente el botón de WhatsApp al 871 165 1404. Ten a la mano tu ticket y el PDF de tu constancia fiscal. Si aún no eres cliente, primero entra a Alta de cliente.'),
+      step('#factura-estacion', '2. Elige tu estación', 'Selecciona la estación donde cargaste combustible. Revisa su nombre y número en el ticket para no enviar tu solicitud a otra estación.'),
+      step('#factura-constancia', '3. Adjunta tu constancia fiscal', 'Selecciona el PDF digital original de la Constancia de Situación Fiscal del SAT (máximo 2 MB). El bot usa únicamente tu RFC para buscar a tu cliente en Polaris. Si encuentra varios clientes con el mismo RFC, solicita revisión sin emitir factura. La calle no interviene en la selección. No necesitas escribir el RFC.'),
+      step('#factura-ticket', '4. Captura el folio del ticket', 'Escribe únicamente el folio numérico de tu ticket. Revisa cada dígito: no se trata del importe ni del número de estación.'),
+      step('#factura-fecha', '5. Indica la fecha del ticket', 'Selecciona la fecha real de tu compra. Solo puedes solicitar tu factura en el mismo mes del consumo y dentro de las 72 horas posteriores a tu compra. El portal limita las fechas del calendario; el bot debe confirmar la hora real. Nunca cambies la fecha para intentar continuar.'),
+      step('#factura-pago', '6. Selecciona cómo pagaste', 'Elige la forma de pago con la que realizaste esta compra. Debe coincidir con tu ticket; no selecciones otra solo para avanzar.'),
+      step('#factura-uso', '7. Elige el uso de CFDI', 'Selecciona el uso que corresponde a tu solicitud. Si tienes dudas sobre cuál necesitas, confírmalo con tu contador antes de enviar.'),
+      step('#factura-correo', '8. Escribe tu correo', 'Captura un correo al que tengas acceso. Revisa letras, puntos y dominio para que la información de tu trámite llegue al destinatario correcto.'),
+      step('#factura-confirmacion', '9. Confirma tu correo', 'Escribe nuevamente el mismo correo. Ambos campos deben coincidir; esta segunda captura ayuda a detectar errores.'),
+      step('#form-factura input[name="confirmado"]', '10. Revisa y confirma tus datos', 'Revisa estación, constancia PDF adjunta, folio, fecha, forma de pago, uso de CFDI y correo. Marca tú mismo la casilla únicamente cuando todo sea correcto.'),
+      step('#form-factura .submit', '11. Abre la revisión final', 'Presiona “Revisar y enviar” en el formulario. Se abrirá un resumen: puedes elegir “Volver a revisar” o, solo después de comprobarlo, “Sí, enviar solicitud”. Los botones de esta guía nunca envían tu factura.'),
       followUp
     ],
     alta: [
@@ -79,6 +86,7 @@
       index = Number.isInteger(savedView.index) ? savedView.index : 0;
     }
   }
+  if (isBilling && !autoGuideEnabled && kind === 'factura') opened = false;
   function rememberView() {
     try {
       const previous = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null') || {};
@@ -311,7 +319,7 @@
     rememberView();
   }
 
-  function begin(selected) {
+  function begin(selected, focusOnOpen = true) {
     if (!Object.hasOwn(guides, selected)) return;
     kind = selected;
     index = 0;
@@ -324,7 +332,7 @@
         switching = false;
       }
     }
-    setOpen(true);
+    setOpen(true, false, focusOnOpen);
   }
 
   function syncPortal() {
@@ -339,6 +347,24 @@
     positionPanel();
   }
 
+  function refreshGuidePreference() {
+    if (!guideToggle || !guideStatus || !guideRestart) return;
+    guideToggle.setAttribute('aria-checked', String(autoGuideEnabled));
+    guideToggle.textContent = autoGuideEnabled ? 'Desactivar guía' : 'Activar guía';
+    guideStatus.textContent = autoGuideEnabled ? 'Guía automática activada' : 'Guía automática desactivada';
+    guideRestart.hidden = !autoGuideEnabled;
+  }
+  guideToggle?.addEventListener('click', () => {
+    autoGuideEnabled = !autoGuideEnabled;
+    try { localStorage.setItem(AUTO_GUIDE_KEY, autoGuideEnabled ? '1' : '0'); } catch { /* optional preference */ }
+    refreshGuidePreference();
+    window.dispatchEvent(new CustomEvent('ary:billing-guide-setting', { detail: { enabled: autoGuideEnabled } }));
+    if (autoGuideEnabled) begin('factura');
+    else setOpen(false);
+  });
+  guideRestart?.addEventListener('click', () => {
+    if (autoGuideEnabled) begin('factura');
+  });
   window.addEventListener('ary:guide-start', (event) => {
     const requested = event.detail?.kind;
     if (isBilling && Object.hasOwn(guides, requested)) begin(requested);
@@ -371,12 +397,14 @@
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && opened && !blocked()) setOpen(false, true);
   });
-  document.getElementById('tabs')?.addEventListener('click', (event) => {
-    const tab = event.target.closest?.('#tab-alta, #tab-factura');
-    if (!tab || switching || !opened || !kind) return;
-    kind = tab.id === 'tab-alta' ? 'alta' : 'factura';
-    index = 0;
-    render(false);
+  window.addEventListener('ary:billing-tab-change', (event) => {
+    if (!isBilling || switching || blocked() || visible(receipt)) return;
+    const selected = event.detail?.kind;
+    if (selected === 'factura' && autoGuideEnabled) {
+      begin('factura', false);
+    } else if (opened && kind === 'factura') {
+      setOpen(false);
+    }
   });
   document.getElementById('newRequest')?.addEventListener('click', () => {
     if (opened && kind) { index = 0; render(false, false); }
@@ -400,8 +428,12 @@
   window.addEventListener('pagehide', () => { clearHighlight(); rememberView(); });
   root.hidden = false;
   restoreBubble();
+  refreshGuidePreference();
   const requested = new URL(window.location.href).searchParams.get('guia');
   if (isBilling && requested && Object.hasOwn(guides, requested)) begin(requested);
-  else setOpen(opened, false, false);
+  else if (isBilling && autoGuideEnabled && !visible(receipt)
+      && document.getElementById('tab-factura')?.getAttribute('aria-selected') === 'true') {
+    begin('factura', false);
+  } else setOpen(opened, false, false);
   syncPortal();
 })();
