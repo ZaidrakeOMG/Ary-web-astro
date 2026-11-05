@@ -247,7 +247,11 @@ def test_granted_voice_preference_does_not_request_microphone_again(browser):
         page.locator('#ary-assistant-tour').wait_for(state='visible',timeout=5000)
         assert page.locator('#ary-voice-prompt').is_hidden()
         assert page.evaluate('voiceCalls.permissionRequests')==0
-        assert page.evaluate('voiceCalls.spoken.length')>=1
+        # Mobile browsers must not autoplay or request permission on reload.
+        assert page.evaluate('voiceCalls.spoken.length')==0
+        page.locator('#billing-guide-voice').click()
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert page.evaluate('voiceCalls.permissionRequests')==1
     finally: ctx.close()
 
 
@@ -263,8 +267,27 @@ def test_missing_microphone_keeps_automatic_narration(browser):
         assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
         page.evaluate('lastUtterance.onend()')
         assert page.evaluate('voiceCalls.starts')==0
-        assert 'No se detectó un micrófono' in page.locator('#ary-voice-status').inner_text()
+        assert 'no se encontró un micrófono' in page.locator('#ary-voice-status').inner_text()
         assert 'Paso 1 de' in page.locator('#ary-assistant-count').inner_text()
+    finally: ctx.close()
+
+
+def test_mobile_guide_button_narrates_without_microphone_permission(browser):
+    ctx,page,calls,_=setup(browser)
+    try:
+        page.set_viewport_size({'width':390,'height':844})
+        page.locator('#tab-factura').click()
+        page.evaluate("""Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{voiceCalls.permissionRequests++;throw new DOMException('Permission denied','NotAllowedError')}});0""")
+        page.locator('#billing-guide-voice').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert '72 horas' in page.evaluate('voiceCalls.spoken[0].text')
+        assert page.locator('#billing-guide-voice').get_attribute('aria-pressed')=='true'
+        assert page.locator('#ary-assistant-tour').is_visible()
+        assert 'La guía seguirá hablando' in page.locator('#ary-voice-status').inner_text()
+        page.locator('#ary-assistant-next').click()
+        assert page.evaluate('voiceCalls.spoken.length')==2
+        assert not any(c['path'].endswith('/solicitudes') for c in calls)
     finally: ctx.close()
 
 
@@ -301,7 +324,7 @@ def test_manual_repeat_uses_natural_voice_and_stops_when_closed(browser):
         assert page.evaluate('voiceCalls.spoken.length')==0
         open_chat(page)
         page.locator('#ary-voice-speak').click()
-        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.permissionRequests')==0
         assert page.evaluate('voiceCalls.spoken.length')==1
         assert page.evaluate('voiceCalls.spoken[0].voice')=='es-MX'
         assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
