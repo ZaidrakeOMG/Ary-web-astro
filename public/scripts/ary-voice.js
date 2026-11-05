@@ -311,7 +311,9 @@
     if (!promptFrame) promptFrame = requestAnimationFrame(positionPrompt);
   }
   function showPrompt(message = '') {
-    if (!prompt || readSession(PROMPT_SESSION_KEY) === '1') return;
+    if (!prompt || readSession(PROMPT_SESSION_KEY) === '1'
+        || readLocal('ary-invoice-auto-guide-v1') === '0'
+        || (isBillingPage && !$('ary-assistant-tour')?.hidden && !panel.hidden)) return;
     if (message) {
       const span = prompt.querySelector('.ary-greeting-open span');
       if (span) span.textContent = message;
@@ -401,6 +403,7 @@
   });
 
   window.addEventListener('ary:guide-step', event => {
+    hidePrompt();
     currentGuide = event.detail;
     if (voiceEnabled && voiceSession) narrateGuide(currentGuide);
   });
@@ -446,7 +449,7 @@
   disable.hidden = !voiceEnabled;
 
   async function initBillingVoice() {
-    if (!isBillingPage) return;
+    if (!isBillingPage || readLocal('ary-invoice-auto-guide-v1') === '0') return;
     if (!voiceEnabled) {
       setTimeout(() => showPrompt(), 850);
       return;
@@ -463,6 +466,12 @@
     setTimeout(() => window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } })), 650);
   }
 
+  window.addEventListener('ary:billing-guide-setting', event => {
+    if (!event.detail?.enabled) {
+      hidePrompt();
+      stopAll();
+    }
+  });
   prompt?.querySelector('#ary-voice-enable')?.addEventListener('click', () => enableVoice(true));
   initBillingVoice();
 })();
