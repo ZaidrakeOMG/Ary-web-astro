@@ -136,6 +136,7 @@
       $('tab-'+key).tabIndex = key === name ? 0 : -1;
     });
     if (focus) $('tab-'+name).focus();
+    window.dispatchEvent(new CustomEvent('ary:billing-tab-change', { detail: { kind: name } }));
   }
   ['factura','alta'].forEach(key => $('tab-'+key).addEventListener('click', () => selectTab(key)));
   $('tabs').addEventListener('keydown', event => {
