@@ -158,7 +158,9 @@
   }
   function restoreBubble() {
     const limits = movementLimits();
-    let x = limits.maxX;
+    // In billing desktop, place the helper at the left edge by default so
+    // its panel does not cover form fields or the activation switch.
+    let x = isBilling && viewportWidth() >= 1100 ? limits.minX : limits.maxX;
     let y = limits.maxY;
     try {
       const stored = JSON.parse(localStorage.getItem(POSITION_KEY) || 'null');
