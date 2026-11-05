@@ -366,8 +366,11 @@
     try { localStorage.setItem(AUTO_GUIDE_KEY, autoGuideEnabled ? '1' : '0'); } catch { /* optional preference */ }
     refreshGuidePreference();
     window.dispatchEvent(new CustomEvent('ary:billing-guide-setting', { detail: { enabled: autoGuideEnabled } }));
-    if (autoGuideEnabled) begin('factura');
-    else setOpen(false);
+    if (autoGuideEnabled) {
+      // This user gesture also starts the optional spoken guide on mobile.
+      window.dispatchEvent(new CustomEvent('ary:billing-guide-activated'));
+      begin('factura');
+    } else setOpen(false);
   });
   guideRestart?.addEventListener('click', () => {
     if (autoGuideEnabled) begin('factura');
