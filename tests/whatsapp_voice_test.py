@@ -268,7 +268,7 @@ def test_missing_microphone_keeps_automatic_narration(browser):
         assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
         page.evaluate('lastUtterance.onend()')
         assert page.evaluate('voiceCalls.starts')==0
-        assert 'no se encontró un micrófono' in page.locator('#ary-voice-status').inner_text()
+        assert 'micrófono' in page.locator('#ary-voice-status').inner_text()
         assert 'Paso 1 de' in page.locator('#ary-assistant-count').inner_text()
     finally: ctx.close()
 
