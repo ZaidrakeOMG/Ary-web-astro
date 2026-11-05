@@ -8,6 +8,7 @@
   root.dataset.voiceReady = 'true';
 
   const isBillingPage = Boolean($('form-factura'));
+  const billingVoiceButton = $('billing-guide-voice');
   const PREF_KEY = 'ary-voice-enabled-v2';
   const PROMPT_SESSION_KEY = 'ary-voice-prompt-dismissed-v2';
   const make = (tag, text, className) => {
@@ -67,7 +68,8 @@
   let oldReadOnly = false, sequence = 0, voiceList = [];
   let voiceEnabled = readLocal(PREF_KEY) === '1';
   let voiceSession = voiceEnabled;
-  let microphoneAvailable = true;
+  // Do not start listening until the user has explicitly granted permission.
+  let microphoneAvailable = false;
   let currentGuide = null, lastGuideKey = '', silenceRetries = 0;
 
   function loadVoices() {
@@ -323,45 +325,65 @@
   }
   function hidePrompt() { if (prompt) prompt.hidden = true; }
 
-  async function enableVoice(startGuide = true) {
-    let micMessage = '';
-    try {
-      status.textContent = 'Solicitando permiso del micrófono…';
-      if (Recognition) {
-        try {
-          await requestMicrophonePermission();
-          microphoneAvailable = true;
-        } catch (error) {
-          const missing = error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError'
-            || /requested device not found|device not found|no device/i.test(String(error?.message || ''));
-          if (missing) {
-            microphoneAvailable = false;
-            micMessage = 'No se detectó un micrófono. La guía seguirá hablando; el dictado se activará cuando haya un micrófono disponible.';
-          } else {
-            throw error;
-          }
-        }
-      }
-      voiceEnabled = true; voiceSession = true; consent.checked = true;
-      writeLocal(PREF_KEY, '1'); hidePrompt(); disable.hidden = false;
-      status.textContent = micMessage || 'Ayuda por voz activada. No necesitas volver a autorizarla mientras el navegador conserve el permiso.';
-      if (startGuide && isBillingPage) {
-        window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } }));
-      } else if (chat.open && microphoneAvailable) {
-        startRecognition('chat');
-      }
-      return true;
-    } catch (error) {
-      voiceEnabled = false; voiceSession = false; consent.checked = false; removeLocal(PREF_KEY);
-      const denied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError';
-      status.textContent = denied ? 'El micrófono está bloqueado. Permítelo en los ajustes del sitio para usar dictado.' : 'No se pudo habilitar el micrófono. La ayuda escrita sigue disponible.';
-      showPrompt(denied ? 'El micrófono está bloqueado. Revisa el permiso del sitio y vuelve a tocar aquí.' : 'Toca aquí para volver a intentar activar la ayuda por voz.');
+  function refreshVoiceButton() {
+    if (billingVoiceButton) {
+      billingVoiceButton.textContent = voiceEnabled ? 'Escuchar o repetir paso' : 'Activar guía con voz';
+      billingVoiceButton.setAttribute('aria-pressed', String(voiceEnabled));
+    }
+    speak.textContent = utterance ? 'Detener voz' : (voiceEnabled ? 'Repetir voz' : 'Activar voz');
+  }
+
+  async function enableVoice(startGuide = true, requestMic = true) {
+    if (!synth || !window.SpeechSynthesisUtterance) {
+      status.textContent = 'Este navegador no admite la lectura en voz alta. Puedes seguir la guía escrita.';
       return false;
     }
+    // Enable speaking *before* awaiting a permission request: mobile browsers
+    // require speechSynthesis.speak() to originate from the user's tap.
+    voiceEnabled = true; voiceSession = true; consent.checked = true;
+    writeLocal(PREF_KEY, '1'); hidePrompt(); disable.hidden = false;
+    lastGuideKey = '';
+    refreshVoiceButton();
+    status.textContent = 'Guía con voz activada. Te explicaré cada paso.';
+    if (startGuide && isBillingPage) {
+      if (currentGuide && !panel.hidden && !$('ary-assistant-tour')?.hidden) {
+        narrateGuide(currentGuide, true);
+      } else {
+        window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } }));
+      }
+    } else if (chat.open && !isBillingPage) {
+      speakText(helpText(), { status: 'Ayuda por voz activada.' });
+    }
+
+    if (!requestMic) return true;
+    if (!Recognition) {
+      microphoneAvailable = false;
+      if (!utterance) status.textContent = 'La guía habla, pero este navegador no admite comandos por micrófono. Usa Siguiente y Anterior.';
+      return true;
+    }
+    try {
+      await requestMicrophonePermission();
+      microphoneAvailable = true;
+      if (!utterance) status.textContent = 'Micrófono autorizado. Puedes decir “siguiente”, “anterior” o “repetir” al terminar cada paso.';
+    } catch (error) {
+      microphoneAvailable = false;
+      const denied = error?.name === 'NotAllowedError' || error?.name === 'SecurityError';
+      const missing = error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError';
+      const message = !window.isSecureContext
+        ? 'La lectura funciona. Para usar el micrófono abre esta página con HTTPS.'
+        : denied
+          ? 'La guía seguirá hablando. Para dar comandos por voz, permite el micrófono en los ajustes del navegador.'
+          : missing
+            ? 'La guía seguirá hablando; no se encontró un micrófono disponible.'
+            : 'La guía seguirá hablando. Este teléfono no pudo habilitar los comandos por micrófono.';
+      status.textContent = message;
+    }
+    return true;
   }
   function disableVoice(showStatus = true) {
     voiceEnabled = false; voiceSession = false; consent.checked = false;
     removeLocal(PREF_KEY); lastGuideKey = ''; currentGuide = null; disable.hidden = true; stopAll();
+    refreshVoiceButton();
     if (showStatus) status.textContent = 'Ayuda por voz desactivada. Puedes volver a activarla cuando quieras.';
   }
 
@@ -379,7 +401,8 @@
   speak.addEventListener('click', async () => {
     if (utterance) { stopSpeech(); status.textContent = 'Lectura detenida.'; return; }
     if (!voiceEnabled) {
-      const enabled = await enableVoice(false);
+      // Repeating the spoken step does not require microphone access.
+      const enabled = await enableVoice(false, false);
       if (!enabled) return;
     }
     const after = currentGuide && !$('ary-assistant-tour')?.hidden ? () => startRecognition('guide') : () => { if (chat.open) startRecognition('chat'); };
@@ -393,6 +416,15 @@
       if (!enabled) return;
     }
     voiceSession = true;
+    if (!microphoneAvailable) {
+      try {
+        await requestMicrophonePermission();
+        microphoneAvailable = true;
+      } catch {
+        status.textContent = 'No se permitió el micrófono. La guía hablada sigue disponible.';
+        return;
+      }
+    }
     startRecognition('chat');
   });
 
@@ -448,24 +480,36 @@
   if (!synth || !window.SpeechSynthesisUtterance) speak.disabled = true;
   disable.hidden = !voiceEnabled;
 
-  async function initBillingVoice() {
-    if (!isBillingPage || readLocal('ary-invoice-auto-guide-v1') === '0') return;
-    if (!voiceEnabled) {
-      setTimeout(() => showPrompt(), 850);
-      return;
-    }
-    consent.checked = true; voiceSession = true; disable.hidden = false;
-    const state = await permissionState();
-    if (state === 'denied' || state === 'prompt') {
-      voiceEnabled = false; voiceSession = false; consent.checked = false; disable.hidden = true; removeLocal(PREF_KEY);
-      setTimeout(() => showPrompt(state === 'denied'
-        ? 'El navegador tiene el micrófono bloqueado. Permítelo en los ajustes del sitio y vuelve a tocar aquí.'
-        : 'El navegador necesita confirmar el micrófono otra vez. Toca aquí para continuar.'), 500);
-      return;
-    }
-    setTimeout(() => window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } })), 650);
+  function initBillingVoice() {
+    if (!isBillingPage) return;
+    consent.checked = voiceEnabled;
+    disable.hidden = !voiceEnabled;
+    // Never auto-request microphone or autoplay on page load (iOS user gesture).
+    voiceSession = false;
+    refreshVoiceButton();
+    if (voiceEnabled) status.textContent = 'Toca “Escuchar o repetir paso” para iniciar la voz en este teléfono.';
+    else if (readLocal('ary-invoice-auto-guide-v1') !== '0') setTimeout(() => showPrompt(), 850);
   }
 
+  window.addEventListener('ary:billing-guide-activated', () => {
+    // Dispatched synchronously by “Activar guía”, so iOS can unlock speech.
+    if (voiceEnabled) {
+      voiceSession = true;
+      lastGuideKey = '';
+      refreshVoiceButton();
+    } else {
+      void enableVoice(false);
+    }
+  });
+  billingVoiceButton?.addEventListener('click', () => {
+    if (!voiceEnabled || !voiceSession) {
+      void enableVoice(true);
+    } else if (currentGuide && !panel.hidden && !$('ary-assistant-tour')?.hidden) {
+      narrateGuide(currentGuide, true);
+    } else {
+      window.dispatchEvent(new CustomEvent('ary:guide-start', { detail: { kind: 'factura' } }));
+    }
+  });
   window.addEventListener('ary:billing-guide-setting', event => {
     if (!event.detail?.enabled) {
       hidePrompt();
