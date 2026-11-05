@@ -122,6 +122,10 @@ def main():
                 page = launch(browser, '/facturacion/?guia=' + kind, width, height)
                 expect(page.locator('#ary-assistant-count')).to_have_text(f'Paso 1 de {count}')
                 expect(page.locator('#tab-' + kind)).to_have_attribute('aria-selected', 'true')
+                if width < 1100:
+                    header = page.locator('.site-header').bounding_box()
+                    assistant = page.locator('#ary-assistant-panel').bounding_box()
+                    assert assistant['y'] >= header['y'] + header['height'] - 2, 'La guía tapa el encabezado'
                 for index in range(count):
                     expect(page.locator('#ary-assistant-count')).to_have_text(f'Paso {index+1} de {count}')
                     if index < count - 1:
