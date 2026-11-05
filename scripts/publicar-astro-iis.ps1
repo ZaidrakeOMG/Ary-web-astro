@@ -90,8 +90,17 @@ try {
     & $npm.Source run test:integrity
     if ($LASTEXITCODE -ne 0) { throw 'La verificacion fallo. No se cambiara la ruta de IIS.' }
   }
-  foreach ($name in @('index.html','facturacion\index.html','web.config','verification.json','release.json')) {
+  foreach ($name in @('index.html','facturacion\index.html','web.config','verification.json','release.json','scripts\ary-assistant.js','scripts\ary-voice.js')) {
     if (-not (Test-Path -LiteralPath (Join-Path $stage $name))) { throw "Falta archivo requerido: $name" }
+  }
+  # Never activate a build that lacks the interactive invoice guide.
+  $billingHtml = Get-Content -LiteralPath (Join-Path $stage 'facturacion\index.html') -Raw -Encoding UTF8
+  $guideScript = Get-Content -LiteralPath (Join-Path $stage 'scripts\ary-assistant.js') -Raw -Encoding UTF8
+  if (-not $billingHtml.Contains('id="billing-guide-toggle"') -or
+      -not $billingHtml.Contains('id="billing-guide-restart"') -or
+      -not $guideScript.Contains('ary-invoice-auto-guide-v1') -or
+      -not $guideScript.Contains('ary:billing-tab-change')) {
+    throw 'El paquete no incluye el asistente de facturacion actualizado. No se cambiara IIS. Actualiza GitHub y recompila el sitio.'
   }
   $releaseInfo=Get-Content -LiteralPath (Join-Path $stage 'release.json') -Raw | ConvertFrom-Json
   $expectedDesign=[string]$releaseInfo.design
@@ -205,6 +214,17 @@ try {
     Start-Sleep -Seconds 2
   }
   if (-not $verified) { throw 'La verificacion HTTPS no confirmo la version nueva. Se restaurara la ruta anterior.' }
+  # The home page can look correct while /facturacion still serves an old release.
+  # Verify the real public billing URL and the JavaScript guide independently.
+  $billingCheck = Invoke-WebRequest -Uri ($url+'facturacion/?ary_check='+$stamp) -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
+  if ($billingCheck.StatusCode -ne 200 -or -not $billingCheck.Content.Contains('id="billing-guide-toggle"')) {
+    throw 'IIS sigue entregando una version antigua de /facturacion/. Se restaurara la ruta anterior; revisa el sitio, las reglas de URL y la cache.'
+  }
+  $scriptCheck = Invoke-WebRequest -Uri ($url+'scripts/ary-assistant.js?ary_check='+$stamp) -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
+  if ($scriptCheck.StatusCode -ne 200 -or -not $scriptCheck.Content.Contains('ary-invoice-auto-guide-v1')) {
+    throw 'El navegador no recibe el script actualizado de asistencia. Se restaurara la ruta anterior; revisa reglas o cache de archivos estaticos.'
+  }
+  Write-Host 'Asistente ARY: formulario y script verificados por HTTPS.' -ForegroundColor Green
   try {
     $api=Invoke-WebRequest -Uri ($url+'api/facturacion/opciones') -UseBasicParsing -TimeoutSec 15
     $options=$api.Content | ConvertFrom-Json
