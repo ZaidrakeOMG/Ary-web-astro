@@ -38,7 +38,7 @@
 
 
 /* Asistente guiado opcional: los controles viven dentro de la pestaña Facturar. */
-.billing-guide-control{display:flex;align-items:center;gap:15px;padding:16px 18px;margin:-11px 0 26px;border:1px solid #edd5e4;border-radius:16px;background:linear-gradient(110deg,#fff8fc,#fff);box-shadow:0 5px 18px #5c26400a}
+.billing-guide-control{display:flex;align-items:center;gap:15px;position:relative;z-index:112;padding:16px 18px;margin:-11px 0 26px;border:1px solid #edd5e4;border-radius:16px;background:linear-gradient(110deg,#fff8fc,#fff);box-shadow:0 5px 18px #5c26400a}
 .billing-guide-mascot{flex:0 0 64px;width:64px;height:67px;object-fit:contain;border-radius:12px;background:#fae6f3}
 .billing-guide-info{min-width:0;flex:1}
 .billing-guide-eyebrow{display:block;margin-bottom:5px;font-size:9px;letter-spacing:.11em;color:var(--magenta);font-weight:850}
