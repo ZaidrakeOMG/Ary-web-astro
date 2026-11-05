@@ -113,6 +113,11 @@
     const vw = viewportWidth();
     const vh = window.innerHeight;
     const margin = 12;
+    const header = isBilling ? document.querySelector('.site-header') : null;
+    const headerBottom = header?.getBoundingClientRect().bottom || 0;
+    // Keep the top of the guide below the sticky header on narrow screens.
+    const safeTop = isBilling ? Math.max(margin, Math.min(vh - 124, headerBottom + 10)) : margin;
+    const freeHeight = Math.max(120, vh - safeTop - margin);
     const bubble = launcher.getBoundingClientRect();
     const pw = panel.getBoundingClientRect().width || Math.min(360, vw - 24);
     const leftSpace = bubble.left - margin * 2;
@@ -120,20 +125,20 @@
     let x;
     let y;
     if (leftSpace >= pw || rightSpace >= pw) {
-      panel.style.maxHeight = 'calc(100dvh - 24px)';
+      panel.style.maxHeight = Math.floor(freeHeight) + 'px';
       const ph = panel.getBoundingClientRect().height;
       x = leftSpace >= pw ? bubble.left - pw - margin : bubble.right + margin;
-      y = clamp(bubble.bottom - ph, margin, Math.max(margin, vh - ph - margin));
+      y = clamp(bubble.bottom - ph, safeTop, Math.max(safeTop, vh - ph - margin));
     } else {
-      // On narrow screens the guide opens above or below the bubble, not over it.
-      const above = Math.max(0, bubble.top - margin * 2);
+      // The guide opens above/below its bubble, without covering the site menu.
+      const above = Math.max(0, bubble.top - safeTop - margin);
       const below = Math.max(0, vh - bubble.bottom - margin * 2);
       const placeAbove = above >= below;
-      panel.style.maxHeight = Math.max(100, Math.floor(placeAbove ? above : below)) + 'px';
+      panel.style.maxHeight = Math.floor(Math.min(freeHeight, Math.max(120, placeAbove ? above : below))) + 'px';
       const ph = panel.getBoundingClientRect().height;
       x = clamp(bubble.right - pw, margin, Math.max(margin, vw - pw - margin));
       y = placeAbove ? bubble.top - ph - margin : bubble.bottom + margin;
-      y = clamp(y, margin, Math.max(margin, vh - ph - margin));
+      y = clamp(y, safeTop, Math.max(safeTop, vh - ph - margin));
     }
     panel.style.left = Math.round(x) + 'px';
     panel.style.top = Math.round(y) + 'px';
