@@ -19,6 +19,19 @@ import { core, scriptHash } from '../lib/billing.mjs';
       </div>
       <section id="panel-factura" class="content" role="tabpanel" aria-labelledby="tab-factura" hidden>
         <div class="form-title"><span class="overline">FACTURACIÓN EN LÍNEA</span><h2>Vamos con <em>tu factura.</em></h2><p>Completa los datos de tu compra. Los campos con * son obligatorios.</p></div>
+        <section class="billing-guide-control" id="billing-guide-control" aria-label="Asistente para facturar">
+          <img class="billing-guide-mascot" src="/media/ary-mascota.webp" width="70" height="70" loading="lazy" alt=""/>
+          <div class="billing-guide-info">
+            <span class="billing-guide-eyebrow">ASISTENTE ARY · PASO A PASO</span>
+            <h3>¿Es tu primera factura? Yo te guío.</h3>
+            <p>Te explico cada dato, te señalo dónde capturarlo y, si lo deseas, te lo leo en voz alta.</p>
+            <span id="billing-guide-state" class="billing-guide-state" role="status">Guía automática activada</span>
+          </div>
+          <div class="billing-guide-actions">
+            <button id="billing-guide-toggle" type="button" role="switch" aria-checked="true" aria-controls="ary-assistant-panel" class="billing-guide-toggle">Desactivar guía</button>
+            <button id="billing-guide-restart" type="button" class="billing-guide-restart">Volver a empezar</button>
+          </div>
+        </section>
         <aside class="billing-deadline" id="factura-plazo-aviso" aria-label="Aviso importante del plazo para facturar">
           <div class="billing-deadline-time" aria-hidden="true"><Icon name="clock" size={28}/><span>72<small>HORAS</small></span></div>
           <div class="billing-deadline-copy">
