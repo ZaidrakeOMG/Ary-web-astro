@@ -118,7 +118,7 @@ def main():
             page.keyboard.press('Escape')
             expect(page.locator('#ary-assistant-launcher')).to_be_focused()
             finish(page, f'assistant:home:{width}')
-            for kind, count in [('alta', 8), ('factura', 11)]:
+            for kind, count in [('alta', 8), ('factura', 12)]:
                 page = launch(browser, '/facturacion/?guia=' + kind, width, height)
                 expect(page.locator('#ary-assistant-count')).to_have_text(f'Paso 1 de {count}')
                 expect(page.locator('#tab-' + kind)).to_have_attribute('aria-selected', 'true')
@@ -229,7 +229,7 @@ def main():
         page = launch(browser, '/')
         page.locator('#ary-assistant-launcher').click()
         page.locator('[data-ary-guide="factura"]').click()
-        expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 11')
+        expect(page.locator('#ary-assistant-count')).to_have_text('Paso 1 de 12')
         assert not page._test[1]
         finish(page, 'assistant:home-navigation-starts-selected-guide')
         browser.close()
