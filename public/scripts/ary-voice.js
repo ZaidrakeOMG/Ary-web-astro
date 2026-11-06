@@ -96,6 +96,13 @@
   // inconsistent speechSynthesis implementation or available system voices.
   const preferRecording = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (preferRecording) {
+    const mobileLabel = testVoice.querySelector('.ary-button-label');
+    if (mobileLabel) mobileLabel.textContent = 'Probar voz MP3';
+    const mobileNote = $('billing-guide-voice-note');
+    if (mobileNote) mobileNote.textContent =
+      'Audio móvil MP3: los pasos se reproducen sin permiso al micrófono. Puedes activar el micrófono por separado para comandos, si tu navegador lo permite.';
+  }
   let oldReadOnly = false, sequence = 0, voiceList = [];
   let voiceEnabled = readLocal(PREF_KEY) === '1';
   let voiceSession = voiceEnabled;
