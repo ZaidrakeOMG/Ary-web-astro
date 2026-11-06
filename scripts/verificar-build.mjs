@@ -56,6 +56,18 @@ for(const name of ['ary-assistant.js','ary-chat.js','ary-voice.js']){
  assert.equal(published,canonical,'STOP: published public client script differs from its source: '+name);
 }
 assert.ok(!billing.includes('src="/scripts/'),'STOP: hidden /scripts/ path is referenced by billing');
+const mobileVoiceManifest = JSON.parse(read(path.join(out,'media/ary-guide-audio/manifest.json')));
+for (const [kind, count] of [['factura',12],['alta',8],['prueba',1]]) {
+ for (let index=0; index<count; index++) {
+  const filename=kind+'-'+index+'.mp3';
+  const pathname=path.join(out,'media/ary-guide-audio',filename);
+  assert.ok(fs.existsSync(pathname),'Missing offline mobile audio: '+filename);
+  assert.ok(fs.statSync(pathname).size>1000,'Empty offline mobile audio: '+filename);
+  assert.ok(mobileVoiceManifest.files.includes(filename),'Audio manifest missing: '+filename);
+ }
+}
+assert.ok(read(path.join(out,'client/ary-voice.js')).includes('/media/ary-guide-audio/'),'Phone voice must play offline MP3 guide audio');
+
 
 assert.ok(billing.includes('/ary-assistance.css'),'Missing assistance styles');
 const config=read(path.join(out,'web.config'));const rootConfig=read('web.config');
