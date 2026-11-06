@@ -21,6 +21,29 @@ import { core, scriptHash } from '../lib/billing.mjs';
             <small>WhatsApp: 871 165 1404</small>
           </div>
       </section>
+      <section class="billing-assistant-card" aria-labelledby="billing-assistant-heading">
+        <div class="billing-assistant-intro">
+          <img class="billing-assistant-mascot" src="/media/ary-mascota.webp" width="62" height="62" loading="lazy" alt=""/>
+          <div>
+            <span class="billing-assistant-eyebrow">ASISTENCIA ARY</span>
+            <h2 id="billing-assistant-heading">Tu asistente</h2>
+            <p>Te acompaño con tu factura, paso a paso.</p>
+          </div>
+        </div>
+        <nav class="billing-guide-control billing-guide-compact" id="billing-guide-control" aria-label="Controles de guía de facturación">
+          <span id="billing-guide-state" class="billing-guide-state sr-only" role="status">Guía automática activada</span>
+          <div class="billing-guide-actions">
+            <button id="billing-guide-toggle" type="button" role="switch" aria-checked="true" aria-controls="ary-assistant-panel" class="billing-guide-toggle">Desactivar guía</button>
+            <button id="billing-guide-restart" type="button" class="billing-guide-restart">Volver a empezar</button>
+            <button id="billing-guide-voice" type="button" class="billing-guide-voice" aria-pressed="false" aria-describedby="billing-guide-voice-note"><Icon name="volume" size={18}/><span id="billing-guide-voice-label">Escuchar guía paso a paso</span></button>
+            <small id="billing-guide-voice-note" class="billing-guide-voice-note sr-only">La explicación hablada funciona sin micrófono. Para decir “siguiente” o “repetir”, toca “Permitir micrófono” dentro de la guía; tu teléfono pedirá autorización.</small>
+          </div>
+        </nav>
+        <div class="guide-photo billing-assistant-photo">
+          <img src="/media/ary-3.webp" alt="Estación de servicio ARY" width="1152" height="864" loading="lazy"/>
+          <span>Tu camino nos mueve.</span>
+        </div>
+      </section>
     </aside>
     <section class="billing-shell" aria-label="Trámites de facturación">
       <div id="tabs" class="tabs" role="tablist" aria-label="Elige tu trámite">
@@ -29,15 +52,7 @@ import { core, scriptHash } from '../lib/billing.mjs';
       </div>
       <section id="panel-factura" class="content" role="tabpanel" aria-labelledby="tab-factura" hidden>
         <div class="form-title"><span class="overline">FACTURACIÓN EN LÍNEA</span><h2>Vamos con <em>tu factura.</em></h2><p>Completa los datos de tu compra. Los campos con * son obligatorios.</p></div>
-        <nav class="billing-guide-control billing-guide-compact" id="billing-guide-control" aria-label="Controles de guía de facturación">
-          <span id="billing-guide-state" class="billing-guide-state" role="status">Guía automática activada</span>
-          <div class="billing-guide-actions">
-            <button id="billing-guide-toggle" type="button" role="switch" aria-checked="true" aria-controls="ary-assistant-panel" class="billing-guide-toggle">Desactivar guía</button>
-            <button id="billing-guide-restart" type="button" class="billing-guide-restart">Volver a empezar</button>
-            <button id="billing-guide-voice" type="button" class="billing-guide-voice" aria-pressed="false" aria-describedby="billing-guide-voice-note"><Icon name="volume" size={18}/><span id="billing-guide-voice-label">Escuchar guía paso a paso</span></button>
-            <small id="billing-guide-voice-note" class="billing-guide-voice-note sr-only">La explicación hablada funciona sin micrófono. Para decir “siguiente” o “repetir”, toca “Permitir micrófono” dentro de la guía; tu teléfono pedirá autorización.</small>
-          </div>
-        </nav>
+
         <aside class="billing-deadline" id="factura-plazo-aviso" aria-label="Aviso importante del plazo para facturar">
           <div class="billing-deadline-time" aria-hidden="true"><Icon name="clock" size={28}/><span>72<small>HORAS</small></span></div>
           <div class="billing-deadline-copy">
