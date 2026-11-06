@@ -397,6 +397,8 @@ def test_mobile_iphone_uses_real_mp3_without_speechsynthesis(browser):
             assert response.headers.get('content-type','').startswith('audio/'), name
             assert len(response.body())>1000, name
         page.locator('#tab-factura').tap()
+        assert 'Audio móvil MP3' in page.locator('#billing-guide-voice-note').inner_text()
+        assert 'Probar voz MP3' in page.locator('#ary-voice-test-tts').inner_text()
         page.locator('#billing-guide-voice').tap()
         assert page.evaluate("mobileAudioCalls.played[0].endsWith('/factura-0.mp3')")
         assert page.evaluate('voiceCalls.spoken.length')==0
