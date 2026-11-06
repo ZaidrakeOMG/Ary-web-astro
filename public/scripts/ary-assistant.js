@@ -448,7 +448,10 @@
     if (!isBilling || switching || blocked() || visible(receipt)) return;
     const selected = event.detail?.kind;
     if (selected === 'factura' && autoGuideEnabled) {
-      begin('factura', false);
+      if (viewportWidth() <= 700) {
+        // Don't cover the voice CTA with the sheet on phones; let the customer tap it.
+        kind = 'factura'; index = 0; setOpen(false, false, false);
+      } else begin('factura', false);
     } else if (opened && kind === 'factura') {
       setOpen(false);
     }
@@ -487,10 +490,13 @@
   restoreBubble();
   refreshGuidePreference();
   const requested = new URL(window.location.href).searchParams.get('guia');
+  if (isBilling && viewportWidth() <= 700 && !requested) opened = false;
   if (isBilling && requested && Object.hasOwn(guides, requested)) begin(requested);
   else if (isBilling && autoGuideEnabled && !visible(receipt)
       && document.getElementById('tab-factura')?.getAttribute('aria-selected') === 'true') {
-    begin('factura', false);
+    if (viewportWidth() <= 700) {
+      kind = 'factura'; index = 0; setOpen(false, false, false);
+    } else begin('factura', false);
   } else setOpen(opened, false, false);
   syncPortal();
 })();
