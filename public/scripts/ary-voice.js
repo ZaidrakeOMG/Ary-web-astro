@@ -404,7 +404,7 @@
   }
   function disableVoice(showStatus = true) {
     voiceEnabled = false; voiceSession = false; consent.checked = false;
-    removeLocal(PREF_KEY); lastGuideKey = ''; currentGuide = null; disable.hidden = true; stopAll();
+    removeLocal(PREF_KEY); lastGuideKey = ''; currentGuide = null; disable.hidden = true; microphoneAvailable = false; stopAll();
     refreshVoiceButton();
     if (showStatus) status.textContent = 'Ayuda por voz desactivada. Puedes volver a activarla cuando quieras.';
   }
@@ -435,8 +435,9 @@
   dictate.addEventListener('click', async () => {
     if (recognition) { stopListening(); status.textContent = 'Dictado detenido.'; return; }
     if (!voiceEnabled) {
-      const enabled = await enableVoice(false);
-      if (!enabled) return;
+      // Request permission in this same tap, not after an await.
+      void enableVoice(false, false);
+      if (!voiceEnabled) return;
     }
     voiceSession = true;
     if (!microphoneAvailable) {
@@ -448,7 +449,38 @@
         return;
       }
     }
+    refreshMic();
     startRecognition('chat');
+  });
+
+  mic.addEventListener('click', async () => {
+    if (!Recognition) { status.textContent = 'Este navegador no admite comandos; usa Siguiente y Anterior.'; return; }
+    if (recognition) { stopListening(); status.textContent = 'Micrófono detenido.'; return; }
+    if (!voiceEnabled) {
+      void enableVoice(false, false);
+      if (!voiceEnabled) return;
+    }
+    voiceSession = true;
+    if (!microphoneAvailable) {
+      status.textContent = 'Solicitando permiso al micrófono…';
+      try {
+        await requestMicrophonePermission();
+        microphoneAvailable = true;
+        refreshMic();
+      } catch (error) {
+        microphoneAvailable = false;
+        refreshMic();
+        status.textContent = ['NotAllowedError','SecurityError'].includes(error?.name)
+          ? 'Micrófono denegado. Habilítalo en los ajustes del sitio. La guía puede seguir hablando.'
+          : 'Este teléfono no pudo habilitar el micrófono; la guía hablada sigue disponible.';
+        return;
+      }
+    }
+    if (utterance) {
+      status.textContent = 'Micrófono autorizado. Cuando termine la explicación escucharé tus comandos.';
+      return;
+    }
+    startRecognition(currentGuide && !$('ary-assistant-tour')?.hidden ? 'guide' : 'chat');
   });
 
   disable.addEventListener('click', () => disableVoice(true));
@@ -471,12 +503,12 @@
       after: () => { if (chat.open) startRecognition('chat'); }
     });
   });
-  window.addEventListener('ary:voice-help-requested', async () => {
-    const enabled = voiceEnabled ? true : await enableVoice(false);
-    if (!enabled) return;
+  window.addEventListener('ary:voice-help-requested', () => {
+    if (!voiceEnabled) void enableVoice(false, false);
+    if (!voiceEnabled) return;
     voiceSession = true;
     if (!chat.open) chat.open = true;
-    startRecognition('chat');
+    status.textContent = 'Para dictar tu pregunta toca “Permitir micrófono”, o escribe normalmente.';
   });
 
   $('ary-chat-send')?.addEventListener('click', stopListening, { capture: true });
@@ -497,7 +529,8 @@
   window.visualViewport?.addEventListener('resize', schedulePromptPosition, { passive: true });
 
   if (!Recognition) {
-    dictate.disabled = true;
+    dictate.disabled = true; mic.disabled = true;
+    micLabel.textContent = 'Comandos no disponibles';
     status.textContent = 'Tu navegador puede leer la guía, pero no admite dictado por voz.';
   }
   if (!synth || !window.SpeechSynthesisUtterance) speak.disabled = true;
@@ -511,7 +544,7 @@
     voiceSession = false;
     refreshVoiceButton();
     if (voiceEnabled) status.textContent = 'Toca “Escuchar o repetir paso” para iniciar la voz en este teléfono.';
-    else if (readLocal('ary-invoice-auto-guide-v1') !== '0') setTimeout(() => showPrompt(), 850);
+    else if (readLocal('ary-invoice-auto-guide-v1') !== '0' && window.innerWidth > 700) setTimeout(() => showPrompt(), 850);
   }
 
   window.addEventListener('ary:billing-guide-activated', () => {
@@ -540,5 +573,6 @@
     }
   });
   prompt?.querySelector('#ary-voice-enable')?.addEventListener('click', () => enableVoice(true));
+  refreshMic();
   initBillingVoice();
 })();
