@@ -1,5 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
+  "engine": "piper-neural",
+  "voice": "es_MX-claude-high",
+  "voiceLocale": "es-MX",
   "files": [
     "factura-0.mp3",
     "factura-1.mp3",
