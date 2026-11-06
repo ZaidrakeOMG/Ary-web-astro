@@ -170,8 +170,13 @@ def main():
 
         page = launch(browser)
         begin(page, 'alta')
+        # Mobile panel is a bottom sheet; close it before switching the form tab.
+        page.locator('#ary-assistant-close').click()
         page.locator('#tab-factura').click()
+        expect(page.locator('#ary-assistant-panel')).to_be_hidden()
+        page.locator('#billing-guide-voice').click()
         expect(page.locator('#ary-assistant-kind')).to_have_text('Facturar ticket')
+        page.locator('#ary-assistant-close').click()
         page.locator('#menuButton').click()
         expect(page.locator('#ary-assistant')).to_be_visible()
         page.keyboard.press('Escape')
