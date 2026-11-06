@@ -12,6 +12,17 @@
   const launcher = byId('launcher');
   const home = byId('home');
   const tour = byId('tour');
+  const navigation = tour.querySelector('.ary-assistant-actions');
+  const navigationMarker = document.createComment('ARY navigation position');
+  navigation.before(navigationMarker);
+  function dockMobileNavigation() {
+    if (viewportWidth() <= 700) {
+      if (navigation.parentElement !== panel) panel.insertBefore(navigation, panel.querySelector('.ary-assistant-footer'));
+    } else if (navigation.parentElement !== tour) {
+      navigationMarker.after(navigation);
+    }
+    navigation.hidden = !opened || !kind || blocked();
+  }
   const heading = byId('step');
   const description = byId('description');
   const notice = byId('notice');
@@ -111,6 +122,14 @@
   function positionPanel() {
     if (!opened || panel.hidden || root.hidden) return;
     const vw = viewportWidth();
+    // Fixed mobile bottom sheet; no pixel coordinates that drift on rotation or keyboard resize.
+    if (vw <= 700) {
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.maxHeight = '';
+      panel.style.bottom = '';
+      return;
+    }
     const vh = window.innerHeight;
     const margin = 12;
     const header = isBilling ? document.querySelector('.site-header') : null;
@@ -163,6 +182,15 @@
   }
   function restoreBubble() {
     const limits = movementLimits();
+    if (viewportWidth() <= 700) {
+      root.style.left = '';
+      root.style.top = '';
+      root.style.right = '';
+      root.style.bottom = '';
+      bubbleX = limits.maxX; bubbleY = limits.maxY;
+      positionPanel();
+      return;
+    }
     // In billing desktop, place the helper at the left edge by default so
     // its panel does not cover form fields or the activation switch.
     let x = isBilling && viewportWidth() >= 1100 ? limits.minX : limits.maxX;
@@ -178,6 +206,8 @@
   }
   launcher.addEventListener('pointerdown', (event) => {
     if (blocked() || !event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    // A finger tap is not a drag on phones: iOS pointer capture was swallowing activation.
+    if (viewportWidth() <= 700 && event.pointerType === 'touch') return;
     drag = { id: event.pointerId, startX: event.clientX, startY: event.clientY, x: bubbleX, y: bubbleY, moved: false, lastX: event.clientX, lastY: event.clientY };
     launcher.setPointerCapture?.(event.pointerId);
   });
@@ -232,13 +262,15 @@
   }
 
   function reserveSpace() {
-    const needed = opened && kind && !root.hidden;
+    const needed = opened && kind && !root.hidden && viewportWidth() > 700;
     document.body.classList.toggle('ary-assistant-space', Boolean(needed));
     if (needed) document.body.style.setProperty('--ary-assistant-space', Math.ceil(root.getBoundingClientRect().height + 100) + 'px');
     else document.body.style.removeProperty('--ary-assistant-space');
   }
 
   function revealTarget() {
+    // On phones the sheet covers part of the page; move to the field only by user tap.
+    if (viewportWidth() <= 700) return;
     if (!visible(highlighted) || !opened || root.hidden) return;
     const box = highlighted.getBoundingClientRect();
     const header = document.querySelector('.site-header');
@@ -256,6 +288,7 @@
     clearHighlight();
     home.hidden = Boolean(kind);
     tour.hidden = !kind;
+    dockMobileNavigation();
     if (!kind) { reserveSpace(); positionPanel(); rememberView(); return; }
     const items = guides[kind];
     index = Math.max(0, Math.min(index, items.length - 1));
@@ -309,6 +342,8 @@
   function setOpen(value, restoreFocus = false, focusOnOpen = true) {
     opened = Boolean(value);
     panel.hidden = !opened || blocked();
+    root.classList.toggle('is-open', opened && !blocked());
+    dockMobileNavigation();
     launcher.setAttribute('aria-expanded', String(opened && !blocked()));
     launcher.setAttribute('aria-label', opened ? 'Minimizar ayuda de ARY' : 'Abrir ayuda paso a paso de ARY');
     if (opened) {
@@ -346,6 +381,8 @@
     const modalOpen = blocked();
     launcher.disabled = modalOpen;
     panel.hidden = !opened || modalOpen;
+    root.classList.toggle('is-open', opened && !modalOpen);
+    dockMobileNavigation();
     if (modalOpen) { clearHighlight(); reserveSpace(); return; }
     if (opened && kind) {
       if (visible(receipt)) index = guides[kind].length - 1;
@@ -432,8 +469,12 @@
   window.addEventListener('resize', () => {
     cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(() => {
-      const limits = movementLimits();
-      moveBubble(clamp(bubbleX, limits.minX, limits.maxX), clamp(bubbleY, limits.minY, limits.maxY));
+      if (viewportWidth() <= 700) restoreBubble();
+      else {
+        const limits = movementLimits();
+        moveBubble(clamp(bubbleX, limits.minX, limits.maxX), clamp(bubbleY, limits.minY, limits.maxY));
+      }
+      dockMobileNavigation();
       reserveSpace();
     });
   }, { passive: true });
