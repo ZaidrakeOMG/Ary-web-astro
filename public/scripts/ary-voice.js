@@ -91,7 +91,11 @@
     } catch { /* API not available on this browser */ }
   }
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let utterance = null, recognition = null, recognitionMode = '';
+  let utterance = null, recording = null, recognition = null, recognitionMode = '';
+  // On phones, ship real MP3 audio so playback never depends on Safari's
+  // inconsistent speechSynthesis implementation or available system voices.
+  const preferRecording = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   let oldReadOnly = false, sequence = 0, voiceList = [];
   let voiceEnabled = readLocal(PREF_KEY) === '1';
   let voiceSession = voiceEnabled;
@@ -121,6 +125,12 @@
   synth?.addEventListener?.('voiceschanged', loadVoices);
 
   function stopSpeech() {
+    const oldAudio = recording;
+    recording = null;
+    if (oldAudio) {
+      oldAudio.onended = null; oldAudio.onerror = null;
+      try { oldAudio.pause(); oldAudio.removeAttribute('src'); oldAudio.load(); } catch { /* best effort */ }
+    }
     const old = utterance; utterance = null;
     if (old) { old.onend = null; old.onerror = null; }
     // iOS Safari may ignore the first utterance after an unnecessary cancel().
@@ -149,9 +159,53 @@
     refreshMic();
   }
   function stopAll(message = '') {
-    const active = Boolean(utterance || recognition);
+    const active = Boolean(utterance || recording || recognition);
     stopSpeech(); stopListening();
     if (message || active) status.textContent = message || 'Voz detenida.';
+  }
+
+  function playRecorded(name, index, options = {}) {
+    if (!preferRecording || !window.Audio) return false;
+    stopListening(); stopSpeech(); prepareAudioPlayback();
+    const filename = name === 'prueba' ? 'prueba-0.mp3' : name + '-' + index + '.mp3';
+    const url = '/media/ary-guide-audio/' + filename;
+    let player;
+    try {
+      player = new Audio(url);
+      player.preload = 'auto'; player.volume = 1;
+    } catch { return false; }
+    recording = player;
+    const fallback = () => {
+      if (recording !== player) return;
+      recording = null;
+      speakLabel.textContent = 'Repetir voz';
+      speak.setAttribute('aria-pressed','false');
+      if (options.text) speakText(options.text, {status:'Intentando voz del teléfono como alternativa.',after:options.after});
+      else status.textContent = 'No se pudo cargar el audio. Revisa que la página esté actualizada.';
+    };
+    player.onplay = () => {
+      if (recording === player) status.textContent = options.status || 'Reproduciendo el audio compatible con teléfonos.';
+    };
+    player.onended = () => {
+      if (recording !== player) return;
+      recording = null;
+      speakLabel.textContent = 'Repetir voz';
+      speak.setAttribute('aria-pressed','false');
+      options.after?.();
+    };
+    player.onerror = fallback;
+    speakLabel.textContent = 'Detener voz';
+    speak.setAttribute('aria-pressed','true');
+    status.textContent = 'Cargando audio en español para tu teléfono…';
+    // .play() happens synchronously in the user's touch handler.
+    try {
+      const attempt = player.play();
+      if (attempt?.catch) attempt.catch(fallback);
+      return true;
+    } catch {
+      fallback();
+      return false;
+    }
   }
 
   function speakText(text, options = {}) {
@@ -242,10 +296,13 @@
       ? 'Cuando termine de hablar, puedes decir: siguiente, anterior, repetir, ir al campo o cerrar ayuda.'
       : 'Cuando estés listo, di siguiente para continuar.';
     const text = [detail.title, detail.text, detail.notice, commandHint].filter(Boolean).join('. ');
-    speakText(text, {
-      status: `Paso ${detail.index + 1} de ${detail.total}. Te estoy guiando por voz.`,
-      after: () => startRecognition('guide')
-    });
+    const options = {
+      status: `Paso ${detail.index + 1} de ${detail.total}. Reproduciendo audio para teléfono.`,
+      after: () => startRecognition('guide'),
+      text
+    };
+    if (playRecorded(detail.kind, detail.index, options)) return;
+    speakText(text, options);
   }
 
   function normalized(text) {
@@ -412,12 +469,12 @@
       if(caption) caption.textContent=voiceEnabled?'Escuchar o repetir paso':'Escuchar guía paso a paso';
       billingVoiceButton.setAttribute('aria-pressed',String(voiceEnabled&&voiceSession));
     }
-    speakLabel.textContent=utterance?'Detener voz':(voiceEnabled?'Repetir voz':'Activar voz');
+    speakLabel.textContent=(utterance||recording)?'Detener voz':(voiceEnabled?'Repetir voz':'Activar voz');
     refreshMic();
   }
 
   async function enableVoice(startGuide = true, requestMic = false) {
-    if (!synth || !window.SpeechSynthesisUtterance) {
+    if ((!synth || !window.SpeechSynthesisUtterance) && !preferRecording) {
       status.textContent = 'Este navegador no admite la lectura en voz alta. Puedes seguir la guía escrita.';
       return false;
     }
@@ -528,13 +585,18 @@
       if (!voiceEnabled) return;
     }
     voiceSession = true;
-    speakText('Hola, soy tu asistente ARY. Estoy probando la voz del teléfono.', {
-      status: 'Prueba de voz iniciada. Si escuchaste los pitidos pero no esta frase, Safari está fallando al sintetizar la voz.',
+    const sample = 'Hola, soy tu asistente ARY. Estoy probando la voz del teléfono.';
+    if (playRecorded('prueba', 0, {
+      status: 'Reproduciendo una pista MP3. Esta prueba no usa la voz de Safari ni el micrófono.',
+      text: sample
+    })) return;
+    speakText(sample, {
+      status: 'Prueba de voz iniciada por el navegador.',
     });
   });
 
   speak.addEventListener('click', () => {
-    if (utterance) { stopSpeech(); status.textContent = 'Lectura detenida.'; return; }
+    if (utterance || recording) { stopSpeech(); status.textContent = 'Lectura detenida.'; return; }
     if (!voiceEnabled) {
       // Never await before speechSynthesis.speak(): iOS needs the same tap.
       void enableVoice(false, false);
@@ -542,6 +604,10 @@
     }
     voiceSession = true;
     const after = currentGuide && !$('ary-assistant-tour')?.hidden ? () => startRecognition('guide') : () => { if (chat.open) startRecognition('chat'); };
+    if (currentGuide && !$('ary-assistant-tour')?.hidden) {
+      narrateGuide(currentGuide, true);
+      return;
+    }
     speakText(helpText(), { status: 'Repitiendo la ayuda.', after });
   });
 
@@ -576,7 +642,7 @@
     voiceSession = true;
     // On an iPhone this tap is a trusted audio gesture. Speak before opening
     // the microphone permission prompt, not after its asynchronous response.
-    if (!microphoneAvailable && currentGuide && !utterance && !$('ary-assistant-tour')?.hidden) {
+    if (!microphoneAvailable && currentGuide && !utterance && !recording && !$('ary-assistant-tour')?.hidden) {
       narrateGuide(currentGuide, true);
     }
     if (!microphoneAvailable) {
@@ -594,7 +660,7 @@
         return;
       }
     }
-    if (utterance) {
+    if (utterance || recording) {
       status.textContent = 'Micrófono autorizado. Cuando termine la explicación escucharé tus comandos.';
       return;
     }
@@ -633,7 +699,7 @@
   chat.querySelector('.ary-chat-clear')?.addEventListener('click', () => stopAll('Chat borrado. La ayuda por voz sigue activada.'), { capture: true });
   chat.addEventListener('toggle', () => {
     if (!chat.open && recognitionMode === 'chat') stopListening();
-    else if (chat.open && voiceEnabled && voiceSession && !utterance && !recognition) setTimeout(() => startRecognition('chat'), 250);
+    else if (chat.open && voiceEnabled && voiceSession && !utterance && !recording && !recognition) setTimeout(() => startRecognition('chat'), 250);
   });
 
   const visibility = new MutationObserver(() => {
@@ -651,7 +717,7 @@
     micLabel.textContent = 'Comandos no disponibles';
     status.textContent = 'Tu navegador puede leer la guía, pero no admite dictado por voz.';
   }
-  if (!synth || !window.SpeechSynthesisUtterance) {
+  if ((!synth || !window.SpeechSynthesisUtterance) && !preferRecording) {
     speak.disabled = true;
     testVoice.disabled = true;
   }
