@@ -204,7 +204,7 @@
       return true;
     } catch {
       fallback();
-      return false;
+      return true;
     }
   }
 
