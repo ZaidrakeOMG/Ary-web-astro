@@ -185,6 +185,35 @@ def open_chat(page):
     page.locator('#ary-voice-dictate').wait_for(state='visible')
 
 
+def test_oils_notice_is_only_in_sidebar_and_guide_is_compact(browser):
+    for mobile in (False, True):
+        ctx,page,calls,_=setup(browser,mobile=mobile)
+        try:
+            page.locator('#tab-factura').click()
+            assert page.locator('.billing-aside .billing-oils').count()==1
+            assert page.locator('#panel-factura .billing-oils').count()==0
+            assert page.locator('.billing-guide').count()==0
+            assert page.locator('.billing-help').count()==0
+            assert page.locator('.billing-guide-mascot').count()==0
+            assert page.locator('.billing-guide-compact').count()==1
+            assert page.locator('#billing-guide-toggle').is_visible()
+            assert page.locator('#billing-guide-voice').is_visible()
+            assert page.locator('#billing-guide-restart').count()==1
+            assert page.locator('.billing-oils strong').inner_text()=='¿Necesitas facturar aceites?'
+            assert 'Los aceites no se facturan desde este portal' in page.locator('.billing-oils').inner_text()
+            link=page.locator('.billing-oils-whatsapp')
+            assert link.get_attribute('href').startswith('https://wa.me/528711651404')
+            assert link.get_attribute('target')=='_blank'
+            assert 'Se aplica el límite que venza primero.' not in page.locator('body').inner_text()
+            if mobile:
+                aside=page.locator('.billing-oils').bounding_box()
+                width=page.evaluate('window.innerWidth')
+                assert aside['x']>=0 and aside['x']+aside['width']<=width+2
+            assert not any(c['path'].endswith('/solicitudes') for c in calls)
+        finally:
+            ctx.close()
+
+
 def test_invoice_guide_opens_on_entry_and_can_be_disabled(browser):
     ctx,page,calls,_=setup(browser)
     try:
