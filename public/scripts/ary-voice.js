@@ -158,42 +158,71 @@
       return false;
     }
     stopListening(); stopSpeech(); loadVoices();
-    prepareAudioPlayback();
-    const u = new SpeechSynthesisUtterance(clean); utterance = u;
-    u.lang = 'es-MX'; u.rate = 0.94; u.pitch = 1.02; u.volume = 1;
-    const voice = bestSpanishVoice();
-    if (voice) u.voice = voice;
-    u.onstart = () => {
-      if (utterance !== u) return;
-      status.textContent = options.status || 'Reproduciendo la explicación. Si no escuchas, revisa el volumen multimedia y el modo silencio del iPhone.';
-    };
-    u.onend = () => {
-      if (utterance !== u) return;
-      utterance = null;
-       speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
-      options.after?.();
-    };
-    u.onerror = event => {
-      if (utterance !== u) return;
-      utterance = null;
-      speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
-      const code = String(event?.error || '');
-      status.textContent = code === 'not-allowed'
-        ? 'Safari bloqueó el audio. Toca “Probar sonido” para iniciarlo directamente.'
-        : 'No se pudo reproducir la voz' + (code ? ' (' + code + ')' : '') + '. Toca “Probar sonido” o usa la guía escrita.';
-    };
-    speakLabel.textContent = 'Detener voz'; speak.setAttribute('aria-pressed', 'true');
-    status.textContent = options.status || 'Te estoy guiando por voz.';
-    try {
-      // Speak first inside the trusted tap; Safari may drop delayed calls.
-      synth.speak(u);
-      if (synth.paused) synth.resume();
-      return true;
-    } catch {
-      stopSpeech();
-      status.textContent = 'No se pudo iniciar la voz. Toca “Probar sonido” para reintentar.';
-      return false;
+    const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const segments = [];
+    if (ios && clean.length > 180) {
+      // Long Web Speech utterances may stall or be cut short on iOS.
+      let piece = '';
+      for (const word of clean.split(' ')) {
+        if (piece && piece.length + word.length + 1 > 170) {
+          segments.push(piece); piece = '';
+        }
+        piece += (piece ? ' ' : '') + word;
+      }
+      if (piece) segments.push(piece);
+    } else {
+      segments.push(clean);
     }
+    const voice = bestSpanishVoice() || voiceList.find(item => item.default) || voiceList[0] || null;
+    let position = 0;
+    const nextPart = () => {
+      if (position >= segments.length) {
+        utterance = null;
+        speakLabel.textContent = 'Repetir voz';
+        speak.setAttribute('aria-pressed', 'false');
+        options.after?.();
+        return true;
+      }
+      // Each part is held in utterance to prevent Safari garbage collection.
+      const u = new SpeechSynthesisUtterance(segments[position++]);
+      utterance = u;
+      u.lang = voice?.lang || 'es-MX';
+      u.rate = 0.94; u.pitch = 1.02; u.volume = 1;
+      if (voice) u.voice = voice;
+      u.onstart = () => {
+        if (utterance !== u) return;
+        status.textContent = options.status || 'Reproduciendo. Si no escuchas, sube el volumen multimedia o desactiva el modo silencio del iPhone.';
+      };
+      u.onend = () => {
+        if (utterance !== u) return;
+        nextPart();
+      };
+      u.onerror = event => {
+        if (utterance !== u) return;
+        utterance = null;
+        speakLabel.textContent = 'Repetir voz';
+        speak.setAttribute('aria-pressed', 'false');
+        const code = String(event?.error || '');
+        status.textContent = code === 'not-allowed'
+          ? 'Safari bloqueó el audio. Toca “Probar sonido” para iniciarlo directamente.'
+          : 'No se pudo reproducir la voz' + (code ? ' (' + code + ')' : '') + '. Toca “Probar sonido” o usa la guía escrita.';
+      };
+      speakLabel.textContent = 'Detener voz';
+      speak.setAttribute('aria-pressed', 'true');
+      status.textContent = options.status || 'Te estoy guiando por voz.';
+      try {
+        prepareAudioPlayback();
+        synth.speak(u); // first call stays within the trusted mobile tap
+        if (synth.paused) synth.resume();
+        return true;
+      } catch {
+        stopSpeech();
+        status.textContent = 'No se pudo iniciar la voz. Toca “Probar sonido” para reintentar.';
+        return false;
+      }
+    };
+    return nextPart();
   }
 
   function guideKey(detail) {
