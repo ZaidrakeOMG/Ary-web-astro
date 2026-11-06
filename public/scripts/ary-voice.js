@@ -501,6 +501,11 @@
       if (!voiceEnabled) return;
     }
     voiceSession = true;
+    // On an iPhone this tap is a trusted audio gesture. Speak before opening
+    // the microphone permission prompt, not after its asynchronous response.
+    if (!microphoneAvailable && currentGuide && !utterance && !$('ary-assistant-tour')?.hidden) {
+      narrateGuide(currentGuide, true);
+    }
     if (!microphoneAvailable) {
       status.textContent = 'Solicitando permiso al micrófono…';
       try {
