@@ -159,6 +159,17 @@
       y = placeAbove ? bubble.top - ph - margin : bubble.bottom + margin;
       y = clamp(y, safeTop, Math.max(safeTop, vh - ph - margin));
     }
+    // Facturación now shows the voice/guide switches in the left sidebar.
+    // Keep the floating explanation outside that sidebar, otherwise an open
+    // guide intercepts taps on “Desactivar guía” and “Volver a empezar”.
+    if (isBilling && vw > 700) {
+      const aside = document.querySelector('.billing-aside');
+      const invoiceTab = document.getElementById('tab-factura');
+      const rect = aside?.getBoundingClientRect();
+      if (rect && rect.width && invoiceTab?.getAttribute('aria-selected') === 'true') {
+        x = clamp(Math.max(x, rect.right + margin), margin, Math.max(margin, vw - pw - margin));
+      }
+    }
     panel.style.left = Math.round(x) + 'px';
     panel.style.top = Math.round(y) + 'px';
   }
@@ -191,9 +202,9 @@
       positionPanel();
       return;
     }
-    // In billing desktop, place the helper at the left edge by default so
-    // its panel does not cover form fields or the activation switch.
-    let x = isBilling && viewportWidth() >= 1100 ? limits.minX : limits.maxX;
+    // With the guide controls in the sidebar, start the draggable bubble
+    // on the right. Users can still move it and their saved position persists.
+    let x = limits.maxX;
     let y = limits.maxY;
     try {
       const stored = JSON.parse(localStorage.getItem(POSITION_KEY) || 'null');
