@@ -388,7 +388,7 @@ def test_iphone_audio_playback_and_test_sound(browser):
         assert "Hola, soy tu asistente ARY" in page.evaluate("voiceCalls.spoken.at(-1).text")
         assert page.evaluate("voiceCalls.permissionRequests")==0
         page.evaluate("lastUtterance.onstart()")
-        assert "Probando el sonido" in page.locator('#ary-voice-status').inner_text()
+        assert "Prueba de voz iniciada" in page.locator('#ary-voice-status').inner_text()
         page.evaluate("lastUtterance.onerror({error:'not-allowed'})")
         assert "Safari bloqueó la voz" in page.locator('#ary-voice-status').inner_text()
         assert not any(c['path'].endswith('/solicitudes') for c in calls)
