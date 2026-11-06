@@ -21,3 +21,6 @@
 /* Distinct diagnostic sound button: accessible from the mobile bottom sheet. */
 .ary-voice-test{border-color:var(--magenta);color:var(--magenta)}
 @media(max-width:700px){.ary-voice-test{width:100%;min-height:50px}}
+
+.ary-voice-test-tts{border-color:var(--magenta);color:var(--magenta)}
+@media(max-width:700px){.ary-voice-test-tts{min-height:50px}}
