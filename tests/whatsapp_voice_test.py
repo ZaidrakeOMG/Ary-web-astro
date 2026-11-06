@@ -45,9 +45,22 @@ Object.defineProperty(navigator,'permissions',{configurable:true,value:{
 """
 
 
-def setup(browser,state='REVISION_REQUERIDA',failure=None,voice=True,paused=False,mobile=False):
-    ctx=browser.new_context(viewport={'width':390 if mobile else 1280,'height':844 if mobile else 900},is_mobile=mobile,has_touch=mobile)
-    ctx.add_init_script(VOICE_MOCK+('' if voice else '\nwindow.SpeechRecognition=undefined;'))
+def setup(browser,state='REVISION_REQUERIDA',failure=None,voice=True,paused=False,mobile=False,ios=False):
+    options={'viewport':{'width':390 if mobile else 1280,'height':844 if mobile else 900},'is_mobile':mobile,'has_touch':mobile}
+    if ios:
+        options['user_agent']='Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Version/18.6 Mobile/15E148 Safari/604.1'
+    ctx=browser.new_context(**options)
+    nativeAudioMock = """
+window.mobileAudioCalls={played:[],paused:0};
+window.Audio=class {
+  constructor(url){this.src=url;this.volume=1;window.mobilePlayer=this;}
+  play(){mobileAudioCalls.played.push(this.src);this.onplay?.();return Promise.resolve();}
+  pause(){mobileAudioCalls.paused++;}
+  removeAttribute(name){if(name==='src')this.src='';}
+  load(){}
+};
+"""
+    ctx.add_init_script(VOICE_MOCK+('' if voice else '\nwindow.SpeechRecognition=undefined;')+(nativeAudioMock if ios else ''))
     calls=[]; details=dict(CAPTURE)
     def api(route):
         request=route.request; path=urlparse(request.url).path
@@ -369,6 +382,30 @@ window.AudioContext=ToneContext;0""")
         page.locator('#ary-voice-test-tts').tap()
         assert page.evaluate('voiceCalls.spoken.length')==initial+1
         assert 'Hola, soy tu asistente ARY' in page.evaluate('voiceCalls.spoken.at(-1).text')
+        assert page.evaluate('voiceCalls.permissionRequests')==0
+        assert not any(c['path'].endswith('/solicitudes') for c in calls)
+    finally: ctx.close()
+
+
+def test_mobile_iphone_uses_real_mp3_without_speechsynthesis(browser):
+    ctx,page,calls,_=setup(browser,mobile=True,ios=True)
+    try:
+        # Actual static media is shipped; the request must succeed without an API.
+        for name in ['factura-0.mp3','factura-11.mp3','alta-0.mp3','prueba-0.mp3']:
+            response=page.request.get(BASE+'/media/ary-guide-audio/'+name)
+            assert response.status==200, name
+            assert response.headers.get('content-type','').startswith('audio/'), name
+            assert len(response.body())>1000, name
+        page.locator('#tab-factura').tap()
+        page.locator('#billing-guide-voice').tap()
+        assert page.evaluate("mobileAudioCalls.played[0].endsWith('/factura-0.mp3')")
+        assert page.evaluate('voiceCalls.spoken.length')==0
+        assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='true'
+        page.locator('#ary-assistant-next').tap()
+        assert page.evaluate("mobileAudioCalls.played.at(-1).endsWith('/factura-1.mp3')")
+        assert page.evaluate('mobileAudioCalls.paused')>=1
+        page.locator('#ary-voice-test-tts').tap()
+        assert page.evaluate("mobileAudioCalls.played.at(-1).endsWith('/prueba-0.mp3')")
         assert page.evaluate('voiceCalls.permissionRequests')==0
         assert not any(c['path'].endswith('/solicitudes') for c in calls)
     finally: ctx.close()
