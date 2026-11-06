@@ -44,8 +44,8 @@ Object.defineProperty(navigator,'permissions',{configurable:true,value:{
 """
 
 
-def setup(browser,state='REVISION_REQUERIDA',failure=None,voice=True,paused=False):
-    ctx=browser.new_context(viewport={'width':1280,'height':900})
+def setup(browser,state='REVISION_REQUERIDA',failure=None,voice=True,paused=False,mobile=False):
+    ctx=browser.new_context(viewport={'width':390 if mobile else 1280,'height':844 if mobile else 900},is_mobile=mobile,has_touch=mobile)
     ctx.add_init_script(VOICE_MOCK+('' if voice else '\nwindow.SpeechRecognition=undefined;'))
     calls=[]; details=dict(CAPTURE)
     def api(route):
@@ -220,13 +220,15 @@ def test_enable_voice_narrates_guide_and_listens_for_next(browser):
     try:
         page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
         page.locator('#ary-voice-enable').click()
-        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.permissionRequests')==0
         page.locator('#ary-assistant-tour').wait_for(state='visible')
         assert 'Facturar ticket' in page.locator('#ary-assistant-kind').inner_text()
         assert page.evaluate('voiceCalls.spoken.length')==1
         assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
         assert page.evaluate('voiceCalls.spoken[0].rate') < 1
         assert page.evaluate('voiceCalls.starts')==0
+        page.locator('#ary-voice-mic').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
         page.evaluate('lastUtterance.onend()')
         assert page.evaluate('voiceCalls.starts')==1
         page.evaluate("const result=[{transcript:'siguiente'}]; result.isFinal=true; lastRecognition.onresult({results:[result]});")
@@ -242,6 +244,8 @@ def test_granted_voice_preference_does_not_request_microphone_again(browser):
     try:
         page.locator('#ary-voice-prompt').wait_for(state='visible',timeout=5000)
         page.locator('#ary-voice-enable').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==0
+        page.locator('#ary-voice-mic').click()
         assert page.evaluate('voiceCalls.permissionRequests')==1
         page.reload(wait_until='networkidle')
         page.locator('#ary-assistant-tour').wait_for(state='visible',timeout=5000)
@@ -252,7 +256,7 @@ def test_granted_voice_preference_does_not_request_microphone_again(browser):
         page.locator('#tab-factura').click()
         page.locator('#billing-guide-voice').click()
         assert page.evaluate('voiceCalls.spoken.length')==1
-        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.permissionRequests')==0
     finally: ctx.close()
 
 
@@ -263,8 +267,10 @@ def test_missing_microphone_keeps_automatic_narration(browser):
         page.evaluate("""Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{voiceCalls.permissionRequests++;throw new DOMException('Requested device not found','NotFoundError')}});0""")
         page.locator('#ary-voice-enable').click()
         page.locator('#ary-assistant-tour').wait_for(state='visible')
-        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.permissionRequests')==0
         assert page.evaluate('voiceCalls.spoken.length')==1
+        page.locator('#ary-voice-mic').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
         assert 'Natural' in page.evaluate('voiceCalls.spoken[0].voiceName')
         page.evaluate('lastUtterance.onend()')
         assert page.evaluate('voiceCalls.starts')==0
@@ -280,16 +286,44 @@ def test_mobile_guide_button_narrates_without_microphone_permission(browser):
         page.locator('#tab-factura').click()
         page.evaluate("""Object.defineProperty(navigator.mediaDevices,'getUserMedia',{configurable:true,value:async()=>{voiceCalls.permissionRequests++;throw new DOMException('Permission denied','NotAllowedError')}});0""")
         page.locator('#billing-guide-voice').click()
-        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.permissionRequests')==0
         assert page.evaluate('voiceCalls.spoken.length')==1
+        page.locator('#ary-voice-mic').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
         assert '72 horas' in page.evaluate('voiceCalls.spoken[0].text')
         assert page.locator('#billing-guide-voice').get_attribute('aria-pressed')=='true'
         assert page.locator('#ary-assistant-tour').is_visible()
-        assert 'La guía seguirá hablando' in page.locator('#ary-voice-status').inner_text()
+        assert 'Micrófono denegado' in page.locator('#ary-voice-status').inner_text()
         page.locator('#ary-assistant-next').click()
         assert page.evaluate('voiceCalls.spoken.length')==2
         assert not any(c['path'].endswith('/solicitudes') for c in calls)
     finally: ctx.close()
+
+
+def test_mobile_touch_launcher_and_bottom_sheet(browser):
+    for width in (320,390):
+        ctx,page,calls,_=setup(browser,mobile=True)
+        try:
+            page.set_viewport_size({'width':width,'height':740 if width==320 else 844})
+            page.locator('#tab-factura').tap()
+            page.locator('#ary-assistant-panel').wait_for(state='visible')
+            panel=page.locator('#ary-assistant-panel').bounding_box()
+            header=page.locator('.site-header').bounding_box()
+            assert panel['x']>=0 and panel['x']+panel['width']<=width+2
+            assert panel['y']>=header['y']+header['height']-2
+            assert page.locator('#ary-assistant-next').is_visible()
+            assert page.locator('#ary-assistant-launcher').is_hidden()
+            page.locator('#billing-guide-voice').tap()
+            assert page.evaluate('voiceCalls.spoken.length')==1
+            assert page.evaluate('voiceCalls.permissionRequests')==0
+            page.locator('#ary-assistant-next').tap()
+            assert 'Paso 2 de' in page.locator('#ary-assistant-count').inner_text()
+            page.locator('#ary-assistant-field').tap()
+            assert page.locator('#ary-assistant-panel').is_hidden()
+            page.locator('#ary-assistant-launcher').tap()
+            assert 'Paso 2 de' in page.locator('#ary-assistant-count').inner_text()
+            assert not any(c['path'].endswith('/solicitudes') for c in calls)
+        finally: ctx.close()
 
 
 def test_success_remembers_reusable_invoice_fields_only(browser):
