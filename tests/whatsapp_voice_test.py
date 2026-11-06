@@ -358,35 +358,6 @@ def test_microphone_consent_tap_starts_guide_audio(browser):
     finally: ctx.close()
 
 
-def test_tone_test_is_separate_from_voice_and_microphone(browser):
-    ctx,page,calls,_=setup(browser,mobile=True)
-    try:
-        page.locator('#tab-factura').tap()
-        page.locator('#billing-guide-voice').tap()
-        page.evaluate("""window.toneChecks={starts:0,resumes:0,connections:0};
-class ToneContext {
-  constructor(){this.currentTime=0;this.destination={};}
-  createOscillator(){return {type:'sine',frequency:{value:0},connect(){},start(){toneChecks.starts++},stop(){}};}
-  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){toneChecks.connections++}};}
-  resume(){toneChecks.resumes++;return Promise.resolve();}
-  close(){return Promise.resolve();}
-}
-window.AudioContext=ToneContext;0""")
-        initial=page.evaluate('voiceCalls.spoken.length')
-        page.locator('#ary-voice-test').tap()
-        assert page.evaluate('toneChecks.starts')==2
-        assert page.evaluate('toneChecks.resumes')==1
-        assert page.evaluate('voiceCalls.spoken.length')==initial
-        assert page.evaluate('voiceCalls.permissionRequests')==0
-        assert 'dos pitidos' in page.locator('#ary-voice-status').inner_text()
-        page.locator('#ary-voice-test-tts').tap()
-        assert page.evaluate('voiceCalls.spoken.length')==initial+1
-        assert 'Hola, soy tu asistente ARY' in page.evaluate('voiceCalls.spoken.at(-1).text')
-        assert page.evaluate('voiceCalls.permissionRequests')==0
-        assert not any(c['path'].endswith('/solicitudes') for c in calls)
-    finally: ctx.close()
-
-
 def test_mobile_iphone_uses_real_mp3_without_speechsynthesis(browser):
     ctx,page,calls,_=setup(browser,mobile=True,ios=True)
     try:
@@ -398,38 +369,22 @@ def test_mobile_iphone_uses_real_mp3_without_speechsynthesis(browser):
             assert len(response.body())>1000, name
         page.locator('#tab-factura').tap()
         assert 'Audio móvil MP3' in page.locator('#billing-guide-voice-note').inner_text()
-        assert 'Probar voz MP3' in page.locator('#ary-voice-test-tts').inner_text()
+        assert page.locator('#ary-voice-test-tts').count()==0
+        assert page.locator('#ary-voice-test').count()==0
+        assert page.locator('#ary-voice-speak').is_visible()
         page.locator('#billing-guide-voice').tap()
-        assert page.evaluate("mobileAudioCalls.played[0].endsWith('/factura-0.mp3')")
+        assert '/factura-0.mp3?voice=neural-claude-2' in page.evaluate("mobileAudioCalls.played[0]")
         assert page.evaluate('voiceCalls.spoken.length')==0
         assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='true'
         page.locator('#ary-assistant-next').tap()
-        assert page.evaluate("mobileAudioCalls.played.at(-1).endsWith('/factura-1.mp3')")
+        assert '/factura-1.mp3?voice=neural-claude-2' in page.evaluate("mobileAudioCalls.played.at(-1)")
         assert page.evaluate('mobileAudioCalls.paused')>=1
-        page.locator('#ary-voice-test-tts').tap()
-        assert page.evaluate("mobileAudioCalls.played.at(-1).endsWith('/prueba-0.mp3')")
+        # Repeating is still available without extra debug/test buttons.
+        page.evaluate("mobilePlayer.onended()")
+        page.locator('#ary-voice-speak').tap()
+        assert '/factura-1.mp3?voice=neural-claude-2' in page.evaluate("mobileAudioCalls.played.at(-1)")
+        assert page.evaluate("mobileAudioCalls.played.length")==3
         assert page.evaluate('voiceCalls.permissionRequests')==0
-        assert not any(c['path'].endswith('/solicitudes') for c in calls)
-    finally: ctx.close()
-
-
-def test_iphone_audio_playback_and_test_sound(browser):
-    ctx,page,calls,_=setup(browser,mobile=True)
-    try:
-        page.locator('#tab-factura').tap()
-        assert page.evaluate("navigator.audioSession.type")=='ambient'
-        page.locator('#billing-guide-voice').tap()
-        assert page.evaluate("navigator.audioSession.type")=='playback'
-        assert page.evaluate("voiceCalls.permissionRequests")==0
-        spoken_before=page.evaluate("voiceCalls.spoken.length")
-        page.locator('#ary-voice-test-tts').tap()
-        assert page.evaluate("voiceCalls.spoken.length")==spoken_before+1
-        assert "Hola, soy tu asistente ARY" in page.evaluate("voiceCalls.spoken.at(-1).text")
-        assert page.evaluate("voiceCalls.permissionRequests")==0
-        page.evaluate("lastUtterance.onstart()")
-        assert "Prueba de voz iniciada" in page.locator('#ary-voice-status').inner_text()
-        page.evaluate("lastUtterance.onerror({error:'not-allowed'})")
-        assert "Safari bloqueó la voz" in page.locator('#ary-voice-status').inner_text()
         assert not any(c['path'].endswith('/solicitudes') for c in calls)
     finally: ctx.close()
 
