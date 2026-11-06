@@ -366,6 +366,26 @@ def test_iphone_audio_playback_and_test_sound(browser):
     finally: ctx.close()
 
 
+def test_iphone_long_guide_is_spoken_in_short_parts(browser):
+    ctx,page,calls,_=setup(browser,mobile=True)
+    try:
+        page.locator('#tab-factura').tap()
+        page.evaluate("""Object.defineProperty(navigator,'userAgent',{configurable:true,get:()=> 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 Safari/604.1'});0""")
+        page.locator('#billing-guide-voice').tap()
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert len(page.evaluate('voiceCalls.spoken[0].text'))<=180
+        for _ in range(30):
+            if page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='false':
+                break
+            page.evaluate('lastUtterance.onend()')
+        assert page.evaluate('voiceCalls.spoken.length')>=3
+        assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='false'
+        assert page.evaluate('voiceCalls.permissionRequests')==0
+        assert page.evaluate("navigator.audioSession.type")=='playback'
+        assert not any(c['path'].endswith('/solicitudes') for c in calls)
+    finally: ctx.close()
+
+
 def test_success_remembers_reusable_invoice_fields_only(browser):
     ctx,page,_,_=setup(browser)
     try:
