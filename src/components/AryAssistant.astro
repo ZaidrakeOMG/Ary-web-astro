@@ -93,4 +93,28 @@
   @media(max-height:540px){.ary-assistant{bottom:12px}.ary-assistant-panel{max-height:calc(100dvh - 24px)}}
   @media(prefers-reduced-motion:reduce){.ary-assistant-launcher img{animation:none}.ary-assistant-launcher{transition:none}}
   @media print{.ary-assistant{display:none!important}}
+  /* In phones the helper opens as a viewport-anchored bottom sheet.
+     The navigation remains visible while the explanation scrolls. */
+  .ary-assistant-actions[hidden]{display:none!important}
+  @media(max-width:700px){
+    .ary-assistant{width:66px;height:66px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+    .ary-assistant-launcher{touch-action:manipulation;cursor:pointer}
+    .ary-assistant.is-open .ary-assistant-launcher{display:none}
+    .ary-assistant-panel{position:fixed;left:12px;right:12px;top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-height:min(72dvh,calc(100dvh - 184px));margin:0;border-radius:18px;box-shadow:0 14px 42px #3c123544}
+    .ary-assistant-header{padding:12px 14px;flex-shrink:0}
+    .ary-assistant-icon{min-width:44px;min-height:44px;display:grid;place-items:center}
+    .ary-assistant-body{padding:14px;overflow-y:auto;overflow-x:hidden;min-height:0;-webkit-overflow-scrolling:touch}
+    .ary-assistant-body h3{font-size:19px}
+    #ary-assistant-description{font-size:14px;line-height:1.55}
+    .ary-assistant-actions{display:flex;gap:10px;flex-shrink:0;padding:12px 14px 14px;background:#fff;border-top:1px solid var(--line)}
+    .ary-assistant-actions button{min-height:50px;touch-action:manipulation;font-size:14px}
+    .ary-assistant-footer{padding:8px 14px;font-size:10px}
+    .ary-assistant-field{min-height:44px}
+  }
+  @media(max-width:700px) and (max-height:540px){
+    .ary-assistant-panel{bottom:12px;max-height:calc(100dvh - 98px)}
+    .ary-assistant-header{padding:8px 12px}
+    .ary-assistant-body{padding:9px 12px}
+    .ary-assistant-footer{display:none}
+  }
 </style>
