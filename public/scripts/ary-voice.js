@@ -35,6 +35,8 @@
   speak.id = 'ary-voice-speak'; speak.type = 'button'; speak.setAttribute('aria-pressed', 'false');
   const testAudio = make('button', 'Probar sonido', 'ary-voice-button ary-voice-test');
   testAudio.id = 'ary-voice-test'; testAudio.type = 'button';
+  const testVoice = make('button', 'Probar voz', 'ary-voice-button ary-voice-test-tts');
+  testVoice.id = 'ary-voice-test-tts'; testVoice.type = 'button';
   const mic = make('button', 'Permitir micrófono', 'ary-voice-button ary-voice-microphone');
   mic.id = 'ary-voice-mic'; mic.type = 'button'; mic.setAttribute('aria-pressed', 'false');
   mic.setAttribute('aria-describedby', 'ary-voice-status');
@@ -42,11 +44,12 @@
   disable.id = 'ary-voice-disable'; disable.type = 'button';
   const speakLabel=iconButton(speak,'Repetir voz','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12');
   const micLabel=iconButton(mic,'Permitir micrófono','M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8');
-  iconButton(testAudio,'Probar sonido','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6');
+  iconButton(testAudio,'Probar bocina','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6');
+  iconButton(testVoice,'Probar voz','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12');
   iconButton(disable,'Desactivar voz','M6 6l12 12M18 6 6 18');
   const status=make('p','Puedes escuchar la guía sin autorizar el micrófono.','ary-voice-status');
   status.id='ary-voice-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
-  bar.append(speak,testAudio,mic,disable,status);
+  bar.append(speak,testAudio,testVoice,mic,disable,status);
   panel.querySelector('.ary-assistant-body').prepend(bar);
 
   const permission = make('label', '', 'ary-voice-consent');
@@ -205,8 +208,8 @@
         speak.setAttribute('aria-pressed', 'false');
         const code = String(event?.error || '');
         status.textContent = code === 'not-allowed'
-          ? 'Safari bloqueó el audio. Toca “Probar sonido” para iniciarlo directamente.'
-          : 'No se pudo reproducir la voz' + (code ? ' (' + code + ')' : '') + '. Toca “Probar sonido” o usa la guía escrita.';
+          ? 'Safari bloqueó la voz. Toca “Probar voz” desde esta página.'
+          : 'No se pudo reproducir la voz' + (code ? ' (' + code + ')' : '') + '. Usa “Probar bocina” para comprobar el audio del teléfono.';
       };
       speakLabel.textContent = 'Detener voz';
       speak.setAttribute('aria-pressed', 'true');
@@ -218,7 +221,7 @@
         return true;
       } catch {
         stopSpeech();
-        status.textContent = 'No se pudo iniciar la voz. Toca “Probar sonido” para reintentar.';
+        status.textContent = 'No se pudo iniciar la voz. Toca “Probar voz” para reintentar.';
         return false;
       }
     };
@@ -478,14 +481,55 @@
     return 'Soy tu asistente ARY. Puedo guiarte para facturar, registrar un cliente o responder dudas.';
   }
 
+  // Independent sound test: a real two-tone signal through Web Audio.
+  // If the beeps are audible but TTS is silent, this isolates a speechSynthesis
+  // problem without requesting a microphone or sending anything to a service.
   testAudio.addEventListener('click', () => {
+    prepareAudioPlayback();
+    stopListening();
+    stopSpeech();
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) {
+      status.textContent = 'Este navegador no permite la prueba de bocina. Intenta “Probar voz” en Safari.';
+      return;
+    }
+    let ctx;
+    try {
+      ctx = new Context();
+      const first = ctx.currentTime + 0.03;
+      for (const [offset, frequency] of [[0,660],[0.28,880]]) {
+        const oscillator = ctx.createOscillator();
+        const volume = ctx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        volume.gain.setValueAtTime(0.0001,first+offset);
+        volume.gain.exponentialRampToValueAtTime(0.10,first+offset+0.025);
+        volume.gain.exponentialRampToValueAtTime(0.0001,first+offset+0.17);
+        oscillator.connect(volume);
+        volume.connect(ctx.destination);
+        oscillator.start(first+offset);
+        oscillator.stop(first+offset+0.19);
+      }
+      // resume() is called directly from the touch/click gesture on iOS.
+      const resumed = ctx.resume();
+      if (resumed?.catch) resumed.catch(() => {
+        status.textContent = 'Safari no permitió iniciar el audio. Revisa el volumen, modo silencio y salida Bluetooth.';
+      });
+      status.textContent = 'Prueba de bocina: deberían sonar dos pitidos. Si no los escuchas, revisa el volumen de contenido multimedia, el modo silencio y Bluetooth.';
+      setTimeout(() => { try { void ctx.close(); } catch { /* optional */ } }, 950);
+    } catch {
+      try { void ctx?.close(); } catch { /* optional */ }
+      status.textContent = 'No se pudo iniciar la prueba de bocina. Abre la página directamente en Safari y comprueba el volumen.';
+    }
+  });
+  testVoice.addEventListener('click', () => {
     if (!voiceEnabled) {
       void enableVoice(false, false);
       if (!voiceEnabled) return;
     }
     voiceSession = true;
-    speakText('Hola, soy tu asistente ARY. Ya puedo hablar en tu teléfono.', {
-      status: 'Probando el sonido. Si no escuchas, sube el volumen de contenido multimedia y desactiva el modo silencio.',
+    speakText('Hola, soy tu asistente ARY. Estoy probando la voz del teléfono.', {
+      status: 'Prueba de voz iniciada. Si escuchaste los pitidos pero no esta frase, Safari está fallando al sintetizar la voz.',
     });
   });
 
@@ -609,7 +653,7 @@
   }
   if (!synth || !window.SpeechSynthesisUtterance) {
     speak.disabled = true;
-    testAudio.disabled = true;
+    testVoice.disabled = true;
   }
   disable.hidden = !voiceEnabled;
 
