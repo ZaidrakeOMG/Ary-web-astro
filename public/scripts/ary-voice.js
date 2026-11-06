@@ -17,6 +17,13 @@
     if (className) el.className = className;
     return el;
   };
+  function iconButton(button, label, path) {
+    const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+    for (const [key, value] of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round',width:'18',height:'18','aria-hidden':'true'})) svg.setAttribute(key,value);
+    const vector = document.createElementNS(ns,'path');vector.setAttribute('d',path);svg.append(vector);
+    const caption=make('span',label,'ary-button-label');button.replaceChildren(svg,caption);
+    return caption;
+  }
   const readLocal = key => { try { return localStorage.getItem(key); } catch { return null; } };
   const writeLocal = (key, value) => { try { localStorage.setItem(key, value); } catch { /* optional */ } };
   const removeLocal = key => { try { localStorage.removeItem(key); } catch { /* optional */ } };
@@ -26,16 +33,22 @@
   const bar = make('div', '', 'ary-voice');
   const speak = make('button', 'Repetir voz', 'ary-voice-button');
   speak.id = 'ary-voice-speak'; speak.type = 'button'; speak.setAttribute('aria-pressed', 'false');
+  const mic = make('button', 'Permitir micrófono', 'ary-voice-button ary-voice-microphone');
+  mic.id = 'ary-voice-mic'; mic.type = 'button'; mic.setAttribute('aria-pressed', 'false');
+  mic.setAttribute('aria-describedby', 'ary-voice-status');
   const disable = make('button', 'Desactivar voz', 'ary-voice-button ary-voice-disable');
   disable.id = 'ary-voice-disable'; disable.type = 'button';
-  const status = make('p', 'La ayuda por voz está lista cuando tú la activas.', 'ary-voice-status');
-  status.id = 'ary-voice-status'; status.setAttribute('role', 'status');
-  bar.append(speak, disable, status);
+  const speakLabel=iconButton(speak,'Repetir voz','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12');
+  const micLabel=iconButton(mic,'Permitir micrófono','M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8');
+  iconButton(disable,'Desactivar voz','M6 6l12 12M18 6 6 18');
+  const status=make('p','Puedes escuchar la guía sin autorizar el micrófono.','ary-voice-status');
+  status.id='ary-voice-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+  bar.append(speak,mic,disable,status);
   panel.querySelector('.ary-assistant-body').prepend(bar);
 
   const permission = make('label', '', 'ary-voice-consent');
   const consent = make('input'); consent.type = 'checkbox'; consent.id = 'ary-voice-consent';
-  permission.append(consent, make('span', 'Activar ayuda por voz. El navegador puede procesar el audio con su proveedor; ARY no guarda una grabación del micrófono.'));
+  permission.append(consent, make('span', 'Activar lectura por voz. Para dictar o controlar los pasos hablando, autoriza el micrófono por separado. El navegador puede procesar tu voz; ARY no guarda grabaciones.'));
   const dictate = make('button', 'Dictar pregunta', 'ary-voice-button');
   dictate.id = 'ary-voice-dictate'; dictate.type = 'button'; dictate.setAttribute('aria-pressed', 'false');
   dictate.setAttribute('aria-describedby', 'ary-voice-status');
@@ -50,7 +63,7 @@
     enable.id = 'ary-voice-enable'; enable.type = 'button';
     enable.append(
       make('strong', '¿Quieres ayuda por voz para facturar?'),
-      make('span', 'Actívala una vez. Te guiaré paso a paso y escucharé comandos como “siguiente”.')
+      make('span', 'Toca para escuchar los pasos. Si después quieres decir “siguiente”, podrás permitir el micrófono.')
     );
     const close = make('button', '×', 'ary-greeting-close');
     close.id = 'ary-voice-prompt-close'; close.type = 'button'; close.setAttribute('aria-label', 'Cerrar invitación de ayuda por voz');
@@ -96,8 +109,13 @@
   function stopSpeech() {
     const old = utterance; utterance = null;
     if (old) { old.onend = null; old.onerror = null; }
-    try { synth?.cancel(); } catch { /* unavailable */ }
-    speak.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
+    // iOS Safari may ignore the first utterance after an unnecessary cancel().
+    try { if (old || synth?.speaking || synth?.pending) synth?.cancel(); } catch { /* unavailable */ }
+    speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
+  }
+  function refreshMic() {
+    micLabel.textContent=recognition?'Detener escucha':microphoneAvailable?'Escuchar comandos':'Permitir micrófono';
+    mic.setAttribute('aria-pressed',String(Boolean(recognition)));
   }
   function stopListening() {
     sequence++;
@@ -108,6 +126,7 @@
       input.readOnly = oldReadOnly;
     }
     dictate.textContent = 'Dictar pregunta'; dictate.setAttribute('aria-pressed', 'false');
+    refreshMic();
   }
   function stopAll(message = '') {
     const active = Boolean(utterance || recognition);
@@ -129,16 +148,16 @@
     u.onend = () => {
       if (utterance !== u) return;
       utterance = null;
-      speak.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
+       speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
       options.after?.();
     };
     u.onerror = () => {
       if (utterance !== u) return;
       utterance = null;
-      speak.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
+       speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
       status.textContent = 'El navegador bloqueó la reproducción automática. Toca “Repetir voz” para continuar.';
     };
-    speak.textContent = 'Detener voz'; speak.setAttribute('aria-pressed', 'true');
+    speakLabel.textContent = 'Detener voz'; speak.setAttribute('aria-pressed', 'true');
     status.textContent = options.status || 'Te estoy guiando por voz.';
     try { synth.resume(); synth.speak(u); return true; }
     catch {
@@ -207,7 +226,7 @@
   function startRecognition(mode = 'chat') {
     if (!voiceEnabled || !voiceSession || recognition || utterance) return;
     if (!microphoneAvailable) {
-      status.textContent = 'No se detectó un micrófono. La guía puede seguir hablando, pero el dictado está pausado.';
+      status.textContent = 'Para avanzar diciendo “siguiente”, toca “Permitir micrófono”. La guía también funciona con los botones.';
       return;
     }
     if (!Recognition) {
@@ -256,7 +275,7 @@
       if (recognition !== r || sequence !== current) return;
       failed = true;
       const code = event.error;
-      if (code === 'audio-capture') microphoneAvailable = false;
+      if (['audio-capture','not-allowed','service-not-allowed'].includes(code)) microphoneAvailable = false;
       stopListening();
       status.textContent = errors[code] || 'El dictado se detuvo.';
       if (mode === 'guide' && code === 'no-speech' && voiceEnabled && voiceSession && silenceRetries < 1) {
@@ -267,6 +286,7 @@
     r.onend = () => {
       if (recognition !== r || sequence !== current) return;
       recognition = null; recognitionMode = '';
+      refreshMic();
       if (mode === 'chat') {
         input.readOnly = oldReadOnly;
         dictate.textContent = 'Dictar pregunta'; dictate.setAttribute('aria-pressed', 'false');
@@ -276,9 +296,9 @@
         setTimeout(() => startRecognition('guide'), 600);
       }
     };
-    try { r.start(); } catch {
+    try { r.start(); refreshMic(); } catch {
       stopListening();
-      status.textContent = 'El navegador no permitió iniciar el micrófono automáticamente. Toca “Dictar pregunta” para reanudar.';
+      status.textContent = 'El navegador no inició el micrófono automáticamente. Toca “Escuchar comandos” para intentarlo de nuevo.';
     }
   }
 
@@ -327,13 +347,15 @@
 
   function refreshVoiceButton() {
     if (billingVoiceButton) {
-      billingVoiceButton.textContent = voiceEnabled ? 'Escuchar o repetir paso' : 'Activar guía con voz';
-      billingVoiceButton.setAttribute('aria-pressed', String(voiceEnabled));
+      const caption=$('billing-guide-voice-label');
+      if(caption) caption.textContent=voiceEnabled?'Escuchar o repetir paso':'Escuchar guía paso a paso';
+      billingVoiceButton.setAttribute('aria-pressed',String(voiceEnabled&&voiceSession));
     }
-    speak.textContent = utterance ? 'Detener voz' : (voiceEnabled ? 'Repetir voz' : 'Activar voz');
+    speakLabel.textContent=utterance?'Detener voz':(voiceEnabled?'Repetir voz':'Activar voz');
+    refreshMic();
   }
 
-  async function enableVoice(startGuide = true, requestMic = true) {
+  async function enableVoice(startGuide = true, requestMic = false) {
     if (!synth || !window.SpeechSynthesisUtterance) {
       status.textContent = 'Este navegador no admite la lectura en voz alta. Puedes seguir la guía escrita.';
       return false;
