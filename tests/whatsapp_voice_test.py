@@ -328,6 +328,23 @@ def test_mobile_touch_launcher_and_bottom_sheet(browser):
         finally: ctx.close()
 
 
+def test_microphone_consent_tap_starts_guide_audio(browser):
+    ctx,page,calls,_=setup(browser)
+    try:
+        page.locator('#tab-factura').click()
+        page.locator('#ary-assistant-tour').wait_for(state='visible')
+        assert page.evaluate('voiceCalls.spoken.length')==0
+        page.locator('#ary-voice-mic').click()
+        assert page.evaluate('voiceCalls.permissionRequests')==1
+        assert page.evaluate('voiceCalls.spoken.length')==1
+        assert page.evaluate('navigator.audioSession.type')=='playback'
+        assert page.evaluate('voiceCalls.starts')==0
+        page.evaluate('lastUtterance.onend()')
+        assert page.evaluate('voiceCalls.starts')==1
+        assert not any(c['path'].endswith('/solicitudes') for c in calls)
+    finally: ctx.close()
+
+
 def test_iphone_audio_playback_and_test_sound(browser):
     ctx,page,calls,_=setup(browser,mobile=True)
     try:
