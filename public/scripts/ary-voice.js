@@ -114,6 +114,12 @@
     speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
   }
   function refreshMic() {
+    if (!Recognition) {
+      mic.disabled = true;
+      micLabel.textContent = 'Comandos no disponibles';
+      mic.setAttribute('aria-pressed','false');
+      return;
+    }
     micLabel.textContent=recognition?'Detener escucha':microphoneAvailable?'Escuchar comandos':'Permitir micrófono';
     mic.setAttribute('aria-pressed',String(Boolean(recognition)));
   }
