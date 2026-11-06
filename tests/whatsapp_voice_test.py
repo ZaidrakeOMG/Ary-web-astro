@@ -235,6 +235,10 @@ def test_invoice_guide_opens_on_entry_and_can_be_disabled(browser):
         assert page.locator('#ary-assistant-tour').is_hidden()
         page.locator('#tab-factura').click()
         page.locator('#ary-assistant-tour').wait_for(state='visible')
+        # The floating guide must not cover the new left-side control buttons.
+        aside=page.locator('.billing-aside').bounding_box()
+        popover=page.locator('#ary-assistant-panel').bounding_box()
+        assert popover['x']>=aside['x']+aside['width']-1
         assert '72 horas' in page.locator('#ary-assistant-description').inner_text()
         assert 'aceites' in page.locator('#ary-assistant-description').inner_text()
         assert page.locator('#billing-guide-toggle').get_attribute('aria-checked') == 'true'
