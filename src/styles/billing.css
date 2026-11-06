@@ -61,3 +61,25 @@
 .billing-guide-voice{background:#fff;color:var(--magenta);border:1px solid var(--magenta)}
 .billing-guide-voice-note{max-width:250px;font-size:10px;line-height:1.5;color:#735b6b}
 @media(max-width:700px){.billing-guide-voice,.billing-guide-voice-note{grid-column:1/-1}.billing-guide-voice-note{max-width:none;text-align:left}}
+
+/* Mobile-first, touch-friendly invoice guide. Desktop layout remains untouched. */
+.billing-guide-voice{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--magenta);border-color:var(--magenta);color:#fff;line-height:1.3}
+.billing-guide-voice svg{width:18px;height:18px;flex:0 0 18px}
+.billing-guide-voice[aria-pressed=true]{background:var(--wine);border-color:var(--wine)}
+@media(max-width:700px){
+  .billing-guide-control{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px 12px;z-index:5;padding:14px;margin:-7px 0 22px}
+  .billing-guide-mascot{width:52px;height:56px;grid-column:1}
+  .billing-guide-info{grid-column:2;min-width:0}
+  .billing-guide-info h3{font-size:15px}
+  .billing-guide-info p{font-size:12px;line-height:1.55}
+  .billing-guide-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:100%;min-width:0}
+  .billing-guide-actions button{min-width:0;min-height:48px;padding:10px;font-size:12px;touch-action:manipulation}
+  .billing-guide-voice{grid-column:1/-1;min-height:52px!important;font-size:14px!important}
+  .billing-guide-voice-note{grid-column:1/-1;max-width:none;font-size:11px;line-height:1.55}
+}
+@media(max-width:360px){
+  .billing-guide-control{grid-template-columns:43px minmax(0,1fr);padding:12px}
+  .billing-guide-mascot{width:43px;height:50px}
+  .billing-guide-actions{grid-template-columns:1fr}
+  .billing-guide-voice,.billing-guide-voice-note{grid-column:1}
+}
