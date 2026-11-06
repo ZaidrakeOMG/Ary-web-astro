@@ -196,15 +196,30 @@ def test_oils_notice_is_only_in_sidebar_and_guide_is_compact(browser):
             assert page.locator('.billing-help').count()==0
             assert page.locator('.billing-guide-mascot').count()==0
             assert page.locator('.billing-guide-compact').count()==1
+            assert page.locator('#panel-factura #billing-guide-control').count()==0
+            assert page.locator('.billing-aside #billing-guide-control').count()==1
+            assert page.locator('.billing-assistant-card').is_visible()
+            assert page.locator('.billing-assistant-card h2').inner_text()=='Tu asistente'
+            assert page.locator('#billing-guide-state').get_attribute('class').find('sr-only')!=-1
             assert page.locator('#billing-guide-toggle').is_visible()
             assert page.locator('#billing-guide-voice').is_visible()
             assert page.locator('#billing-guide-restart').count()==1
+            photo=page.locator('.billing-assistant-photo img')
+            assert photo.is_visible()
+            assert photo.get_attribute('src')=='/media/ary-3.webp'
+            assert photo.bounding_box()['y']>=page.locator('#billing-guide-voice').bounding_box()['y']+page.locator('#billing-guide-voice').bounding_box()['height']-1
             assert page.locator('.billing-oils strong').inner_text()=='¿Necesitas facturar aceites?'
             assert 'Los aceites no se facturan desde este portal' in page.locator('.billing-oils').inner_text()
             link=page.locator('.billing-oils-whatsapp')
             assert link.get_attribute('href').startswith('https://wa.me/528711651404')
             assert link.get_attribute('target')=='_blank'
             assert 'Se aplica el límite que venza primero.' not in page.locator('body').inner_text()
+            # Sidebar assistant only belongs to invoice tab. The existing voice
+            # handlers remain the same; only its placement has changed.
+            page.locator('#tab-alta').click()
+            assert not page.locator('.billing-assistant-card').is_visible()
+            page.locator('#tab-factura').click()
+            assert page.locator('.billing-assistant-card').is_visible()
             if mobile:
                 aside=page.locator('.billing-oils').bounding_box()
                 width=page.evaluate('window.innerWidth')
