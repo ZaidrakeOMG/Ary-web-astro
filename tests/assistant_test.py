@@ -58,7 +58,12 @@ def launch(browser, route='/facturacion/', width=390, height=844, offline=False)
     context.route('**/*', route_request)
     page.on('response', lambda response: bad.append(f'{response.status} {response.url}') if response.status >= 400 and '/api/facturacion/' not in response.url else None)
     page.goto(BASE + route, wait_until='networkidle')
-    expect(page.locator('#ary-assistant-launcher')).to_be_visible()
+    expect(page.locator('#ary-assistant')).to_be_visible()
+    # On phones the launcher intentionally hides while the accessible guide sheet is open.
+    if page.locator('#ary-assistant-panel').is_hidden():
+        expect(page.locator('#ary-assistant-launcher')).to_be_visible()
+    else:
+        expect(page.locator('#ary-assistant-panel')).to_be_visible()
     page._test = (context, sent, errors, bad)
     return page
 
