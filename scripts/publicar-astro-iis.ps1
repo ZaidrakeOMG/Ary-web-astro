@@ -21,6 +21,48 @@ function Assert-NoDuplicateDefaults($Doc) {
   $names=@($Doc.SelectNodes('/configuration/system.webServer/defaultDocument/files/add') | ForEach-Object { $_.GetAttribute('value').ToLowerInvariant() })
   if ($names.Count -ne 1 -or $names[0] -ne 'index.html') { throw 'La lista de documentos predeterminados no es valida. Se esperaba solamente index.html.' }
 }
+# Probe files over the SAME IIS HTTPS binding without requiring a public DNS
+# hairpin or persistent PowerShell WebRequest connections. Curl verifies TLS,
+# SNI, the entire HTTP response, status 200 and the file's content type.
+# The external homepage and invoice page are still checked above.
+function Confirm-StaticAssetHttps(
+  [string]$AssetUrl, [string]$Label, [string]$ExpectedMime,
+  [string]$BindHost, [string]$BindPort, [string]$BindAddress
+) {
+  $ip=$BindAddress.Trim()
+  if (-not $ip -or $ip -in @('*','0.0.0.0','::','[::]')) { $ip='127.0.0.1' }
+  $curl=Get-Command curl.exe -ErrorAction SilentlyContinue
+  $lastError=''
+  for($attempt=1;$attempt -le 3;$attempt++) {
+    try {
+      if($curl) {
+        # --resolve preserves hostname, HTTPS certificate verification and SNI.
+        # --noproxy avoids an unintended corporate proxy for localhost traffic.
+        $result=@(& $curl.Source '--noproxy' '*' '--resolve' "${BindHost}:${BindPort}:${ip}" '--connect-timeout' '5' '--max-time' '18' '--silent' '--show-error' '--output' 'NUL' '--write-out' '%{http_code}|%{content_type}' $AssetUrl 2>&1)
+        $exitCode=$LASTEXITCODE
+        $line=@($result | ForEach-Object {[string]$_}) -join ' '
+        $hit=[regex]::Match($line,'(?<![0-9])(?<code>[0-9]{3})\|(?<mime>[^\s]+)')
+        if($exitCode -eq 0 -and $hit.Success -and $hit.Groups['code'].Value -eq '200' -and $hit.Groups['mime'].Value -match $ExpectedMime) {
+          Write-Host ('HTTPS local OK: '+$Label+' ('+$hit.Groups['mime'].Value+')') -ForegroundColor Green
+          return
+        }
+        $lastError='curl exit='+$exitCode+'; '+$line
+      } else {
+        # Windows installations without curl.exe retain the original check.
+        $response=Invoke-WebRequest -Uri $AssetUrl -UseBasicParsing -DisableKeepAlive -TimeoutSec 18 -Headers @{'Cache-Control'='no-cache'}
+        $mime=[string]$response.Headers['Content-Type']
+        if($response.StatusCode -eq 200 -and $mime -match $ExpectedMime) {
+          Write-Host ('HTTPS OK: '+$Label+' ('+$mime+')') -ForegroundColor Green
+          return
+        }
+        $lastError='HTTP '+[string]$response.StatusCode+'; MIME '+$mime
+      }
+    } catch { $lastError=$_.Exception.Message }
+    Write-Host ('Verificacion '+$Label+' intento '+$attempt+'/3: '+$lastError) -ForegroundColor Yellow
+    if($attempt -lt 3) { Start-Sleep -Seconds 2 }
+  }
+  throw ('Fallo la verificacion HTTPS del archivo '+$Label+' tras 3 intentos. Ultimo resultado: '+$lastError+'. Se restaurara la version anterior.')
+}
 try {
   $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
   $principal=New-Object Security.Principal.WindowsPrincipal($identity)
@@ -228,35 +270,26 @@ try {
   if ($billingCheck.StatusCode -ne 200 -or -not $billingCheck.Content.Contains('id="billing-guide-toggle"')) {
     throw 'IIS sigue entregando una version antigua de /facturacion/. Se restaurara la ruta anterior; revisa el sitio, las reglas de URL y la cache.'
   }
-  try {
-    $scriptCheck = Invoke-WebRequest -Uri ($url+'client/ary-assistant.js?ary_check='+$stamp) -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
-  } catch {
-    throw ('Fallo el JavaScript publico /client/ary-assistant.js: '+$_.Exception.Message)
+  # Validate content on disk first. IIS requests must still return 200 and MIME.
+  $assets=@(
+    @{ Relative='client/ary-assistant.js'; Type='^(?:text|application)/(?:javascript|x-javascript)(?:[;\s]|$)' },
+    @{ Relative='client/ary-chat.js'; Type='^(?:text|application)/(?:javascript|x-javascript)(?:[;\s]|$)' },
+    @{ Relative='client/ary-voice.js'; Type='^(?:text|application)/(?:javascript|x-javascript)(?:[;\s]|$)' },
+    @{ Relative='media/ary-guide-audio/factura-0.mp3'; Type='^audio/(?:mpeg|mp3)(?:[;\s]|$)' },
+    @{ Relative='media/ary-guide-audio/prueba-0.mp3'; Type='^audio/(?:mpeg|mp3)(?:[;\s]|$)' }
+  )
+  # PowerShell -match overwrites $Matches; read the original binding again.
+  if([string]$binding.bindingInformation -notmatch '^(.*):([0-9]+):([^:]*)$') {
+    throw 'Binding HTTPS no valido al comprobar archivos estaticos.'
   }
-  if ($scriptCheck.StatusCode -eq 200) {
-    foreach ($asset in @('ary-chat.js','ary-voice.js')) {
-      try {
-        $assetResponse=Invoke-WebRequest -Uri ($url+'client/'+$asset+'?ary_check='+$stamp) -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
-        if ($assetResponse.StatusCode -ne 200) { throw ('HTTP '+[string]$assetResponse.StatusCode) }
-      } catch {
-        throw ('Fallo el JavaScript publico /client/'+$asset+': '+$_.Exception.Message)
-      }
-    }
-  }
-  if ($scriptCheck.StatusCode -ne 200 -or -not $scriptCheck.Content.Contains('ary-invoice-auto-guide-v1')) {
-    throw 'El navegador no recibe el script actualizado de asistencia. Se restaurara la ruta anterior; revisa reglas o cache de archivos estaticos.'
-  }
-  # The page may render but the iPhone remains silent when MP3 assets are 404.
-  foreach ($clip in @('factura-0.mp3','prueba-0.mp3')) {
-    try {
-      $clipUrl=$url+'media/ary-guide-audio/'+$clip+'?ary_check='+$stamp
-      $audioCheck=Invoke-WebRequest -Uri $clipUrl -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
-      if ($audioCheck.StatusCode -ne 200 -or [string]$audioCheck.Headers['Content-Type'] -notmatch '^audio/(mpeg|mp3)') {
-        throw ('HTTP '+$audioCheck.StatusCode+', MIME '+[string]$audioCheck.Headers['Content-Type'])
-      }
-    } catch {
-      throw ('No se puede reproducir el MP3 publico /media/ary-guide-audio/'+$clip+': '+$_.Exception.Message)
-    }
+  $ipForHttps=$Matches[1]
+  foreach($asset in $assets) {
+    $relative=[string]$asset.Relative
+    $local=Join-Path $release ($relative.Replace('/','\'))
+    if(-not (Test-Path -LiteralPath $local -PathType Leaf)) { throw ('Falta archivo en la release: '+$relative) }
+    if((Get-Item -LiteralPath $local).Length -lt 1000) { throw ('Archivo incompleto en la release: '+$relative) }
+    $checkUrl=$url+$relative+'?ary_check='+$stamp
+    Confirm-StaticAssetHttps -AssetUrl $checkUrl -Label ('/'+$relative) -ExpectedMime ([string]$asset.Type) -BindHost $hostName -BindPort $port -BindAddress $ipForHttps
   }
   Write-Host 'Asistente ARY: formulario, scripts y MP3 moviles verificados por HTTPS.' -ForegroundColor Green
   try {
