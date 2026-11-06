@@ -306,6 +306,8 @@ def test_mobile_touch_launcher_and_bottom_sheet(browser):
         try:
             page.set_viewport_size({'width':width,'height':740 if width==320 else 844})
             page.locator('#tab-factura').tap()
+            assert page.locator('#ary-assistant-panel').is_hidden()
+            page.locator('#billing-guide-voice').tap()
             page.locator('#ary-assistant-panel').wait_for(state='visible')
             panel=page.locator('#ary-assistant-panel').bounding_box()
             header=page.locator('.site-header').bounding_box()
@@ -313,7 +315,6 @@ def test_mobile_touch_launcher_and_bottom_sheet(browser):
             assert panel['y']>=header['y']+header['height']-2
             assert page.locator('#ary-assistant-next').is_visible()
             assert page.locator('#ary-assistant-launcher').is_hidden()
-            page.locator('#billing-guide-voice').tap()
             assert page.evaluate('voiceCalls.spoken.length')==1
             assert page.evaluate('voiceCalls.permissionRequests')==0
             page.locator('#ary-assistant-next').tap()
