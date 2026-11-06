@@ -182,8 +182,8 @@ def main():
         finish(page, 'assistant:manual-tab-mobile-menu-print')
 
 
-        # New regression: draggable floating bubble keeps its location across Astro pages.
-        page = launch(browser, '/', width=390, height=844)
+        # Desktop retains the draggable bubble; on phones touch works as a stable tap target.
+        page = launch(browser, '/', width=1280, height=900)
         bubble = page.locator('#ary-assistant-launcher')
         first = bubble.bounding_box()
         page.mouse.move(first['x'] + first['width'] / 2, first['y'] + first['height'] / 2)
