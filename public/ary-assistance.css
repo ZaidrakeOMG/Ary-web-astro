@@ -15,3 +15,5 @@
   .ary-voice-status{grid-column:1/-1;margin:0;font-size:12px}
   .ary-voice-consent{font-size:12px}
 }
+
+.ary-voice-button[hidden]{display:none!important}
