@@ -2,6 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 const out = path.resolve(process.env.ARY_OUT_DIR || 'dist');
+// The IIS request filter hides /scripts/ to protect server-side automation files.
+// Publish only browser-safe voice/chat scripts at /client/ instead; never relax this filter.
+const browserScripts = ['ary-assistant.js','ary-chat.js','ary-voice.js'];
+fs.mkdirSync(path.join(out,'client'),{recursive:true});
+for(const name of browserScripts){
+ const src=path.join(out,'scripts',name);
+ if(!fs.existsSync(src)) throw new Error('Missing built browser script: '+src);
+ fs.copyFileSync(src,path.join(out,'client',name));
+}
 const aliases = {
  'default.htm':'/', 'default.html':'/', 'default_01.htm':'/', 'defaultori.htm':'/', 'indext.htm':'/', 'indext.html':'/', 'index.htm':'/',
  'ary_conoce_nuestra_empresa.htm':'/empresa/', 'ary_ubica_nuestras_estaciones.htm':'/estaciones/',
