@@ -33,9 +33,16 @@ function render(name, index, text) {
   const wav = path.join(root, '_temporary.wav');
   const filename = path.join(root, name+'-'+index+'.mp3');
   try {
-    execute('espeak', ['-v','es-la','-s','157','-p','49','-a','155','-w',wav,text]);
+    // Neural high-quality Mexican Spanish female model (Apache 2.0 dataset).
+    // No robotic eSpeak waveform is used; Piper only uses its phonemizer.
+    const spoken = text.replace(/\bRFC\b/g,'erre efe ce').replace(/\bCFDI\b/g,'comprobante fiscal digital')
+      .replace(/\bPDF\b/g,'pe de efe').replace(/\bidCIF\b/gi,'identificador fiscal');
+    execute('python3', ['-m','piper','-m','es_MX-claude-high.onnx',
+      '--length-scale','1.09','--noise-scale','0.60','--noise-w','0.76',
+      '--output_file',wav,'--',spoken]);
     execute('ffmpeg', ['-nostdin','-hide_banner','-loglevel','error','-y','-i',wav,
-      '-codec:a','libmp3lame','-b:a','40k','-ar','22050','-ac','1',filename]);
+      '-af','highpass=f=65,lowpass=f=10000,loudnorm=I=-19:TP=-2:LRA=10',
+      '-codec:a','libmp3lame','-b:a','64k','-ar','22050','-ac','1',filename]);
   } finally { if (fs.existsSync(wav)) fs.unlinkSync(wav); }
   if (fs.statSync(filename).size < 1000) throw new Error('Empty output: '+filename);
   return path.basename(filename);
@@ -48,5 +55,7 @@ for (const name of ['factura','alta']) {
   });
 }
 files.push(render('prueba',0,'Hola. Soy tu asistente de Gasolinerías ARY. Ahora puedes escuchar las indicaciones de tu factura desde el teléfono.'));
-fs.writeFileSync(path.join(root,'manifest.json'),JSON.stringify({version:1,files},null,2)+'\n');
-console.log('Generated '+files.length+' local Spanish MP3 clips');
+fs.writeFileSync(path.join(root,'manifest.json'),JSON.stringify({
+  version:2, engine:'piper-neural', voice:'es_MX-claude-high', voiceLocale:'es-MX', files
+},null,2)+'\n');
+console.log('Generated '+files.length+' natural Mexican-Spanish neural MP3 clips');
