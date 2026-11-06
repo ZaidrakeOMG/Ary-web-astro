@@ -90,7 +90,7 @@ try {
     & $npm.Source run test:integrity
     if ($LASTEXITCODE -ne 0) { throw 'La verificacion fallo. No se cambiara la ruta de IIS.' }
   }
-  foreach ($name in @('index.html','facturacion\index.html','web.config','verification.json','release.json','client\ary-assistant.js','client\ary-voice.js','client\ary-chat.js')) {
+  foreach ($name in @('index.html','facturacion\index.html','web.config','verification.json','release.json','client\ary-assistant.js','client\ary-voice.js','client\ary-chat.js','media\ary-guide-audio\factura-0.mp3','media\ary-guide-audio\prueba-0.mp3')) {
     if (-not (Test-Path -LiteralPath (Join-Path $stage $name))) { throw "Falta archivo requerido: $name" }
   }
   # Never activate a build that lacks the interactive invoice guide.
@@ -125,6 +125,10 @@ try {
   foreach ($n in @($static.SelectNodes('*[@fileExtension=".webp"]'))) { [void]$static.RemoveChild($n) }
   $remove=$merged.CreateElement('remove');$remove.SetAttribute('fileExtension','.webp');[void]$static.AppendChild($remove)
   $mime=$merged.CreateElement('mimeMap');$mime.SetAttribute('fileExtension','.webp');$mime.SetAttribute('mimeType','image/webp');[void]$static.AppendChild($mime)
+  # Keep all existing IIS mappings, but make MP3 support explicit for iOS playback.
+  foreach ($n in @($static.SelectNodes('*[@fileExtension=".mp3"]'))) { [void]$static.RemoveChild($n) }
+  $removeMp3=$merged.CreateElement('remove');$removeMp3.SetAttribute('fileExtension','.mp3');[void]$static.AppendChild($removeMp3)
+  $mimeMp3=$merged.CreateElement('mimeMap');$mimeMp3.SetAttribute('fileExtension','.mp3');$mimeMp3.SetAttribute('mimeType','audio/mpeg');[void]$static.AppendChild($mimeMp3)
   $directory=Ensure-Child $merged $server 'directoryBrowse';$directory.SetAttribute('enabled','false')
   $protocol=Ensure-Child $merged $server 'httpProtocol';$headers=Ensure-Child $merged $protocol 'customHeaders'
   foreach ($n in @($headers.SelectNodes('*[@name="X-ARY-Release"]'))) { [void]$headers.RemoveChild($n) }
@@ -242,7 +246,19 @@ try {
   if ($scriptCheck.StatusCode -ne 200 -or -not $scriptCheck.Content.Contains('ary-invoice-auto-guide-v1')) {
     throw 'El navegador no recibe el script actualizado de asistencia. Se restaurara la ruta anterior; revisa reglas o cache de archivos estaticos.'
   }
-  Write-Host 'Asistente ARY: formulario y script verificados por HTTPS.' -ForegroundColor Green
+  # The page may render but the iPhone remains silent when MP3 assets are 404.
+  foreach ($clip in @('factura-0.mp3','prueba-0.mp3')) {
+    try {
+      $clipUrl=$url+'media/ary-guide-audio/'+$clip+'?ary_check='+$stamp
+      $audioCheck=Invoke-WebRequest -Uri $clipUrl -UseBasicParsing -TimeoutSec 20 -Headers @{'Cache-Control'='no-cache'}
+      if ($audioCheck.StatusCode -ne 200 -or [string]$audioCheck.Headers['Content-Type'] -notmatch '^audio/(mpeg|mp3)') {
+        throw ('HTTP '+$audioCheck.StatusCode+', MIME '+[string]$audioCheck.Headers['Content-Type'])
+      }
+    } catch {
+      throw ('No se puede reproducir el MP3 publico /media/ary-guide-audio/'+$clip+': '+$_.Exception.Message)
+    }
+  }
+  Write-Host 'Asistente ARY: formulario, scripts y MP3 moviles verificados por HTTPS.' -ForegroundColor Green
   try {
     $api=Invoke-WebRequest -Uri ($url+'api/facturacion/opciones') -UseBasicParsing -TimeoutSec 15
     $options=$api.Content | ConvertFrom-Json
