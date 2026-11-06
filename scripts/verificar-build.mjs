@@ -47,7 +47,16 @@ function contract(html){
 }
 assert.deepEqual(contract(billing),contract(source),'STOP: a billing field or validation changed');
 for(const id of [...new Set([...originalCore.matchAll(/\$\('([^']+)'\)/g)].map(x=>x[1]))])assert.ok(billing.includes(`id="${id}"`),`Missing original event target: ${id}`);
-assert.ok(billing.includes('/scripts/ary-voice.js'),'Missing voice module');
+assert.ok(billing.includes('/client/ary-voice.js'),'Missing voice module at the IIS-safe public URL');
+assert.ok(billing.includes('/client/ary-chat.js'),'Missing browser chat module at the IIS-safe URL');
+assert.ok(billing.includes('/client/ary-assistant.js'),'Missing guided assistant at the IIS-safe URL');
+for(const name of ['ary-assistant.js','ary-chat.js','ary-voice.js']){
+ const published=read(path.join(out,'client',name));
+ const canonical=read(path.join('public','scripts',name));
+ assert.equal(published,canonical,'STOP: published public client script differs from its source: '+name);
+}
+assert.ok(!billing.includes('src="/scripts/'),'STOP: hidden /scripts/ path is referenced by billing');
+
 assert.ok(billing.includes('/ary-assistance.css'),'Missing assistance styles');
 const config=read(path.join(out,'web.config'));const rootConfig=read('web.config');
 const rule=s=>s.match(/<rule\b[^>]*name="ARY Portal Facturacion API"[\s\S]*?<\/rule>/)?.[0].replace(/\s+/g,'');
