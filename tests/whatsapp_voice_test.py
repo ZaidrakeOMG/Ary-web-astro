@@ -35,6 +35,7 @@ window.SpeechRecognition=class{
  abort(){window.voiceCalls.aborts++}
 };
 window.webkitSpeechRecognition=undefined;
+Object.defineProperty(navigator,'audioSession',{configurable:true,value:{type:'ambient'}});
 Object.defineProperty(navigator,'mediaDevices',{configurable:true,value:{
  getUserMedia:async()=>{window.voiceCalls.permissionRequests++;return{getTracks:()=>[{stop(){}}]}}
 }});
@@ -325,6 +326,27 @@ def test_mobile_touch_launcher_and_bottom_sheet(browser):
             assert 'Paso 2 de' in page.locator('#ary-assistant-count').inner_text()
             assert not any(c['path'].endswith('/solicitudes') for c in calls)
         finally: ctx.close()
+
+
+def test_iphone_audio_playback_and_test_sound(browser):
+    ctx,page,calls,_=setup(browser,mobile=True)
+    try:
+        page.locator('#tab-factura').tap()
+        assert page.evaluate("navigator.audioSession.type")=='ambient'
+        page.locator('#billing-guide-voice').tap()
+        assert page.evaluate("navigator.audioSession.type")=='playback'
+        assert page.evaluate("voiceCalls.permissionRequests")==0
+        spoken_before=page.evaluate("voiceCalls.spoken.length")
+        page.locator('#ary-voice-test').tap()
+        assert page.evaluate("voiceCalls.spoken.length")==spoken_before+1
+        assert "Hola, soy tu asistente ARY" in page.evaluate("voiceCalls.spoken.at(-1).text")
+        assert page.evaluate("voiceCalls.permissionRequests")==0
+        page.evaluate("lastUtterance.onstart()")
+        assert "Probando el sonido" in page.locator('#ary-voice-status').inner_text()
+        page.evaluate("lastUtterance.onerror({error:'not-allowed'})")
+        assert "Safari bloqueó el audio" in page.locator('#ary-voice-status').inner_text()
+        assert not any(c['path'].endswith('/solicitudes') for c in calls)
+    finally: ctx.close()
 
 
 def test_success_remembers_reusable_invoice_fields_only(browser):
