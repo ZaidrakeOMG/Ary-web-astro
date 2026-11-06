@@ -83,3 +83,134 @@
   .billing-guide-actions{grid-template-columns:1fr}
   .billing-guide-voice,.billing-guide-voice-note{grid-column:1}
 }
+
+
+/* Facturación: una sola tarjeta de aceites junto al formulario.
+   Se elimina el panel de pasos decorativo y el aviso de ayuda duplicado. */
+.billing-aside>.billing-oils{
+  position:sticky;
+  top:calc(var(--header,78px) + 18px);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin:0;
+  padding:26px 23px;
+  border:1px solid #ead2be;
+  border-radius:19px;
+  background:linear-gradient(145deg,#fffaf5 0%,#fff 100%);
+  box-shadow:0 10px 28px #5834490b;
+}
+.billing-aside .billing-oils-icon{
+  flex:0 0 auto;
+  width:46px;
+  height:46px;
+  border-radius:14px;
+}
+.billing-aside .billing-oils-copy{width:100%}
+.billing-aside .billing-oils strong{
+  font-size:19px;
+  line-height:1.35;
+  letter-spacing:-.025em;
+}
+.billing-aside .billing-oils p{
+  margin:10px 0 20px;
+  font-size:13px;
+  line-height:1.75;
+}
+.billing-aside .billing-oils-whatsapp{
+  display:flex;
+  width:100%;
+  min-height:50px;
+  padding:12px 11px;
+  text-align:center;
+  font-size:12px;
+  line-height:1.4;
+}
+.billing-aside .billing-oils small{font-size:11px;text-align:center}
+
+/* Preserve the functioning voice controls but remove the large mascot banner. */
+.billing-guide-control.billing-guide-compact{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:center;
+  gap:11px;
+  z-index:5;
+  padding:0 0 16px;
+  margin:-3px 0 24px;
+  border:0;
+  border-bottom:1px solid var(--line);
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
+.billing-guide-compact .billing-guide-state{
+  flex:0 1 auto;
+  color:var(--muted);
+  font-size:11px;
+}
+.billing-guide-compact .billing-guide-actions{
+  display:flex;
+  flex:1 1 auto;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  width:auto;
+  min-width:0;
+}
+.billing-guide-compact .billing-guide-actions button{
+  flex:0 1 auto;
+  min-height:42px;
+  padding:9px 11px;
+  font-size:11px;
+}
+.billing-guide-compact .billing-guide-voice{
+  grid-column:auto;
+  min-height:42px!important;
+  font-size:11px!important;
+}
+.billing-guide-compact .billing-guide-voice-note.sr-only{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+}
+@media(max-width:850px){
+  .billing-aside>.billing-oils{position:static}
+}
+@media(max-width:700px){
+  .billing-guide-control.billing-guide-compact{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    padding:0 0 15px;
+    margin:0 0 20px;
+  }
+  .billing-guide-compact .billing-guide-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    gap:9px;
+    width:100%;
+  }
+  .billing-guide-compact .billing-guide-actions button{
+    min-width:0;
+    min-height:46px;
+    padding:9px;
+    font-size:11px;
+  }
+  .billing-guide-compact .billing-guide-voice{
+    grid-column:1/-1;
+    min-height:49px!important;
+    font-size:12px!important;
+  }
+}
+@media(max-width:360px){
+  .billing-guide-compact .billing-guide-actions{grid-template-columns:1fr}
+  .billing-guide-compact .billing-guide-voice{grid-column:1}
+  .billing-aside>.billing-oils{padding:19px}
+}
