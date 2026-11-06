@@ -57,6 +57,9 @@ for(const name of ['ary-assistant.js','ary-chat.js','ary-voice.js']){
 }
 assert.ok(!billing.includes('src="/scripts/'),'STOP: hidden /scripts/ path is referenced by billing');
 const mobileVoiceManifest = JSON.parse(read(path.join(out,'media/ary-guide-audio/manifest.json')));
+assert.equal(mobileVoiceManifest.version,2,'Mobile audio still points to the old robotic voice');
+assert.equal(mobileVoiceManifest.engine,'piper-neural','Mobile audio must use the neural voice');
+assert.equal(mobileVoiceManifest.voice,'es_MX-claude-high','Wrong mobile natural voice pack');
 for (const [kind, count] of [['factura',12],['alta',8],['prueba',1]]) {
  for (let index=0; index<count; index++) {
   const filename=kind+'-'+index+'.mp3';
