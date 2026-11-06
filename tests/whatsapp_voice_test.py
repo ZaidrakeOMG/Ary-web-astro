@@ -371,8 +371,8 @@ def test_mobile_iphone_uses_real_mp3_without_speechsynthesis(browser):
         assert 'Audio móvil MP3' in page.locator('#billing-guide-voice-note').inner_text()
         assert page.locator('#ary-voice-test-tts').count()==0
         assert page.locator('#ary-voice-test').count()==0
-        assert page.locator('#ary-voice-speak').is_visible()
         page.locator('#billing-guide-voice').tap()
+        assert page.locator('#ary-voice-speak').is_visible()
         assert '/factura-0.mp3?voice=neural-claude-2' in page.evaluate("mobileAudioCalls.played[0]")
         assert page.evaluate('voiceCalls.spoken.length')==0
         assert page.locator('#ary-voice-speak').get_attribute('aria-pressed')=='true'
