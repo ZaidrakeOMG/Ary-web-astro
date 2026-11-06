@@ -33,6 +33,8 @@
   const bar = make('div', '', 'ary-voice');
   const speak = make('button', 'Repetir voz', 'ary-voice-button');
   speak.id = 'ary-voice-speak'; speak.type = 'button'; speak.setAttribute('aria-pressed', 'false');
+  const testAudio = make('button', 'Probar sonido', 'ary-voice-button ary-voice-test');
+  testAudio.id = 'ary-voice-test'; testAudio.type = 'button';
   const mic = make('button', 'Permitir micrófono', 'ary-voice-button ary-voice-microphone');
   mic.id = 'ary-voice-mic'; mic.type = 'button'; mic.setAttribute('aria-pressed', 'false');
   mic.setAttribute('aria-describedby', 'ary-voice-status');
@@ -40,10 +42,11 @@
   disable.id = 'ary-voice-disable'; disable.type = 'button';
   const speakLabel=iconButton(speak,'Repetir voz','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12');
   const micLabel=iconButton(mic,'Permitir micrófono','M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3ZM5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8');
+  iconButton(testAudio,'Probar sonido','M11 5 6 9H3v6h3l5 4V5ZM15 9a5 5 0 0 1 0 6');
   iconButton(disable,'Desactivar voz','M6 6l12 12M18 6 6 18');
   const status=make('p','Puedes escuchar la guía sin autorizar el micrófono.','ary-voice-status');
   status.id='ary-voice-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
-  bar.append(speak,mic,disable,status);
+  bar.append(speak,testAudio,mic,disable,status);
   panel.querySelector('.ary-assistant-body').prepend(bar);
 
   const permission = make('label', '', 'ary-voice-consent');
@@ -76,6 +79,14 @@
   }
 
   const synth = window.speechSynthesis;
+  // iOS normally uses an ambient audio session, which can be inaudible
+  // while the Ring/Silent switch is set to silent. Select playback on tap.
+  function prepareAudioPlayback() {
+    try {
+      const audioSession = navigator.audioSession;
+      if (audioSession && audioSession.type !== 'playback') audioSession.type = 'playback';
+    } catch { /* API not available on this browser */ }
+  }
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let utterance = null, recognition = null, recognitionMode = '';
   let oldReadOnly = false, sequence = 0, voiceList = [];
@@ -147,28 +158,40 @@
       return false;
     }
     stopListening(); stopSpeech(); loadVoices();
+    prepareAudioPlayback();
     const u = new SpeechSynthesisUtterance(clean); utterance = u;
     u.lang = 'es-MX'; u.rate = 0.94; u.pitch = 1.02; u.volume = 1;
     const voice = bestSpanishVoice();
     if (voice) u.voice = voice;
+    u.onstart = () => {
+      if (utterance !== u) return;
+      status.textContent = options.status || 'Reproduciendo la explicación. Si no escuchas, revisa el volumen multimedia y el modo silencio del iPhone.';
+    };
     u.onend = () => {
       if (utterance !== u) return;
       utterance = null;
        speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
       options.after?.();
     };
-    u.onerror = () => {
+    u.onerror = event => {
       if (utterance !== u) return;
       utterance = null;
-       speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
-      status.textContent = 'El navegador bloqueó la reproducción automática. Toca “Repetir voz” para continuar.';
+      speakLabel.textContent = 'Repetir voz'; speak.setAttribute('aria-pressed', 'false');
+      const code = String(event?.error || '');
+      status.textContent = code === 'not-allowed'
+        ? 'Safari bloqueó el audio. Toca “Probar sonido” para iniciarlo directamente.'
+        : 'No se pudo reproducir la voz' + (code ? ' (' + code + ')' : '') + '. Toca “Probar sonido” o usa la guía escrita.';
     };
     speakLabel.textContent = 'Detener voz'; speak.setAttribute('aria-pressed', 'true');
     status.textContent = options.status || 'Te estoy guiando por voz.';
-    try { synth.resume(); synth.speak(u); return true; }
-    catch {
+    try {
+      // Speak first inside the trusted tap; Safari may drop delayed calls.
+      synth.speak(u);
+      if (synth.paused) synth.resume();
+      return true;
+    } catch {
       stopSpeech();
-      status.textContent = 'No se pudo iniciar la voz. Toca “Repetir voz” para continuar.';
+      status.textContent = 'No se pudo iniciar la voz. Toca “Probar sonido” para reintentar.';
       return false;
     }
   }
@@ -426,6 +449,17 @@
     return 'Soy tu asistente ARY. Puedo guiarte para facturar, registrar un cliente o responder dudas.';
   }
 
+  testAudio.addEventListener('click', () => {
+    if (!voiceEnabled) {
+      void enableVoice(false, false);
+      if (!voiceEnabled) return;
+    }
+    voiceSession = true;
+    speakText('Hola, soy tu asistente ARY. Ya puedo hablar en tu teléfono.', {
+      status: 'Probando el sonido. Si no escuchas, sube el volumen de contenido multimedia y desactiva el modo silencio.',
+    });
+  });
+
   speak.addEventListener('click', () => {
     if (utterance) { stopSpeech(); status.textContent = 'Lectura detenida.'; return; }
     if (!voiceEnabled) {
@@ -539,7 +573,10 @@
     micLabel.textContent = 'Comandos no disponibles';
     status.textContent = 'Tu navegador puede leer la guía, pero no admite dictado por voz.';
   }
-  if (!synth || !window.SpeechSynthesisUtterance) speak.disabled = true;
+  if (!synth || !window.SpeechSynthesisUtterance) {
+    speak.disabled = true;
+    testAudio.disabled = true;
+  }
   disable.hidden = !voiceEnabled;
 
   function initBillingVoice() {
