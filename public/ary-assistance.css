@@ -17,3 +17,7 @@
 }
 
 .ary-voice-button[hidden]{display:none!important}
+
+/* Distinct diagnostic sound button: accessible from the mobile bottom sheet. */
+.ary-voice-test{border-color:var(--magenta);color:var(--magenta)}
+@media(max-width:700px){.ary-voice-test{width:100%;min-height:50px}}
