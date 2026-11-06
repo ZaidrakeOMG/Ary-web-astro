@@ -11,39 +11,8 @@ import { core, scriptHash } from '../lib/billing.mjs';
   <div id="modeBanner" class="mode-banner" hidden><Icon name="shield" size={22}/><div><strong>Portal en modo de prueba.</strong> Las solicitudes se preparan sin timbrar facturas ni guardar clientes. El trámite todavía no está finalizado.</div></div>
   <div id="connectionError" class="billing-alert" role="alert" hidden></div>
   <div class="billing-workspace" id="tramites">
-    <aside class="billing-aside"><div class="billing-guide"><span class="overline">TE ACOMPAÑAMOS EN EL PROCESO</span><h2>Menos vueltas.<br/><em>Más claridad.</em></h2><p>Antes de empezar, ten a la mano la información de tu trámite.</p><ol><li><span>1</span><div><strong>Elige tu trámite</strong><p>Factura un ticket o solicita tu alta si eres un nuevo cliente.</p></div></li><li><span>2</span><div><strong>Revisa tus datos</strong><p>Adjunta la constancia PDF correcta, verifica la estación y el correo.</p></div></li><li><span>3</span><div><strong>Conserva tu referencia</strong><p>Consulta el avance sin volver a enviar la misma solicitud.</p></div></li></ol><div class="guide-photo"><img src="/media/ary-3.webp" alt="Estación ARY III" width="1152" height="864" loading="lazy"/><span>Tu camino nos mueve.</span></div></div><div class="billing-help"><Icon name="help" size={23}/><div><strong>¿Necesitas ayuda?</strong><p>Atención por WhatsApp. Ten a la mano tu ticket o referencia.</p><a class="billing-help-whatsapp" href="https://wa.me/528711651404?text=Hola%2C%20necesito%20ayuda%20con%20una%20factura%20de%20ARY." target="_blank" rel="noopener noreferrer" aria-label="Enviar mensaje por WhatsApp al 871 165 1404">WhatsApp: 871 165 1404 <Icon name="external" size={15}/></a></div></div></aside>
-    <section class="billing-shell" aria-label="Trámites de facturación">
-      <div id="tabs" class="tabs" role="tablist" aria-label="Elige tu trámite">
-        <button id="tab-factura" class="tab" type="button" role="tab" aria-controls="panel-factura" aria-selected="false" tabindex="-1"><span class="tab-symbol"><Icon name="receipt" size={23}/></span><span><strong>Facturar ticket</strong><small>Ya estoy registrado</small></span></button>
-        <button id="tab-alta" class="tab" type="button" role="tab" aria-controls="panel-alta" aria-selected="true"><span class="tab-symbol"><Icon name="person" size={23}/></span><span><strong>Alta de cliente</strong><small>Es mi primera vez</small></span></button>
-      </div>
-      <section id="panel-factura" class="content" role="tabpanel" aria-labelledby="tab-factura" hidden>
-        <div class="form-title"><span class="overline">FACTURACIÓN EN LÍNEA</span><h2>Vamos con <em>tu factura.</em></h2><p>Completa los datos de tu compra. Los campos con * son obligatorios.</p></div>
-        <section class="billing-guide-control" id="billing-guide-control" aria-label="Asistente para facturar">
-          <img class="billing-guide-mascot" src="/media/ary-mascota.webp" width="70" height="70" loading="lazy" alt=""/>
-          <div class="billing-guide-info">
-            <span class="billing-guide-eyebrow">ASISTENTE ARY · PASO A PASO</span>
-            <h3>¿Es tu primera factura? Yo te guío.</h3>
-            <p>Te explico cada dato, te señalo dónde capturarlo y, si lo deseas, te lo leo en voz alta.</p>
-            <span id="billing-guide-state" class="billing-guide-state" role="status">Guía automática activada</span>
-          </div>
-          <div class="billing-guide-actions">
-            <button id="billing-guide-toggle" type="button" role="switch" aria-checked="true" aria-controls="ary-assistant-panel" class="billing-guide-toggle">Desactivar guía</button>
-            <button id="billing-guide-restart" type="button" class="billing-guide-restart">Volver a empezar</button>
-            <button id="billing-guide-voice" type="button" class="billing-guide-voice" aria-pressed="false" aria-describedby="billing-guide-voice-note"><Icon name="volume" size={18}/><span id="billing-guide-voice-label">Escuchar guía paso a paso</span></button>
-            <small id="billing-guide-voice-note" class="billing-guide-voice-note">La explicación hablada funciona sin micrófono. Para decir “siguiente” o “repetir”, toca “Permitir micrófono” dentro de la guía; tu teléfono pedirá autorización.</small>
-          </div>
-        </section>
-        <aside class="billing-deadline" id="factura-plazo-aviso" aria-label="Aviso importante del plazo para facturar">
-          <div class="billing-deadline-time" aria-hidden="true"><Icon name="clock" size={28}/><span>72<small>HORAS</small></span></div>
-          <div class="billing-deadline-copy">
-            <span class="billing-deadline-kicker">ATENCIÓN · PLAZO LÍMITE</span>
-            <strong>¡No dejes pasar tu factura!</strong>
-            <p>Solo puedes solicitarla <b>dentro del mismo mes de tu compra</b> y durante las <b>72 horas posteriores al consumo</b>. Se aplica el límite que venza primero.</p>
-            <div class="billing-deadline-rules"><span>Máximo 72 horas</span><span>Sin pasar al mes siguiente</span></div>
-          </div>
-        </aside>
-        <aside class="billing-oils" aria-label="Facturación de aceites por WhatsApp">
+    <aside class="billing-aside" aria-label="Facturación de aceites por WhatsApp">
+      <section class="billing-oils" aria-label="Facturación de aceites por WhatsApp">
           <div class="billing-oils-icon" aria-hidden="true"><Icon name="help" size={24}/></div>
           <div class="billing-oils-copy">
             <strong>¿Necesitas facturar aceites?</strong>
@@ -51,7 +20,34 @@ import { core, scriptHash } from '../lib/billing.mjs';
             <a class="billing-oils-whatsapp" href="https://wa.me/528711651404?text=Hola%2C%20necesito%20ayuda%20para%20facturar%20una%20compra%20de%20aceites%20en%20ARY." target="_blank" rel="noopener noreferrer" aria-label="Enviar mensaje por WhatsApp al 871 165 1404 sobre facturación de aceites"><Icon name="phone" size={17}/> Enviar mensaje por WhatsApp <Icon name="external" size={15}/></a>
             <small>WhatsApp: 871 165 1404</small>
           </div>
+      </section>
+    </aside>
+    <section class="billing-shell" aria-label="Trámites de facturación">
+      <div id="tabs" class="tabs" role="tablist" aria-label="Elige tu trámite">
+        <button id="tab-factura" class="tab" type="button" role="tab" aria-controls="panel-factura" aria-selected="false" tabindex="-1"><span class="tab-symbol"><Icon name="receipt" size={23}/></span><span><strong>Facturar ticket</strong><small>Ya estoy registrado</small></span></button>
+        <button id="tab-alta" class="tab" type="button" role="tab" aria-controls="panel-alta" aria-selected="true"><span class="tab-symbol"><Icon name="person" size={23}/></span><span><strong>Alta de cliente</strong><small>Es mi primera vez</small></span></button>
+      </div>
+      <section id="panel-factura" class="content" role="tabpanel" aria-labelledby="tab-factura" hidden>
+        <div class="form-title"><span class="overline">FACTURACIÓN EN LÍNEA</span><h2>Vamos con <em>tu factura.</em></h2><p>Completa los datos de tu compra. Los campos con * son obligatorios.</p></div>
+        <nav class="billing-guide-control billing-guide-compact" id="billing-guide-control" aria-label="Controles de guía de facturación">
+          <span id="billing-guide-state" class="billing-guide-state" role="status">Guía automática activada</span>
+          <div class="billing-guide-actions">
+            <button id="billing-guide-toggle" type="button" role="switch" aria-checked="true" aria-controls="ary-assistant-panel" class="billing-guide-toggle">Desactivar guía</button>
+            <button id="billing-guide-restart" type="button" class="billing-guide-restart">Volver a empezar</button>
+            <button id="billing-guide-voice" type="button" class="billing-guide-voice" aria-pressed="false" aria-describedby="billing-guide-voice-note"><Icon name="volume" size={18}/><span id="billing-guide-voice-label">Escuchar guía paso a paso</span></button>
+            <small id="billing-guide-voice-note" class="billing-guide-voice-note sr-only">La explicación hablada funciona sin micrófono. Para decir “siguiente” o “repetir”, toca “Permitir micrófono” dentro de la guía; tu teléfono pedirá autorización.</small>
+          </div>
+        </nav>
+        <aside class="billing-deadline" id="factura-plazo-aviso" aria-label="Aviso importante del plazo para facturar">
+          <div class="billing-deadline-time" aria-hidden="true"><Icon name="clock" size={28}/><span>72<small>HORAS</small></span></div>
+          <div class="billing-deadline-copy">
+            <span class="billing-deadline-kicker">ATENCIÓN · PLAZO LÍMITE</span>
+            <strong>¡No dejes pasar tu factura!</strong>
+            <p>Solo puedes solicitarla <b>dentro del mismo mes de tu compra</b> y durante las <b>72 horas posteriores al consumo</b>.</p>
+            <div class="billing-deadline-rules"><span>Máximo 72 horas</span><span>Sin pasar al mes siguiente</span></div>
+          </div>
         </aside>
+
         <form id="form-factura" autocomplete="off"><fieldset class="fields"><legend class="sr-only">Datos para facturar tu ticket</legend>
 <div class="form-group"><div class="group-heading"><span>01</span><div><h3>Tu compra</h3><p>Tus datos fiscales se obtienen de la constancia PDF y se comprueban con Polaris.</p></div></div><div class="fields-grid"><div class="field full"><label id="factura-estacion-label" for="factura-estacion">Estación donde cargaste<span class="required" aria-hidden="true">*</span></label><select aria-describedby="factura-estacion-hint" class="control station" id="factura-estacion" name="estacion" required="">
 <option value="">
