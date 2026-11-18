@@ -350,3 +350,26 @@
   .billing-assistant-card .billing-guide-actions{grid-template-columns:1fr}
   .billing-assistant-card .billing-guide-actions .billing-guide-voice{grid-column:1}
 }
+
+
+/* Fotografía de ticket: lectura automática obligatoria y estado accesible. */
+.ticket-foto-estado {
+  margin-top: .65rem;
+  padding: .8rem 1rem;
+  border: 1px solid var(--border, #d9e1e7);
+  border-radius: .65rem;
+  line-height: 1.45;
+  font-size: .9rem;
+  color: #44546a;
+  background: #f6f8fa;
+}
+.ticket-foto-estado[data-state="loading"] { background: #f1f6fd; color: #194c80; }
+.ticket-foto-estado[data-state="ok"] { background: #edf8f1; border-color: #b5dec5; color: #195735; }
+.ticket-foto-estado[data-state="error"] { background: #fff2f1; border-color: #edb9b5; color: #8a2924; }
+#factura-ticket[readonly] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .075em;
+  cursor: not-allowed;
+  background: #f1f4f7;
+  font-weight: 700;
+}
