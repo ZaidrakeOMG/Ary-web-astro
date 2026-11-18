@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 from playwright.sync_api import sync_playwright
+from ticket_foto_mock import subir_ticket_simulado
 
 BASE=os.environ.get('ARY_TEST_URL','http://127.0.0.1:4173')
 OPTIONS={'csrf':'test-only-csrf','modo_seguro':True,'aceptando':True,
@@ -67,6 +68,8 @@ window.Audio=class {
         body=request.post_data_json if request.method=='POST' else None
         calls.append({'path':path,'body':body,'id':request.headers.get('x-ary-request-id')})
         if path.endswith('/opciones'): data=dict(OPTIONS,aceptando=not paused)
+        elif path.endswith('/validar-ticket'):
+            route.fulfill(status=200,json={'folio':'123456'}); return
         elif path.endswith('/solicitudes'):
             number=sum(c['path'].endswith('/solicitudes') for c in calls)
             if failure=='abort' and number==1:
@@ -94,7 +97,7 @@ def fill(page):
     page.locator('#tab-factura').click()
     page.locator('#factura-estacion').select_option('ARY V')
     page.locator('#factura-constancia').set_input_files({'name':'prueba.pdf','mimeType':'application/pdf','buffer':b'%PDF-'+b'FAKE-TEST-ONLY'*30})
-    page.locator('#factura-ticket').fill('123456')
+    subir_ticket_simulado(page, '123456')
     today=page.evaluate("document.getElementById('factura-fecha').max")
     page.locator('#factura-fecha').fill(today)
     page.locator('#factura-pago').select_option('TARJETA DE DEBITO')
