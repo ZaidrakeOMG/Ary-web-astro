@@ -390,12 +390,18 @@
   async function fotoAData(file) {
     if(!file || !String(file.type||'').startsWith('image/') || file.size>15*1024*1024 || file.size<1000)
       throw new Error('Selecciona una fotografía del ticket (JPG, PNG o imagen de cámara, máximo 15 MB antes de comprimir).');
-    const url=URL.createObjectURL(file);
-    try {
+    // Usar data: (permitido por la CSP de IIS) en vez de blob:.
+    const source=await new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(String(reader.result||''));
+      reader.onerror=()=>reject(new Error('No se pudo leer la foto. Vuelve a tomarla.'));
+      reader.readAsDataURL(file);
+    });
+    {
       const img=new Image();
       await new Promise((resolve,reject)=>{
         img.onload=resolve; img.onerror=()=>reject(new Error('No se pudo abrir la imagen. Usa JPG o toma otra foto.'));
-        img.src=url;
+        img.src=source;
       });
       const scale=Math.min(1,2200/Math.max(img.naturalWidth,img.naturalHeight));
       const canvas=document.createElement('canvas');
@@ -412,7 +418,7 @@
         if(ix>0 && encoded.length-ix-7 < 4*1024*1024) return encoded.slice(ix+7);
       }
       throw new Error('La foto es demasiado pesada. Vuelve a tomarla de frente y más cerca.');
-    } finally { URL.revokeObjectURL(url); }
+    }
   }
   $('factura-foto-ticket').addEventListener('change', async event => {
     const selected=event.currentTarget.files?.[0];
