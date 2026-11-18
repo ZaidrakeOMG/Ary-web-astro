@@ -45,7 +45,19 @@ function contract(html){
  }
  return result;
 }
-assert.deepEqual(contract(billing),contract(source),'STOP: a billing field or validation changed');
+// Cambio intencional: fotografía obligatoria y folio solo lectura.
+const esperado=contract(source);
+const camposFactura=esperado['form-factura'];
+const ticketAnterior=camposFactura.find(x=>x.name==='ticket');
+assert.ok(ticketAnterior,'Missing original folio field');
+ticketAnterior.pattern='[0-9]{6,20}';
+camposFactura.push({tag:'input',name:'foto_archivo',type:'file',id:'factura-foto-ticket',required:true});
+camposFactura.sort((a,b)=>a.name.localeCompare(b.name));
+assert.deepEqual(contract(billing),esperado,'STOP: a billing field changed outside the approved photo-ticket change');
+assert.ok(/<input\b[^>]*id="factura-ticket"[^>]*readonly/.test(billing),'Manual folio editing must be disabled');
+assert.ok(/<input\b[^>]*id="factura-foto-ticket"[^>]*required/.test(billing),'Photo upload must be required');
+assert.ok(runtime.includes("call('/validar-ticket'"),'The new OCR endpoint is missing');
+assert.ok(runtime.includes('values.foto_ticket=ticketFoto.base64'),'Final submission must carry photo for server revalidation');
 for(const id of [...new Set([...originalCore.matchAll(/\$\('([^']+)'\)/g)].map(x=>x[1]))])assert.ok(billing.includes(`id="${id}"`),`Missing original event target: ${id}`);
 assert.ok(billing.includes('/client/ary-voice.js'),'Missing voice module at the IIS-safe public URL');
 assert.ok(billing.includes('/client/ary-chat.js'),'Missing browser chat module at the IIS-safe URL');
@@ -75,7 +87,8 @@ assert.ok(read(path.join(out,'client/ary-voice.js')).includes('/media/ary-guide-
 assert.ok(billing.includes('/ary-assistance.css'),'Missing assistance styles');
 const config=read(path.join(out,'web.config'));const rootConfig=read('web.config');
 const rule=s=>s.match(/<rule\b[^>]*name="ARY Portal Facturacion API"[\s\S]*?<\/rule>/)?.[0].replace(/\s+/g,'');
-assert.ok(rule(config),'Missing original API proxy');assert.equal(rule(config),rule(rootConfig),'STOP: backend API rule changed');
+assert.ok(rule(config),'Missing original API proxy');assert.equal(rule(config),rule(rootConfig),'STOP: backend API rule differs from root');
+assert.ok(rule(config).includes('validar-ticket'),'IIS must forward the new authenticated photo OCR endpoint');
 const defaultFiles=config.match(/<defaultDocument\b[^>]*>[\s\S]*?<files>([\s\S]*?)<\/files>/)?.[1];assert.ok(defaultFiles);
 const names=[...defaultFiles.matchAll(/<add\b[^>]*value="([^"]+)"/g)].map(x=>x[1].toLowerCase());assert.equal(names[0],'index.html');assert.equal(names.length,new Set(names).size,'IIS duplicate defaultDocument entries');
 assert.ok(config.includes('mimeType="image/webp"'),'IIS must serve the new WebP photographs');
@@ -88,7 +101,7 @@ assert.ok(!/script-src[^;]*'unsafe-inline'/.test(headerCsp),'Global CSP must not
 assert.ok(headerCsp.includes("script-src-attr 'none'"),'Inline event handlers must be blocked');
 assert.ok(!config.includes('ARY_CSP_PLACEHOLDER'),'CSP placeholder leaked into build');
 assert.ok(config.includes('<requestFiltering removeServerHeader="true">'),'IIS must remove Server header');
-assert.ok(config.includes('maxAllowedContentLength="5242880" maxUrl="2048" maxQueryString="1024"'),'Missing IIS request limits');
+assert.ok(config.includes('maxAllowedContentLength="10485760" maxUrl="2048" maxQueryString="1024"'),'Missing IIS request limits for photo+PDF');
 assert.ok(fs.existsSync(path.join(out,'seguridad/index.html')),'Missing public cybersecurity page');
 for(const verb of ['TRACE','TRACK','CONNECT','PUT','DELETE','PATCH','PROPFIND','PROPPATCH','MKCOL','COPY','MOVE','LOCK','UNLOCK']){
  assert.ok(config.includes(`<remove verb="${verb}" />`),`Inherited verb rule not removed first: ${verb}`);
@@ -122,7 +135,7 @@ for(const file of walk(out).filter(p=>p.endsWith('.html'))){
  }
 }
 assert.ok(count>=11,'Not all Astro routes were generated');
-const results={builtPages:count,scriptSHA256:createHash('sha256').update(builtCore).digest('hex'),scriptSource:'src/lib/billing-runtime.js',billingFields:'unchanged',billingCatalogs:'unchanged',apiProxy:'unchanged',aliases:Object.keys(release.aliases).length,legacyImagesPublished:false};
+const results={builtPages:count,scriptSHA256:createHash('sha256').update(builtCore).digest('hex'),scriptSource:'src/lib/billing-runtime.js',billingFields:'photo-ticket + readonly folio',billingCatalogs:'unchanged',apiProxy:'validar-ticket enabled',aliases:Object.keys(release.aliases).length,legacyImagesPublished:false};
 fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify(results,null,2));
 console.log('PASS: '+JSON.stringify(results));
 const manifest=Object.fromEntries(walk(out).filter(p=>path.basename(p)!=='sha256-manifest.json').sort().map(p=>[path.relative(out,p).split(path.sep).join('/'),createHash('sha256').update(fs.readFileSync(p)).digest('hex')]));
