@@ -19,7 +19,7 @@ foreach($name in $requiredHeaders){
 $filter=$doc.SelectSingleNode('/configuration/system.webServer/security/requestFiltering')
 $limit=$filter.SelectSingleNode('requestLimits')
 if(-not $filter -or $filter.removeServerHeader -ne 'true'){throw 'Server header removal missing'}
-if(-not $limit -or $limit.maxAllowedContentLength -ne '5242880' -or $limit.maxUrl -ne '2048' -or $limit.maxQueryString -ne '1024'){throw 'IIS request limits missing'}
+if(-not $limit -or $limit.maxAllowedContentLength -ne '10485760' -or $limit.maxUrl -ne '2048' -or $limit.maxQueryString -ne '1024'){throw 'IIS request limits missing'}
 foreach($verb in @('TRACE','TRACK','CONNECT','PUT','DELETE','PATCH','PROPFIND','PROPPATCH','MKCOL','COPY','MOVE','LOCK','UNLOCK')){
  $node=$filter.SelectSingleNode("verbs/add[@verb='$verb'][@allowed='false']")
  $remove=$filter.SelectSingleNode("verbs/remove[@verb='$verb']")

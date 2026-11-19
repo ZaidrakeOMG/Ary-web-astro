@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright, expect
+from ticket_foto_mock import subir_ticket_simulado
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "test-results"
@@ -52,6 +53,8 @@ class API:
         if endpoint == "opciones":
             if self.scenario == "offline": return {"status": 502, "data": {"error": "Servidor de prueba no disponible"}}
             return {"status": 200, "data": dict(CATALOG, csrf="MOCK-CSRF-NOT-PRODUCTION", modo_seguro=self.safe, aceptando=self.scenario != "paused")}
+        if endpoint == "validar-ticket":
+            return {"status": 200, "data": {"folio": "12345"}}
         if endpoint == "solicitudes":
             self.receipt = {"tipo": body["tipo"], "referencia": "ARY-DEMO-0001", "seguimiento": "MOCK-TRACK-ONLY", "estado": "ALTA_CONFIRMADA" if body["tipo"] == "ALTA" else "ENVIO_SOLICITADO", "modo_seguro": self.safe, "mensaje": "Simulacion de navegador"}
             count = len([c for c in self.calls if c["url"].endswith("/solicitudes")])
@@ -131,7 +134,7 @@ def fill(page, kind="alta"):
     if kind == 'alta':
         page.locator('#alta-telefono').fill('8711234567')
     else:
-        page.locator('#factura-ticket').fill('12345')
+        subir_ticket_simulado(page, '12345')
         page.locator('#factura-fecha').fill(page.locator('#factura-fecha').get_attribute('max'))
         page.locator('#factura-pago').select_option('EFECTIVO')
     page.locator('#'+kind+'-correo').fill('prueba@example.com')
@@ -186,6 +189,10 @@ def main():
             assert call['body']['tipo']==kind.upper() and call['body']['confirmado'] is True
             assert 'rfc' not in call['body'] and 'idcif' not in call['body']
             assert 'constancia_archivo' not in call['body']
+            if kind=='factura':
+                assert call['body']['ticket']=='12345'
+                assert len(call['body']['foto_ticket'])>1000
+                assert 'foto_archivo' not in call['body']
             assert call['body']['constancia_pdf'].startswith('JVBERi')
             assert call['body']['sitio_web']==''
             assert call['headers']['x-ary-csrf']=='MOCK-CSRF-NOT-PRODUCTION'

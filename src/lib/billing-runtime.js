@@ -155,7 +155,7 @@
 
   async function call(path, body, headers = {}) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(() => controller.abort(), 45000);
     try {
       const response = await fetch(API+path, { method: body ? 'POST' : 'GET', credentials:'same-origin',
         cache:'no-store', signal:controller.signal, headers: body ? {'Content-Type':'application/json','X-ARY-CSRF':csrf, ...headers} : headers,
@@ -356,6 +356,7 @@
   $('newRequest').addEventListener('click', () => {
     if(!window.confirm('Conserva tu referencia. No vuelvas a enviar el mismo ticket o la misma alta pendiente. ¿Iniciar un trámite diferente?')) return;
     if(poll) clearTimeout(poll); receipt=null; storage.remove('ary_portal_seguimiento');
+    fotoSecuencia++; ticketFoto=null; estadoFoto('La foto se revisará automáticamente antes de facturar.'); $('factura-ticket').value='';
     ['factura','alta'].forEach(kind => { const form=$('form-'+kind);form.reset();form.querySelector('fieldset').disabled=false;$('error-'+kind).hidden=true; });
     snapshots={factura:null,alta:null};assistanceSnapshot=null;lastReceipt=null;reviewApproved=false;ids={factura:id(),alta:id()};
     document.querySelectorAll('#error-factura .ary-whatsapp,#statusError .ary-whatsapp,#finalResult .ary-whatsapp').forEach(el=>el.remove());
@@ -376,6 +377,72 @@
     const button = $('clearRememberedBilling');
     button.textContent = 'Datos recordados borrados';
     setTimeout(() => { button.textContent = 'Borrar datos recordados en este dispositivo'; }, 2400);
+  });
+
+  // La foto se convierte a JPEG en el dispositivo; no se persiste en localStorage.
+  let ticketFoto = null;
+  let fotoSecuencia = 0;
+  function estadoFoto(mensaje, state='idle') {
+    const box=$('factura-foto-estado');
+    box.textContent=mensaje;
+    box.dataset.state=state;
+  }
+  async function fotoAData(file) {
+    if(!file || !String(file.type||'').startsWith('image/') || file.size>15*1024*1024 || file.size<1000)
+      throw new Error('Selecciona una fotografía del ticket (JPG, PNG o imagen de cámara, máximo 15 MB antes de comprimir).');
+    // Usar data: (permitido por la CSP de IIS) en vez de blob:.
+    const source=await new Promise((resolve,reject)=>{
+      const reader=new FileReader();
+      reader.onload=()=>resolve(String(reader.result||''));
+      reader.onerror=()=>reject(new Error('No se pudo leer la foto. Vuelve a tomarla.'));
+      reader.readAsDataURL(file);
+    });
+    {
+      const img=new Image();
+      await new Promise((resolve,reject)=>{
+        img.onload=resolve; img.onerror=()=>reject(new Error('No se pudo abrir la imagen. Usa JPG o toma otra foto.'));
+        img.src=source;
+      });
+      const scale=Math.min(1,2200/Math.max(img.naturalWidth,img.naturalHeight));
+      const canvas=document.createElement('canvas');
+      canvas.width=Math.round(img.naturalWidth*scale);
+      canvas.height=Math.round(img.naturalHeight*scale);
+      if(!canvas.width || !canvas.height) throw new Error('La imagen del ticket es inválida.');
+      const ctx=canvas.getContext('2d');
+      if(!ctx) throw new Error('No es posible preparar la foto en este dispositivo.');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      for(const q of [0.88,0.76,0.64,0.52]) {
+        const encoded=canvas.toDataURL('image/jpeg',q);
+        const ix=encoded.indexOf('base64,');
+        if(ix>0 && encoded.length-ix-7 < 4*1024*1024) return encoded.slice(ix+7);
+      }
+      throw new Error('La foto es demasiado pesada. Vuelve a tomarla de frente y más cerca.');
+    }
+  }
+  $('factura-foto-ticket').addEventListener('change', async event => {
+    const selected=event.currentTarget.files?.[0];
+    const actual=++fotoSecuencia;
+    ticketFoto=null;reviewApproved=false;
+    $('factura-ticket').value='';
+    if(!selected){estadoFoto('Toma o sube una fotografía completa del ticket.');return;}
+    estadoFoto('Leyendo el folio y revisando que no sea una reimpresión…','loading');
+    try {
+      if(!ready) throw new Error('Sin conexión con el bot de facturación. Intenta cuando el portal esté conectado.');
+      const encoded=await fotoAData(selected);
+      if(actual!==fotoSecuencia)return;
+      const result=await call('/validar-ticket',{foto_ticket:encoded});
+      if(actual!==fotoSecuencia)return;
+      if(!/^[0-9]{6,20}$/.test(result.folio||'')) throw new Error('El folio no fue reconocido. Sube una foto más legible.');
+      ticketFoto={folio:result.folio,base64:encoded,archivo:selected};
+      $('factura-ticket').value=result.folio;
+      estadoFoto('Ticket leído correctamente. Folio: '+result.folio+'. Ya puedes continuar.','ok');
+      $('error-factura').hidden=true;
+    } catch(error) {
+      if(actual!==fotoSecuencia)return;
+      estadoFoto(error.name==='AbortError' ? 'La lectura tardó demasiado. Vuelve a tomar una foto más legible.' : error.message,'error');
+      $('factura-ticket').value='';
+    }
   });
 
   const MAX_CONSTANCIA=2*1024*1024;
@@ -401,7 +468,11 @@
       const email=form.elements.correo, confirmation=form.elements.correo_confirmacion;
       confirmation.setCustomValidity(email.value.trim() === confirmation.value.trim() ? '' : 'Los dos correos deben coincidir.');
       if(!form.reportValidity()) return;
+      if(kind==='factura' && (!ticketFoto || ticketFoto.archivo!==$('factura-foto-ticket').files?.[0] || $('factura-ticket').value!==ticketFoto.folio)) {
+        formError(kind,'Primero sube una fotografía legible de tu ticket original y espera a que se lea el folio.'); return;
+      }
       const values=Object.fromEntries(new FormData(form).entries());
+      if(kind==='factura') { values.ticket=ticketFoto.folio; values.foto_ticket=ticketFoto.base64; delete values.foto_archivo; }
       values.tipo=kind==='factura' ? 'FACTURA' : 'ALTA'; values.confirmado=form.elements.confirmado.checked;
       if(kind === 'factura') assistanceSnapshot = supportValues(values);
       try { values.constancia_pdf=await leerConstancia(form.elements.constancia_archivo.files[0]); }
