@@ -356,7 +356,7 @@
   $('newRequest').addEventListener('click', () => {
     if(!window.confirm('Conserva tu referencia. No vuelvas a enviar el mismo ticket o la misma alta pendiente. ¿Iniciar un trámite diferente?')) return;
     if(poll) clearTimeout(poll); receipt=null; storage.remove('ary_portal_seguimiento');
-    fotoSecuencia++; ticketFoto=null; estadoFoto('La foto se revisará automáticamente antes de facturar.'); $('factura-ticket').value='';
+    fotoSecuencia++; ticketFoto=null; estadoFoto('El código de barras se leerá automáticamente.'); $('factura-ticket').value='';
     ['factura','alta'].forEach(kind => { const form=$('form-'+kind);form.reset();form.querySelector('fieldset').disabled=false;$('error-'+kind).hidden=true; });
     snapshots={factura:null,alta:null};assistanceSnapshot=null;lastReceipt=null;reviewApproved=false;ids={factura:id(),alta:id()};
     document.querySelectorAll('#error-factura .ary-whatsapp,#statusError .ary-whatsapp,#finalResult .ary-whatsapp').forEach(el=>el.remove());
@@ -389,7 +389,7 @@
   }
   async function fotoAData(file) {
     if(!file || !String(file.type||'').startsWith('image/') || file.size>15*1024*1024 || file.size<1000)
-      throw new Error('Selecciona una fotografía del ticket (JPG, PNG o imagen de cámara, máximo 15 MB antes de comprimir).');
+      throw new Error('Selecciona una foto del código de barras (máximo 15 MB antes de comprimir).');
     // Usar data: (permitido por la CSP de IIS) en vez de blob:.
     const source=await new Promise((resolve,reject)=>{
       const reader=new FileReader();
@@ -425,22 +425,22 @@
     const actual=++fotoSecuencia;
     ticketFoto=null;reviewApproved=false;
     $('factura-ticket').value='';
-    if(!selected){estadoFoto('Toma o sube una fotografía completa del ticket.');return;}
-    estadoFoto('Leyendo el folio y revisando que no sea una reimpresión…','loading');
+    if(!selected){estadoFoto('Toma una foto de todas las barras del código del ticket.');return;}
+    estadoFoto('Decodificando el código de barras…','loading');
     try {
       if(!ready) throw new Error('Sin conexión con el bot de facturación. Intenta cuando el portal esté conectado.');
       const encoded=await fotoAData(selected);
       if(actual!==fotoSecuencia)return;
-      const result=await call('/validar-ticket',{foto_ticket:encoded});
+      const result=await call('/validar-ticket',{foto_ticket:encoded,modo_ticket:'codigo_barras'});
       if(actual!==fotoSecuencia)return;
       if(!/^[0-9]{6,20}$/.test(result.folio||'')) throw new Error('El folio no fue reconocido. Sube una foto más legible.');
       ticketFoto={folio:result.folio,base64:encoded,archivo:selected};
       $('factura-ticket').value=result.folio;
-      estadoFoto('Ticket leído correctamente. Folio: '+result.folio+'. Ya puedes continuar.','ok');
+      estadoFoto('Código leído. Folio: '+result.folio+'. Confirma estación y fecha antes de continuar.','ok');
       $('error-factura').hidden=true;
     } catch(error) {
       if(actual!==fotoSecuencia)return;
-      estadoFoto(error.name==='AbortError' ? 'La lectura tardó demasiado. Vuelve a tomar una foto más legible.' : error.message,'error');
+      estadoFoto(error.name==='AbortError' ? 'La lectura tardó demasiado. Acércate al código de barras y vuelve a intentarlo.' : error.message,'error');
       $('factura-ticket').value='';
     }
   });
@@ -469,10 +469,10 @@
       confirmation.setCustomValidity(email.value.trim() === confirmation.value.trim() ? '' : 'Los dos correos deben coincidir.');
       if(!form.reportValidity()) return;
       if(kind==='factura' && (!ticketFoto || ticketFoto.archivo!==$('factura-foto-ticket').files?.[0] || $('factura-ticket').value!==ticketFoto.folio)) {
-        formError(kind,'Primero sube una fotografía legible de tu ticket original y espera a que se lea el folio.'); return;
+        formError(kind,'Primero sube una foto clara de todo el código de barras y espera a que se lea el folio.'); return;
       }
       const values=Object.fromEntries(new FormData(form).entries());
-      if(kind==='factura') { values.ticket=ticketFoto.folio; values.foto_ticket=ticketFoto.base64; delete values.foto_archivo; }
+      if(kind==='factura') { values.ticket=ticketFoto.folio; values.foto_ticket=ticketFoto.base64; values.modo_ticket='codigo_barras'; delete values.foto_archivo; }
       values.tipo=kind==='factura' ? 'FACTURA' : 'ALTA'; values.confirmado=form.elements.confirmado.checked;
       if(kind === 'factura') assistanceSnapshot = supportValues(values);
       try { values.constancia_pdf=await leerConstancia(form.elements.constancia_archivo.files[0]); }
