@@ -27,3 +27,13 @@
 El OCR **no demuestra** que un papel sea original: puede no ver una marca pequeña o tapada de REIMPRESIÓN. Por eso bloquea capturas ambiguas, pero la revisión de duplicados y la comprobación por Polaris siguen siendo necesarias. No sustituye la verificación de folios procesados.
 
 Las fotografías se procesan en memoria durante la petición y no se persisten como archivos ni en almacenamiento local.
+
+
+## Nuevo modo: foto solo del código de barras
+
+- La página envía `modo_ticket: "codigo_barras"` a la misma ruta `/validar-ticket` y lo vuelve a incluir en `/solicitudes`.
+- El bot utiliza `analizar_codigo_barras_foto`: acepta recortes horizontales y decodifica CODE39/CODE128 sin OCR, preservando ceros iniciales. Rechaza ausencia o múltiples códigos contradictorios.
+- En el envío final, vuelve a decodificar exactamente la misma foto y compara el folio para evitar cambios manuales.
+- La API anterior de fotografía completa (`modo_ticket` ausente o `ticket_completo`) se conserva para clientes que aún no actualizan el sitio.
+- **Limitación:** el código de barras no acredita que el ticket sea original, su fecha ni el producto/importe. La declaración del usuario, la validación de fecha, los controles de duplicidad y las verificaciones en Polaris siguen siendo indispensables. No interpretar la prelectura como comprobación del ticket real.
+- Reutiliza los endpoints existentes: no requiere nuevas reglas URL Rewrite en IIS. Desplegar la compilación Astro al directorio real que atiende IIS.
