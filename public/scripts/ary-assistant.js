@@ -43,10 +43,10 @@
   const followUp = step('#receipt', 'Conserva tu referencia', 'Después de enviar, el portal mostrará una referencia para consultar el avance con “Actualizar estado”. Recibir la solicitud no significa que la factura esté emitida ni que el alta esté confirmada. En modo de prueba no se completa el trámite real.');
   const guides = {
     factura: [
-      step('#factura-plazo-aviso', '1. Antes de empezar: conoce los requisitos', '¡Hola! Te acompaño a solicitar tu factura. Puedes solicitarla durante las 72 horas posteriores al consumo, siempre dentro del mismo mes de la compra. Los aceites no se facturan aquí; para esos productos usa únicamente el botón de WhatsApp al 871 165 1404. Ten a la mano tu ticket y el PDF de tu constancia fiscal. Si aún no eres cliente, primero entra a Alta de cliente.'),
+      step('#factura-plazo-aviso', '1. Antes de empezar: conoce los requisitos', '¡Hola! Te acompaño a solicitar tu factura. Puedes solicitarla durante las 72 horas posteriores al consumo, siempre dentro del mismo mes de la compra. Los aceites no se facturan aquí; para esos productos usa únicamente el botón de WhatsApp al 871 165 1404. Ten a la mano tu ticket original con el código de barras y el PDF de tu constancia fiscal. Si aún no eres cliente, primero entra a Alta de cliente.'),
       step('#factura-estacion', '2. Elige tu estación', 'Selecciona la estación donde cargaste combustible. Revisa su nombre y número en el ticket para no enviar tu solicitud a otra estación.'),
       step('#factura-constancia', '3. Adjunta tu constancia fiscal', 'Selecciona el PDF digital original de la Constancia de Situación Fiscal del SAT (máximo 2 MB). El bot usa únicamente tu RFC para buscar a tu cliente en Polaris. Si encuentra varios clientes con el mismo RFC, solicita revisión sin emitir factura. La calle no interviene en la selección. No necesitas escribir el RFC.'),
-      step('#factura-ticket', '4. Captura el folio del ticket', 'Escribe únicamente el folio numérico de tu ticket. Revisa cada dígito: no se trata del importe ni del número de estación.'),
+      step('#factura-foto-ticket', '4. Fotografía solo el código de barras', 'Toca “Seleccionar archivo” y elige Cámara. Acércate hasta que el código de barras ocupe gran parte de la foto. Incluye todas las barras negras, espacios y extremos, sin cortar ninguna línea. Espera a que aparezca el folio con los ceros iniciales y compáralo con el que está impreso en el ticket: si es distinto, no envíes el formulario. El folio no se escribe a mano. Conserva el ticket original: las barras no demuestran la fecha ni que no sea reimpresión.'),
       step('#factura-fecha', '5. Indica la fecha del ticket', 'Selecciona la fecha real de tu compra. Solo puedes solicitar tu factura en el mismo mes del consumo y dentro de las 72 horas posteriores a tu compra. El portal limita las fechas del calendario; el bot debe confirmar la hora real. Nunca cambies la fecha para intentar continuar.'),
       step('#factura-pago', '6. Selecciona cómo pagaste', 'Elige la forma de pago con la que realizaste esta compra. Debe coincidir con tu ticket; no selecciones otra solo para avanzar.'),
       step('#factura-uso', '7. Elige el uso de CFDI', 'Selecciona el uso que corresponde a tu solicitud. Si tienes dudas sobre cuál necesitas, confírmalo con tu contador antes de enviar.'),
@@ -193,17 +193,8 @@
   }
   function restoreBubble() {
     const limits = movementLimits();
-    if (viewportWidth() <= 700) {
-      root.style.left = '';
-      root.style.top = '';
-      root.style.right = '';
-      root.style.bottom = '';
-      bubbleX = limits.maxX; bubbleY = limits.maxY;
-      positionPanel();
-      return;
-    }
-    // With the guide controls in the sidebar, start the draggable bubble
-    // on the right. Users can still move it and their saved position persists.
+    // Restore the floating position on iPhone too, including after rotation.
+    // Default on the right but preserve any coordinates the user chooses.
     let x = limits.maxX;
     let y = limits.maxY;
     try {
@@ -252,6 +243,42 @@
   }
   launcher.addEventListener('pointerup', finishDrag);
   launcher.addEventListener('pointercancel', finishDrag);
+
+  // Safari: avoid pointer capture on touch (previously swallowing taps).
+  // Distinguish a tap from a drag and persist the moved position.
+  let touchDrag = null;
+  launcher.addEventListener('touchstart', event => {
+    if (blocked() || viewportWidth() > 700 || event.touches.length !== 1) return;
+    const t = event.touches[0];
+    touchDrag = { id:t.identifier, startX:t.clientX, startY:t.clientY, x:bubbleX, y:bubbleY, moved:false };
+  }, { passive:true });
+  launcher.addEventListener('touchmove', event => {
+    if (!touchDrag || viewportWidth() > 700) return;
+    const t = [...event.touches].find(touch => touch.identifier === touchDrag.id);
+    if (!t) return;
+    const dx = t.clientX - touchDrag.startX, dy = t.clientY - touchDrag.startY;
+    if (!touchDrag.moved && Math.hypot(dx,dy) < 10) return;
+    touchDrag.moved = true;
+    root.classList.add('is-dragging');
+    event.preventDefault();
+    moveBubble(touchDrag.x+dx,touchDrag.y+dy);
+  }, { passive:false });
+  function finishTouch(event,cancelled=false) {
+    if (!touchDrag) return;
+    const t = [...event.changedTouches].find(touch => touch.identifier === touchDrag.id);
+    if (!t) return;
+    if (touchDrag.moved) {
+      moveBubble(touchDrag.x+t.clientX-touchDrag.startX,
+        touchDrag.y+t.clientY-touchDrag.startY,true);
+      ignoreClick = true;
+      setTimeout(() => { ignoreClick = false; },420);
+      if (!cancelled && event.cancelable) event.preventDefault();
+    }
+    root.classList.remove('is-dragging');
+    touchDrag = null;
+  }
+  launcher.addEventListener('touchend',event => finishTouch(event),{ passive:false });
+  launcher.addEventListener('touchcancel',event => finishTouch(event,true),{ passive:true });
   launcher.addEventListener('dragstart', (event) => event.preventDefault());
   launcher.addEventListener('keydown', (event) => {
     const offsets = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] };
@@ -483,11 +510,7 @@
   window.addEventListener('resize', () => {
     cancelAnimationFrame(resizeFrame);
     resizeFrame = requestAnimationFrame(() => {
-      if (viewportWidth() <= 700) restoreBubble();
-      else {
-        const limits = movementLimits();
-        moveBubble(clamp(bubbleX, limits.minX, limits.maxX), clamp(bubbleY, limits.minY, limits.maxY));
-      }
+      restoreBubble();
       dockMobileNavigation();
       reserveSpace();
     });
