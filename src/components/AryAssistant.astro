@@ -28,12 +28,12 @@
     </div>
     <footer class="ary-assistant-footer">Esta guía no lee tus datos ni envía solicitudes por ti.</footer>
   </section>
-  <button id="ary-assistant-launcher" class="ary-assistant-launcher" type="button" aria-controls="ary-assistant-panel" aria-expanded="false" aria-label="Abrir ayuda paso a paso de ARY" title="Asistente ARY · Arrastra para mover">
+  <button id="ary-assistant-launcher" class="ary-assistant-launcher" type="button" aria-controls="ary-assistant-panel" aria-expanded="false" aria-label="Abrir ayuda ARY; arrastra la burbuja para moverla" title="Toca para abrir · Arrastra para mover">
     <img src="/media/ary-mascota.webp" alt="" width="58" height="58" decoding="async"/>
-    <span><strong>¿Te ayudo?</strong><small>Asistente ARY</small></span><span class="ary-assistant-dot" aria-hidden="true"></span>
+    <span><strong>¿Te ayudo?</strong><small>Asistente ARY</small></span><span class="ary-assistant-dot" aria-hidden="true"></span><span class="ary-assistant-grip" aria-hidden="true"></span>
   </button>
 </div>
-<script is:inline defer src="/client/ary-assistant.js?v=9"></script>
+<script is:inline defer src="/client/ary-assistant.js?v=10"></script>
 <style>
   .ary-assistant{position:fixed;right:20px;bottom:22px;z-index:110;width:min(352px,calc(100vw - 32px));color:var(--ink);font-size:14px;line-height:1.55;pointer-events:none}
   .ary-assistant-panel,.ary-assistant-launcher{pointer-events:auto}
@@ -86,6 +86,8 @@
   .ary-assistant-launcher:focus-visible{outline:3px solid #681444;outline-offset:4px}
   .ary-assistant.is-dragging .ary-assistant-launcher{cursor:grabbing;box-shadow:0 13px 32px #4c173a4d;border-color:var(--magenta)}
   .ary-assistant.is-dragging .ary-assistant-launcher img{animation-play-state:paused}
+  .ary-assistant-grip{position:absolute;bottom:5px;left:6px;width:18px;height:18px;border-radius:50%;background:#fff8fd;border:1px solid #d694bb;pointer-events:none;box-shadow:0 1px 4px #4c173a22}
+  .ary-assistant-grip::before{content:'';position:absolute;left:5px;top:5px;width:2px;height:2px;border-radius:50%;background:var(--magenta);box-shadow:5px 0 var(--magenta),0 5px var(--magenta),5px 5px var(--magenta)}
   .ary-assistant-launcher:disabled{opacity:.8;cursor:default}
   @keyframes ary-assistant-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
   @media(min-width:1100px){:global(body.is-billing) .ary-assistant{right:20px;left:auto;width:74px}}
@@ -98,7 +100,7 @@
   .ary-assistant-actions[hidden]{display:none!important}
   @media(max-width:700px){
     .ary-assistant{width:66px;height:66px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px))}
-    .ary-assistant-launcher{touch-action:manipulation;cursor:pointer}
+    .ary-assistant-launcher{touch-action:none;cursor:grab}
     .ary-assistant.is-open .ary-assistant-launcher{display:none}
     .ary-assistant-panel{position:fixed;left:12px;right:12px;top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));width:calc(100vw - 24px);max-height:min(72dvh,calc(100dvh - 184px));margin:0;border-radius:18px;box-shadow:0 14px 42px #3c123544}
     .ary-assistant-header{padding:12px 14px;flex-shrink:0}
