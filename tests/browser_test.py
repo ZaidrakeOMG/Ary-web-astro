@@ -74,6 +74,10 @@ class API:
             if self.scenario == "queue": self.receipt["estado"] = "EN_COLA"
             return {"status": 200, "data": self.receipt}
         if endpoint in ("recepcion", "estado"):
+            if endpoint == "recepcion" and self.scenario == "missing-recepcion":
+                return {"status": 404, "data": {"error": "Ruta no disponible."}}
+            if endpoint == "recepcion" and self.scenario == "not-found-request":
+                return {"status": 404, "data": {"error": "No se encontró una solicitud registrada para este envío."}}
             value = self.receipt or {"tipo":"ALTA","referencia":"ARY-RECUPERADA","seguimiento":"MOCK-RECOVERY","estado":"ALTA_CONFIRMADA","modo_seguro":True,"mensaje":"Solicitud recuperada"}
             if self.scenario == "queue": value = dict(value, estado="ALTA_CONFIRMADA")
             return {"status": 200, "data": value}
@@ -246,12 +250,36 @@ def main():
         api=API('reject');page=launch_page(b,api=api);fill(page)
         page.locator('#form-alta .submit').click();expect(page.locator('#error-alta')).to_have_text('Datos rechazados en simulacion')
         assert not page.locator('#form-alta fieldset').evaluate('e=>e.disabled')
-        finish(page,'rejection:400-unlocks-form')
+        first_id=api.sent[0]['headers']['x-ary-request-id']
+        api.scenario='ok'
+        page.locator('#form-alta .submit').click()
+        expect(page.locator('#receipt')).to_be_visible()
+        assert len(api.sent)==2
+        assert api.sent[1]['headers']['x-ary-request-id']!=first_id
+        finish(page,'rejection:400-unlocks-form-and-renews-id')
         for scenario in ['paused','offline']:
             api=API(scenario);page=launch_page(b,api=api)
             expect(page.locator('#form-alta .submit')).to_be_disabled();assert not api.sent
             expect(page.locator('#connectionError')).to_be_visible()
-            finish(page,'connection:'+scenario)
+            expect(page.locator('.ary-retry-connection')).to_be_visible()
+            api.scenario='ok'
+            page.locator('.ary-retry-connection').click()
+            expect(page.locator('#form-alta .submit')).to_be_enabled()
+            assert not api.sent
+            finish(page,'connection:'+scenario+':recovers-without-request')
+        api=API('missing-recepcion');page=launch_page(b,api=api,storage={'ary_portal_pendiente':'a'*32})
+        expect(page.locator('#form-alta .submit')).to_be_disabled()
+        assert page.evaluate("sessionStorage.getItem('ary_portal_pendiente')")=='a'*32
+        api.scenario='ok'
+        page.locator('.ary-retry-connection').click()
+        expect(page.locator('#receipt')).to_be_visible()
+        assert not api.sent
+        finish(page,'recovery:generic-404-keeps-pending-until-verified')
+        api=API('not-found-request');page=launch_page(b,api=api,storage={'ary_portal_pendiente':'b'*32})
+        expect(page.locator('#form-alta .submit')).to_be_enabled()
+        assert page.evaluate("sessionStorage.getItem('ary_portal_pendiente')") is None
+        assert not api.sent
+        finish(page,'recovery:explicit-not-found-releases-pending')
         api=API(safe=False);page=launch_page(b,api=api);fill(page)
         expect(page.locator('#modeBanner')).to_be_hidden()
         page.locator('#form-alta .submit').click();expect(page.locator('#receipt')).to_be_visible()

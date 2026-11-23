@@ -497,7 +497,15 @@
       storeReceipt(data);snapshots[kind]=null;renderReceipt(data);$('receipt').focus();
     } catch(error) {
       const certain=error.status && error.status < 500;
-      if(certain || error.status===503) { snapshots[kind]=null;storage.remove('ary_portal_pendiente');form.querySelector('fieldset').disabled=false; }
+      if(certain || error.status===503) {
+        snapshots[kind]=null;
+        storage.remove('ary_portal_pendiente');
+        form.querySelector('fieldset').disabled=false;
+        // Si el servidor confirmó rechazo SIN encolar, un trámite nuevo
+        // debe utilizar otro identificador. 409 se conserva: puede ser un
+        // envío anterior cuya recepción hay que comprobar.
+        if([400,403,404,422,429,503].includes(error.status)) ids[kind]=id();
+      }
       formError(kind, certain || error.status===503 ? error.message : 'No se confirmó la recepción. Conservé el mismo envío para evitar duplicarlo. Pulsa «Confirmar recepción» sin cambiar los datos.');
     } finally {
       busy=false;button.disabled=!ready;
@@ -505,7 +513,23 @@
     }
   }
   ['factura','alta'].forEach(kind => $('form-'+kind).addEventListener('submit', event => send(kind,event)));
+  function connectionRetry(message) {
+    const box=$('connectionError');
+    box.replaceChildren();
+    box.hidden=false;
+    const text=document.createElement('span');text.textContent=message;
+    const retry=document.createElement('button');
+    retry.type='button';
+    retry.textContent='Reintentar conexión y comprobar recepción';
+    retry.className='ary-retry-connection';
+    retry.addEventListener('click',async()=>{
+      retry.disabled=true;
+      try { await connect(); } finally { retry.disabled=false; }
+    });
+    box.append(text,document.createTextNode(' '),retry);
+  }
   async function connect() {
+    $('connectionError').hidden=true;
     if(location.protocol==='file:') {
       $('connection').textContent='Vista previa sin conexión';$('connection').dataset.state='error';
       $('connectionError').hidden=false;$('connectionError').textContent='Esta es una vista previa. Para enviar solicitudes, abre el portal desde el bot o desde el sitio con el API configurado. Abrir el archivo por sí solo no conecta con Polaris.';return;
@@ -517,21 +541,31 @@
       $('modeBanner').hidden=!data.modo_seguro;
       $('connection').textContent=ready ? 'Conectado al portal' : 'Recepción pausada';$('connection').dataset.state=ready?'ok':'error';
       document.querySelectorAll('.submit').forEach(button => button.disabled=!ready);
-      if(!ready){$('connectionError').hidden=false;$('connectionError').textContent='La recepción de nuevas solicitudes está pausada. El seguimiento de las ya registradas continúa disponible.';showWhatsApp($('connectionError'),{},'Recepción de solicitudes pausada.',true);}
+      if(!ready){
+        connectionRetry('La recepción de nuevas solicitudes está pausada. El seguimiento de las ya registradas continúa disponible.');
+        showWhatsApp($('connectionError'),{},'Recepción de solicitudes pausada.',true);
+      }
       const saved=storage.get('ary_portal_seguimiento');
       if(saved){try{receipt=JSON.parse(saved);if(receipt.seguimiento){const result=await call('/estado',{seguimiento:receipt.seguimiento});renderReceipt(result);return;}}catch(_){receipt=null;storage.remove('ary_portal_seguimiento');}}
       const pending=storage.get('ary_portal_pendiente');
       if(pending){
         try{const result=await call('/recepcion',{request_id:pending});storeReceipt(result);renderReceipt(result);}
         catch(error){
-          if(error.status===404){storage.remove('ary_portal_pendiente');}
-          else{ready=false;document.querySelectorAll('.submit').forEach(button=>button.disabled=true);throw new Error('Hay un envío pendiente de confirmar. Recarga la página para consultar su recepción antes de iniciar otro.');}
+          if(error.status===404 && error.message==='No se encontró una solicitud registrada para este envío.'){
+            // El servidor confirmó que NO recibió ese identificador.
+            storage.remove('ary_portal_pendiente');
+          } else {
+            // Una respuesta HTTP 404 genérica puede ser un proxy IIS roto:
+            // jamás borrar un envío incierto ni permitir duplicar el ticket.
+            ready=false;document.querySelectorAll('.submit').forEach(button=>button.disabled=true);
+            throw new Error('Hay un envío cuya recepción no se ha podido confirmar. Usa «Reintentar conexión y comprobar recepción». No repitas el mismo ticket.');
+          }
         }
       }
     } catch(error) {
       ready=false;document.querySelectorAll('.submit').forEach(button=>button.disabled=true);
       $('connection').textContent='Sin conexión al bot';$('connection').dataset.state='error';
-      $('connectionError').hidden=false;$('connectionError').textContent='No se pudo conectar con el portal de facturación. No se ha registrado una nueva solicitud desde esta pantalla. '+(error.name==='AbortError' ? 'Revisa la conexión.' : error.message);
+      connectionRetry('No se pudo conectar con el portal de facturación. No se ha confirmado un nuevo registro desde esta pantalla. '+(error.name==='AbortError' ? 'Revisa la conexión.' : error.message));
       showWhatsApp($('connectionError'), {}, 'No se pudo conectar con el portal. Comprobar cualquier solicitud pendiente antes de emitir.', true);
     }
   }
