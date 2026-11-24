@@ -2,6 +2,13 @@
 (() => {
   const API = '/api/facturacion';
   const INITIAL = {"estaciones":[{"valor":"ARY I","texto":"ARY I · Est. 6953"},{"valor":"ARY II","texto":"ARY II · Est. 4376"},{"valor":"ARY III","texto":"ARY III · Est. 4837"},{"valor":"ARY IV","texto":"ARY IV · Est. 5522"},{"valor":"SERVICIO APACHE","texto":"SERVICIO APACHE · Est. 6086"},{"valor":"ARY V","texto":"ARY V · Est. 9427"},{"valor":"ARY VI","texto":"ARY VI · Est. 11507"}],"formas_pago":[{"valor":"EFECTIVO","texto":"Efectivo"},{"valor":"TARJETA DE CREDITO","texto":"Tarjeta de crédito"},{"valor":"TARJETA DE DEBITO","texto":"Tarjeta de débito"},{"valor":"TRANSFERENCIA ELECTRONICA DE FONDOS","texto":"Transferencia"}],"usos_cfdi":[{"valor":"G01","texto":"G01 — ADQUISICIÓN DE MERCANCÍAS."},{"valor":"G02","texto":"G02 — DEVOLUCIONES, DESCUENTOS O BONIFICACIONES."},{"valor":"G03","texto":"G03 — GASTOS EN GENERAL."},{"valor":"I01","texto":"I01 — CONSTRUCCIONES."},{"valor":"I02","texto":"I02 — MOBILIARIO Y EQUIPO DE OFICINA POR INVERSIONES."},{"valor":"I03","texto":"I03 — EQUIPO DE TRANSPORTE."},{"valor":"I04","texto":"I04 — EQUIPO DE CÓMPUTO Y ACCESORIOS."},{"valor":"I05","texto":"I05 — DADOS, TROQUELES, MOLDES, MATRICES Y HERRAMENTAL."},{"valor":"I06","texto":"I06 — COMUNICACIONES TELEFÓNICAS."},{"valor":"I07","texto":"I07 — COMUNICACIONES SATELITALES."},{"valor":"I08","texto":"I08 — OTRA MAQUINARIA Y EQUIPO."},{"valor":"D01","texto":"D01 — HONORARIOS MÉDICOS, DENTALES Y GASTOS HOSPITALARIOS."},{"valor":"D02","texto":"D02 — GASTOS MÉDICOS POR INCAPACIDAD O DISCAPACIDAD."},{"valor":"D03","texto":"D03 — GASTOS FUNERALES."},{"valor":"D04","texto":"D04 — DONATIVOS."},{"valor":"D05","texto":"D05 — INTERESES REALES EFECTIVAMENTE PAGADOS POR CRÉDITOS HIPOTECARIOS."},{"valor":"D06","texto":"D06 — APORTACIONES VOLUNTARIAS AL SAR."},{"valor":"D07","texto":"D07 — PRIMAS POR SEGUROS DE GASTOS MÉDICOS."},{"valor":"D08","texto":"D08 — GASTOS DE TRANSPORTACIÓN ESCOLAR OBLIGATORIA."},{"valor":"D09","texto":"D09 — DEPÓSITOS EN CUENTAS PARA EL AHORRO Y PLANES DE PENSIONES."},{"valor":"D10","texto":"D10 — PAGOS POR SERVICIOS EDUCATIVOS (COLEGIATURAS)."},{"valor":"S01","texto":"S01 — SIN EFECTOS FISCALES."},{"valor":"CP01","texto":"CP01 — PAGOS."},{"valor":"CN01","texto":"CN01 — NÓMINA."},{"valor":"P01","texto":"P01 — POR DEFINIR"}]};
+  // El portal público ofrece únicamente estos dos usos CFDI, aunque
+  // el catálogo del bot contenga otros valores para uso administrativo.
+  const USOS_CFDI_WEB = Object.freeze([
+    {valor:'G03', texto:'G03 — Gastos en general'},
+    {valor:'S01', texto:'S01 — Sin efectos fiscales'}
+  ]);
+  const usoCfdiWebValido = valor => USOS_CFDI_WEB.some(uso => uso.valor === valor);
   const $ = id => document.getElementById(id);
   const storage = {
     get(key) { try { return sessionStorage.getItem(key); } catch (_) { return null; } },
@@ -93,7 +100,7 @@
   function setCatalogs(data) {
     document.querySelectorAll('.station').forEach(select => options(select, data.estaciones, 'Selecciona tu estación', select.value));
     options($('factura-pago'), data.formas_pago, 'Selecciona tu forma de pago', $('factura-pago').value);
-    options($('factura-uso'), data.usos_cfdi, '', $('factura-uso').value || 'G03');
+    options($('factura-uso'), USOS_CFDI_WEB, '', usoCfdiWebValido($('factura-uso').value) ? $('factura-uso').value : 'G03');
   }
   function readFacturaProfile() {
     try {
@@ -105,7 +112,7 @@
     const profile = {
       estacion: clean(values?.estacion, 50),
       forma_pago: clean(values?.forma_pago, 50),
-      uso_cfdi: clean(values?.uso_cfdi, 4),
+      uso_cfdi: usoCfdiWebValido(values?.uso_cfdi) ? values.uso_cfdi : 'G03',
       correo: clean(values?.correo, 254)
     };
     if (!profile.correo) return;
@@ -472,6 +479,10 @@
         formError(kind,'Primero sube una foto clara de todo el código de barras y espera a que se lea el folio.'); return;
       }
       const values=Object.fromEntries(new FormData(form).entries());
+      if(kind==='factura' && !usoCfdiWebValido(values.uso_cfdi)) {
+        formError(kind,'Solo están disponibles Gastos en general (G03) y Sin efectos fiscales (S01).');
+        return;
+      }
       if(kind==='factura') { values.ticket=ticketFoto.folio; values.foto_ticket=ticketFoto.base64; values.modo_ticket='codigo_barras'; delete values.foto_archivo; }
       values.tipo=kind==='factura' ? 'FACTURA' : 'ALTA'; values.confirmado=form.elements.confirmado.checked;
       if(kind === 'factura') assistanceSnapshot = supportValues(values);
