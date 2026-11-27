@@ -164,9 +164,11 @@
     // guide intercepts taps on “Desactivar guía” and “Volver a empezar”.
     if (isBilling && vw > 700) {
       const aside = document.querySelector('.billing-aside');
-      const invoiceTab = document.getElementById('tab-factura');
       const rect = aside?.getBoundingClientRect();
-      if (rect && rect.width && invoiceTab?.getAttribute('aria-selected') === 'true') {
+      // Never depend on tab aria-selected timing: the guide can open before
+      // the billing tab finishes updating its attributes. In that case the
+      // panel used to cover the switch and could also obstruct form controls.
+      if (rect && rect.width) {
         x = clamp(Math.max(x, rect.right + margin), margin, Math.max(margin, vw - pw - margin));
       }
     }
