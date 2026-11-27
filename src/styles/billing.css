@@ -373,10 +373,3 @@
   background: #f1f4f7;
   font-weight: 700;
 }
-
-/* En escritorio el panel flotante de ayuda permanece a la derecha del
-   formulario, fuera del panel lateral que contiene los botones de la guía.
-   No tapar ni los controles laterales ni los botones interiores del asistente. */
-@media(min-width:701px){
-  #ary-assistant-panel{left:auto!important;right:16px!important}
-}
