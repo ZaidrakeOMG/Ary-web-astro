@@ -8,6 +8,28 @@
     {valor:'G03', texto:'G03 — Gastos en general'},
     {valor:'S01', texto:'S01 — Sin efectos fiscales'}
   ]);
+  const REGIMENES_ALTA = Object.freeze([
+    ['601','General de Ley Personas Morales','M'],
+    ['603','Personas Morales con Fines no Lucrativos','M'],
+    ['605','Sueldos y Salarios e Ingresos Asimilados a Salarios','F'],
+    ['606','Arrendamiento','F'],
+    ['607','Régimen de Enajenación o Adquisición de Bienes','F'],
+    ['608','Demás ingresos','F'],
+    ['610','Residentes en el Extranjero sin Establecimiento Permanente en México','FM'],
+    ['611','Ingresos por Dividendos (socios y accionistas)','F'],
+    ['612','Personas Físicas con Actividades Empresariales y Profesionales','F'],
+    ['614','Ingresos por intereses','F'],
+    ['615','Régimen de los ingresos por obtención de premios','F'],
+    ['616','Sin obligaciones fiscales','F'],
+    ['620','Sociedades Cooperativas de Producción que optan por diferir sus ingresos','M'],
+    ['621','Incorporación Fiscal','F'],
+    ['622','Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras','M'],
+    ['623','Opcional para Grupos de Sociedades','M'],
+    ['624','Coordinados','M'],
+    ['625','Régimen de las Actividades Empresariales con ingresos a través de Plataformas Tecnológicas','F'],
+    ['626','Régimen Simplificado de Confianza','FM']
+  ].map(([valor,nombre,tipo])=>({valor,texto:valor+' — '+nombre,tipo})));
+  const regimenAltaValido = valor => REGIMENES_ALTA.some(regimen => regimen.valor === valor);
   const usoCfdiWebValido = valor => USOS_CFDI_WEB.some(uso => uso.valor === valor);
   const $ = id => document.getElementById(id);
   const storage = {
@@ -116,6 +138,8 @@
   function setCatalogs(data) {
     document.querySelectorAll('.station').forEach(select => options(select, data.estaciones, 'Selecciona tu estación', select.value));
     options($('factura-pago'), data.formas_pago, 'Selecciona tu forma de pago', $('factura-pago').value);
+    options($('alta-regimen'), data.regimenes_fiscales || REGIMENES_ALTA,
+      'Selecciona el régimen fiscal de tu constancia', $('alta-regimen').value);
     options($('factura-uso'), USOS_CFDI_WEB, '', usoCfdiWebValido($('factura-uso').value) ? $('factura-uso').value : 'G03');
   }
   function readFacturaProfile() {
@@ -500,6 +524,9 @@
         formError(kind,'Primero sube una foto clara de todo el código de barras y espera a que se lea el folio.'); return;
       }
       const values=Object.fromEntries(new FormData(form).entries());
+      if(kind==='alta' && !regimenAltaValido(values.regimen_fiscal)) {
+        formError(kind,'Selecciona el régimen fiscal que aparece en tu constancia del SAT.'); return;
+      }
       if(kind==='factura' && !usoCfdiWebValido(values.uso_cfdi)) {
         formError(kind,'Solo están disponibles Gastos en general (G03) y Sin efectos fiscales (S01).');
         return;
