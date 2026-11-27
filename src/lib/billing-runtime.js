@@ -286,7 +286,7 @@
   const PHONE_DISPLAY = '871 165 1404';
   const PHONE_LINK = 'tel:+528711651404';
   const PROGRESS = {
-    EN_COLA:{pct:18,title:'Solicitud recibida',msg:'Tu solicitud está en espera para ser atendida.'},
+    EN_COLA:{pct:18,title:'Solicitud registrada',msg:'El bot atenderá automáticamente este trámite cuando Polaris esté libre. No es necesario volver a enviar el ticket.'},
     EJECUTANDO:{pct:68,title:'Generando tu factura…',msg:'Estamos procesando tu solicitud. No cierres esta página.'},
     PREPARADA_FACTURA:{pct:82,title:'Prueba preparada',msg:'La prueba quedó preparada sin emitir una factura.',warning:true},
     PREPARADA_ALTA:{pct:82,title:'Alta preparada',msg:'Tu alta está preparada y pendiente de confirmación.'},
@@ -349,7 +349,11 @@
   function renderReceipt(data) {
     $('tabs').hidden = true; $('panel-factura').hidden = true; $('panel-alta').hidden = true;
     $('receipt').hidden = false; $('receiptRef').textContent = data.referencia;
-    $('receiptState').textContent = data.estado.replaceAll('_',' ');
+    // El estado de almacenamiento EN_COLA es interno; no significa que la
+    // persona deba enviar de nuevo su ticket ni esperar una acción manual.
+    $('receiptState').textContent = data.estado === 'EN_COLA' ? 'RECIBIDA'
+      : data.estado === 'EJECUTANDO' ? 'PROCESANDO'
+      : data.estado.replaceAll('_',' ');
     $('receiptSafe').hidden = !data.modo_seguro;
     const state = PROGRESS[data.estado];
     $('receiptMessage').textContent = data.codigo_cliente || data.tipo === 'ALTA' || state?.error
