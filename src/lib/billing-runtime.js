@@ -33,9 +33,10 @@
   const showLogo = () => { if(brandLogo.complete && brandLogo.naturalWidth > 0) { brandLogo.hidden = false; $('brandFallback').hidden = true; } };
   brandLogo.addEventListener('load', showLogo);
   showLogo();
-  // Preliminary date-only check: same calendar month AND a maximum of three
-  // prior calendar dates. The actual 72-hour cutoff must be verified against
-  // the original purchase timestamp in Polaris by the server.
+  // Polaris acepta como máximo 72 horas. Como el portal pide FECHA y no
+  // hora de compra, se muestran sólo hoy y los dos días anteriores; incluso
+  // su primera hora queda dentro de 72 h. El tercer día anterior podría
+  // exceder las 72 h y debe aclararse con el área de facturación.
   const dateInput = $('factura-fecha');
   function localISO(d) {
     const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
@@ -43,7 +44,7 @@
   }
   function ticketDateWindow() {
     const today=new Date(); today.setHours(12,0,0,0);
-    const earliest=new Date(today); earliest.setDate(earliest.getDate()-3);
+    const earliest=new Date(today); earliest.setDate(earliest.getDate()-2);
     const firstOfMonth=new Date(today.getFullYear(),today.getMonth(),1,12);
     if(earliest<firstOfMonth) earliest.setTime(firstOfMonth.getTime());
     return {today,earliest};
@@ -52,6 +53,14 @@
     if(!dateInput) return;
     const {today,earliest}=ticketDateWindow();
     dateInput.min=localISO(earliest); dateInput.max=localISO(today);
+    const hint=$('factura-fecha-hint');
+    if(hint) hint.textContent='Selecciona del '+displayDate(localISO(earliest))+
+      ' al '+displayDate(localISO(today))+
+      '. Si tu compra fue hace tres días y aún está dentro de 72 horas, consulta a Facturación.';
+    const fecha=dateInput.value;
+    dateInput.setCustomValidity(fecha && !ticketDateIsAllowed(fecha)
+      ? 'Esta fecha no está permitida. Selecciona una fecha dentro del intervalo mostrado.'
+      : '');
   }
   function ticketDateIsAllowed(value) {
     if(!/^\d{4}-\d{2}-\d{2}$/.test(value||'')) return false;
@@ -91,6 +100,13 @@
     }
   }
   configureTicketDate();
+  // Recalcular cuando la página permanezca abierta durante un cambio de día,
+  // al volver a la pestaña y antes de usar el selector. No sustituir nunca
+  // silenciosamente la fecha elegida por la persona.
+  dateInput?.addEventListener('focus',configureTicketDate);
+  dateInput?.addEventListener('change',configureTicketDate);
+  window.addEventListener('pageshow',configureTicketDate);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden) configureTicketDate();});
   function options(select, rows, placeholder = '', chosen = '') {
     select.replaceChildren();
     if (placeholder) select.add(new Option(placeholder, ''));
@@ -474,6 +490,7 @@
     if(!snapshots[kind]) {
       const email=form.elements.correo, confirmation=form.elements.correo_confirmacion;
       confirmation.setCustomValidity(email.value.trim() === confirmation.value.trim() ? '' : 'Los dos correos deben coincidir.');
+      if(kind==='factura') configureTicketDate();
       if(!form.reportValidity()) return;
       if(kind==='factura' && (!ticketFoto || ticketFoto.archivo!==$('factura-foto-ticket').files?.[0] || $('factura-ticket').value!==ticketFoto.folio)) {
         formError(kind,'Primero sube una foto clara de todo el código de barras y espera a que se lea el folio.'); return;
@@ -490,7 +507,7 @@
       catch(error) { formError(kind,error.message); return; }
       delete values.constancia_archivo;
       if(kind==='factura' && !ticketDateIsAllowed(values.fecha_ticket)) {
-        formError(kind,'Solo puedes solicitar tu factura dentro del mismo mes de la compra y durante las 72 horas posteriores al consumo. Revisa la fecha del ticket.'); return;
+        formError(kind,'Para evitar rechazos de Polaris, selecciona hoy o cualquiera de los dos días anteriores del mismo mes. Si compraste hace tres días, consulta al área de facturación por la hora exacta.'); return;
       }
       if(kind==='factura' && !reviewApproved) { openFacturaReview(values); return; }
       if(kind==='factura') reviewApproved=false;
