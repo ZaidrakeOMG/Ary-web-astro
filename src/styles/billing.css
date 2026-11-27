@@ -374,8 +374,9 @@
   font-weight: 700;
 }
 
-/* El asistente flotante nunca debe impedir pulsar la guía lateral de facturación.
-   El panel puede solaparse al volver del scroll o con zoom del navegador. */
-@media(min-width:851px){
-  .billing-aside{position:relative;z-index:120}
+/* En escritorio el panel flotante de ayuda permanece a la derecha del
+   formulario, fuera del panel lateral que contiene los botones de la guía.
+   No tapar ni los controles laterales ni los botones interiores del asistente. */
+@media(min-width:701px){
+  #ary-assistant-panel{left:auto!important;right:16px!important}
 }
