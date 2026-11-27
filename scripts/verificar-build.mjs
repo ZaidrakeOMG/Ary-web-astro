@@ -53,7 +53,19 @@ assert.ok(ticketAnterior,'Missing original folio field');
 ticketAnterior.pattern='[0-9]{6,20}';
 camposFactura.push({tag:'input',name:'foto_archivo',type:'file',id:'factura-foto-ticket',required:true});
 camposFactura.sort((a,b)=>a.name.localeCompare(b.name));
-assert.deepEqual(contract(billing),esperado,'STOP: a billing field changed outside the approved photo-ticket change');
+// Cambio intencional aprobado: el alta exige régimen fiscal SAT declarado
+// por la persona solicitante, sin asignar 601 por defecto.
+const camposAlta=esperado['form-alta'];
+assert.ok(camposAlta,'Missing original customer registration form');
+assert.ok(!camposAlta.some(x=>x.name==='regimen_fiscal'),'Legacy baseline already has the new field');
+camposAlta.push({tag:'select',name:'regimen_fiscal',type:'select',id:'alta-regimen',required:true});
+camposAlta.sort((a,b)=>a.name.localeCompare(b.name));
+assert.deepEqual(contract(billing),esperado,
+ 'STOP: billing fields differ from the approved photo-ticket and SAT fiscal-regime changes');
+assert.ok(/<select\b[^>]*id="alta-regimen"[^>]*name="regimen_fiscal"[^>]*\brequired\b/.test(billing),
+ 'The SAT regime select must be required on customer registration');
+assert.ok(runtime.includes("options($('alta-regimen')") && runtime.includes('regimenAltaValido(values.regimen_fiscal)'),
+ 'Customer registration must populate and validate the SAT regime before submission');
 assert.ok(/<input\b[^>]*id="factura-ticket"[^>]*readonly/.test(billing),'Manual folio editing must be disabled');
 assert.ok(/<input\b[^>]*id="factura-foto-ticket"[^>]*required/.test(billing),'Photo upload must be required');
 assert.ok(runtime.includes("call('/validar-ticket'"),'The new OCR endpoint is missing');
@@ -135,7 +147,7 @@ for(const file of walk(out).filter(p=>p.endsWith('.html'))){
  }
 }
 assert.ok(count>=11,'Not all Astro routes were generated');
-const results={builtPages:count,scriptSHA256:createHash('sha256').update(builtCore).digest('hex'),scriptSource:'src/lib/billing-runtime.js',billingFields:'photo-ticket + readonly folio',billingCatalogs:'unchanged',apiProxy:'validar-ticket enabled',aliases:Object.keys(release.aliases).length,legacyImagesPublished:false};
+const results={builtPages:count,scriptSHA256:createHash('sha256').update(builtCore).digest('hex'),scriptSource:'src/lib/billing-runtime.js',billingFields:'photo-ticket + readonly folio + required SAT regime on alta',billingCatalogs:'unchanged',apiProxy:'validar-ticket enabled',aliases:Object.keys(release.aliases).length,legacyImagesPublished:false};
 fs.writeFileSync(path.join(out,'verification.json'),JSON.stringify(results,null,2));
 console.log('PASS: '+JSON.stringify(results));
 const manifest=Object.fromEntries(walk(out).filter(p=>path.basename(p)!=='sha256-manifest.json').sort().map(p=>[path.relative(out,p).split(path.sep).join('/'),createHash('sha256').update(fs.readFileSync(p)).digest('hex')]));
