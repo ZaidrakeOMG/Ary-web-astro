@@ -2,6 +2,22 @@
 
 Sitio corporativo y portal de facturación con una sola identidad visual. La portada, estaciones, servicios, contacto y facturación están construidos con componentes Astro. No se incrusta ni se publica el diseño anterior.
 
+## Actualización del 27 de noviembre de 2026 — Régimen Fiscal en altas
+
+El formulario **Alta de cliente** incluye un selector obligatorio `regimen_fiscal`
+con las 19 claves SAT. No se selecciona un régimen por defecto: el usuario
+debe elegir el que aparece en su Constancia de Situación Fiscal. El bot valida
+la correspondencia entre código 601 (persona moral) y longitud del RFC;
+también admite los regímenes para personas físicas compatibles con su RFC.
+
+**Publicación coordinada:** primero actualiza y reinicia
+`ZaidrakeOMG/Facturacion-bot-` en la VM. Después actualiza este repositorio
+y publica desde la carpeta del IIS mediante `INICIAR_ARY_IIS.bat`.
+El servidor anterior rechazará el nuevo campo; es indispensable publicar ambos.
+Antes de usar altas en producción, comprueba en Polaris que el combo de
+Régimen Fiscal pueda leerse y seleccionarse: si la interfaz de Delphi no lo
+expone a la automatización, el bot detiene el guardado sin pulsar Aceptar.
+
 ## Actualización del 23 de octubre de 2026
 
 - **Facturación:** el bot busca exclusivamente por RFC leído de la constancia fiscal. El nombre/razón social y el domicilio no filtran la selección. Si hay cero o más de un cliente con ese RFC, o Polaris VCL no permite comprobar **todas** las filas, **NO** se pulsa Aceptar ni se timbra; se solicita revisión humana. Las altas siguen exigiendo nombre, calle e idCIF.
