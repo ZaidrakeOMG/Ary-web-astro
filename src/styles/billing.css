@@ -373,3 +373,9 @@
   background: #f1f4f7;
   font-weight: 700;
 }
+
+/* El asistente flotante nunca debe impedir pulsar la guía lateral de facturación.
+   El panel puede solaparse al volver del scroll o con zoom del navegador. */
+@media(min-width:851px){
+  .billing-aside{position:relative;z-index:120}
+}
